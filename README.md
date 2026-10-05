@@ -15,13 +15,13 @@ The project chooses modern, lightweight, and maintainable technologies tailored 
 | Technology                          | Category               | Purpose & Rationale                                                                                                                                                                                                                                                        |
 | ----------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **React Native & Expo**             | Core Mobile Framework  | Enables rapid cross-platform mobile development for Android and iOS. Expo Go allows immediate on-device preview without requiring heavy native compilation during early development.                                                                                       |
-| **Expo Router**                     | Navigation & Routing   | Modern file-based routing architecture. Isolates screen definitions and layout hierarchies (`_layout.tsx`, `index.tsx`, `(auth)/login.tsx`) inside `src/app/`, preventing business logic leakage into routing files.                                                       |
+| **Expo Router**                     | Navigation & Routing   | File-based routing with thin route adapters in `src/app/`; screens and business logic live in feature modules.                                                                                                                                                             |
 | **TypeScript**                      | Language & Type Safety | Provides strict compile-time type checking for UI component props, theme tokens, API payloads, and store states. Eliminates common runtime bugs and accelerates teamwork.                                                                                                  |
 | **ES Modules (`"type": "module"`)** | Module Standard        | Employs standard ES Module imports and exports throughout the codebase and configuration files.                                                                                                                                                                            |
 | **React Native `StyleSheet`**       | Styling System         | Uses React Native's built-in `StyleSheet.create()` paired with centralized design tokens (`src/theme/`). Avoids third-party CSS utility frameworks (no NativeWind, Tailwind, or styled-components) to keep the project lightweight, predictable, and simple for beginners. |
 | **Zustand**                         | Client / Global State  | Lightweight, hook-based client state manager without Redux boilerplate. Specifically designated for client-side state (authentication status, current user profile, local session flags).                                                                                  |
 | **TanStack Query (React Query)**    | Server / Async State   | Industry-standard async server state manager. Handles API caching, background refetching, stale time management, and network synchronization without polluting global client stores.                                                                                       |
-| **Axios**                           | Network / HTTP Client  | Centralized HTTP client instance (`src/services/api/client.ts`) configured with base URL resolution from environment variables, request timeouts, and interceptors for bearer token insertion.                                                                             |
+| **Axios**                           | Network / HTTP Client  | Centralized HTTP client instance (`src/services/api/apiClient.ts`) configured with environment-based URLs, timeouts, bearer-token injection, and shared error normalization.                                                                                               |
 | **AsyncStorage**                    | Local Persistence      | Provides key-value offline storage wrapped inside `src/services/storage/storage.ts` for session and preference preservation across app restarts.                                                                                                                           |
 | **ESLint & Prettier**               | Quality & Formatting   | Enforces consistent code formatting and static code quality rules across all team contributors.                                                                                                                                                                            |
 
@@ -31,9 +31,24 @@ The project chooses modern, lightweight, and maintainable technologies tailored 
    - **Zustand** handles _client-side state_ (e.g., active user, authentication tokens, theme preferences).
    - **TanStack Query** handles _server-side state_ (e.g., recipes, nutrition data, remote queries). API responses are not duplicated in Zustand.
 2. **Design Tokens Over Hardcoded Values**:
-   - All components consume centralized tokens from `@/theme` (`colors`, `spacing`, `typography`, `radius`), ensuring a cohesive visual identity.
+   - Components consume `colors`, `spacing`, `radius`, `typography`, `shadows`, and `sizes` from `@/theme`.
+   - The light theme is sourced from Figma node [`158:542`](https://www.figma.com/design/ubV7q0QQdol4rlSN1ZBTjC/MMA301?node-id=158-542).
 3. **Abstraction of External Services**:
    - Storage operations are wrapped in `src/services/storage/` and API calls in `src/services/api/` to avoid direct library coupling throughout screens.
+
+### Design System and Theme
+
+The app uses the Figma **Typography & Color Theme** foundation (node `158:542`) as its visual source of truth. The application uses clean system **sans-serif** typography across platforms (`System` on iOS, `sans-serif` on Android) with standard typographic weights, avoiding heavy external font bundles and ensuring instantaneous rendering.
+
+```ts
+import { colors, spacing, radius, typography, shadows, sizes } from '@/theme';
+```
+
+Figma-defined values include primary `100/500/700`, accent orange, base/surface/elevated backgrounds, default border, primary/secondary/inverse text, status colors, H1-H6, body text treatments, `radius.sm`, and `radius.xl`.
+
+The following values are inferred because node `158:542` does not define them: the remaining primary shades, selected/disabled backgrounds, tertiary/disabled text, extra border states, overlays, rating colors, the complete spacing scale, intermediate radii, shadows, component sizes, and typography roles not shown in the node. They are centralized in `src/theme/` so future Figma definitions can replace them without editing components.
+
+Figma currently provides only a light theme. `lightTheme.ts` and the `AppTheme` type keep the API extensible without introducing an unused runtime theme provider or an invented dark palette.
 
 ---
 
@@ -77,18 +92,23 @@ _(Alternatively, you can also run `npm start` or `npx expo start`)_
 vegan-app-mma302/
 │
 ├── src/
-│   ├── app/           # Expo Router: routes, layouts (_layout.tsx), and screens
-│   ├── components/    # Reusable UI components (Button, Input, Loading)
-│   ├── features/      # Feature modules (auth, recipes, meal-planner, etc.)
-│   ├── services/      # External services (Axios apiClient, AsyncStorage persistence)
-│   ├── store/         # Zustand global stores (authStore)
-│   ├── hooks/         # Custom reusable React hooks
-│   ├── theme/         # Design system tokens (colors, spacing, typography, radius)
-│   ├── constants/     # Application constants
-│   ├── types/         # Shared TypeScript definitions
-│   └── utils/         # Helper functions and utilities
+│   ├── app/                         # Expo Router routes and root layout only
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx                # Thin Home route
+│   │   └── (auth)/login.tsx         # Thin Login route
+│   ├── components/
+│   │   ├── ui/                      # Shared Button, Input, Loading, Card, Badge
+│   │   └── layout/                  # Shared Screen layout wrapper
+│   ├── features/
+│   │   ├── auth/                    # Login screen, validation, types, authApi, Zustand store
+│   │   └── profile/                 # Authenticated Home screen
+│   ├── services/
+│   │   ├── api/                     # apiClient, apiConfig, apiError
+│   │   └── storage/                 # AsyncStorage wrapper and storage keys
+│   ├── theme/                       # Figma-backed tokens, system sans-serif typography, and light theme
+│   └── types/                       # Shared API & pagination data types
 │
-├── assets/            # Static media, icons, and fonts
+├── assets/            # Static media, icons, and animations
 ├── tests/             # Automated test suites
 ├── .env.example       # Sample environment configuration
 ├── .gitignore         # Version control ignore rules
@@ -101,13 +121,12 @@ vegan-app-mma302/
 
 ### Directory Responsibilities
 
-- **`src/app/`**: Contains route files, navigation groups (e.g. `(auth)/login.tsx`), and root layouts (`_layout.tsx`). Business logic should not be placed directly in route files.
-- **`src/components/`**: Houses reusable UI components built on design system tokens.
-- **`src/features/`**: Domain-specific feature modules created on-demand as features are implemented.
+- **`src/app/`**: Contains only Expo Router routes, redirects, layouts, and navigation configuration. Route files delegate to feature screens.
+- **`src/components/`**: Houses reusable cross-feature UI components built on theme tokens.
+- **`src/features/`**: Owns feature screens, components, validation, types, services, and stores. Auth state therefore lives in `features/auth/store/`, not the global store folder.
 - **`src/services/`**: Centralized API client and local device storage abstraction layer.
-- **`src/store/`**: Global client-side state stores (e.g. user authentication and session management).
-- **`src/hooks/`**: Shared custom React hooks across screens.
-- **`src/theme/`**: Theme tokens including color palette, spacing, typography, and border radius.
+- **`src/hooks/`**: Reserved for hooks reused by multiple features; feature-specific hooks stay inside their feature.
+- **`src/theme/`**: Figma-backed colors, spacing, radius, typography, shadows, sizes, common layouts, and the typed light theme.
 - **`src/constants/`**: Global constant values, error codes, and configuration parameters.
 - **`src/types/`**: Shared TypeScript types and data models.
 - **`src/utils/`**: General helper and formatting functions.
@@ -141,10 +160,10 @@ Defined in `.env.example`:
 
 ## Authentication Flow (Initial Milestone)
 
-1. The app boots into `src/app/_layout.tsx` and checks for an active session using `authStore.restoreSession()`.
+1. The app boots into `src/app/_layout.tsx` and restores the session through `features/auth/store/authStore.ts`.
 2. If unauthenticated, the app redirects to the Login screen (`/(auth)/login`).
 3. Users can test login with any valid email and a password of 6+ characters.
-4. Upon successful authentication, session state is persisted in `AsyncStorage` and the user is navigated to the Home Dashboard with sign-out functionality.
+4. Upon successful authentication, session state is persisted through the shared storage service and the user is navigated to `features/profile/screens/HomeScreen.tsx`.
 
 ---
 
@@ -184,7 +203,7 @@ Progressive Feature Expansion
 1. **Feature On-Demand Folder Structure**:
    Do not pre-create empty feature folders prematurely. Feature modules under `src/features/` (e.g., `recipes/`, `meal-planner/`, `chatbot/`) are created only when that domain is actively developed.
 2. **State Segregation Rule**:
-   - Client state stays in **Zustand** stores (`src/store/`).
+   - Client state stays in **Zustand** stores owned by the relevant feature (for example, `src/features/auth/store/`).
    - Remote data stays in **TanStack Query** hooks (`src/services/api/` and feature hooks).
    - Never duplicate server-fetched data into Zustand unless offline persistence is specifically mandated.
 3. **Design System Discipline**:

@@ -3,8 +3,9 @@ import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useAuthStore } from '@/store/authStore';
-import { colors } from '@/theme';
+
+import { useAuthStore } from '@/features/auth';
+import { colors, typography } from '@/theme';
 
 // Create a single TanStack Query client
 const queryClient = new QueryClient({
@@ -30,14 +31,12 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerStyle: {
-              backgroundColor: colors.surface,
+              backgroundColor: colors.background.elevated,
             },
-            headerTintColor: colors.primary,
-            headerTitleStyle: {
-              fontWeight: '600',
-            },
+            headerTintColor: colors.primary[700],
+            headerTitleStyle: typography.heading5,
             contentStyle: {
-              backgroundColor: colors.background,
+              backgroundColor: colors.background.base,
             },
           }}
         >

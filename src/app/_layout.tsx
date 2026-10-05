@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import { useAuthStore } from '@/features/auth';
-import { colors, typography } from '@/theme';
+import { colors, typography, useDesignFonts } from '@/theme';
 
 // Create a single TanStack Query client
 const queryClient = new QueryClient({
@@ -18,11 +18,15 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useDesignFonts();
   const restoreSession = useAuthStore((state) => state.restoreSession);
 
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
+
+  if (fontError) throw fontError;
+  if (!fontsLoaded) return null;
 
   return (
     <SafeAreaProvider>

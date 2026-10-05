@@ -1,0 +1,7 @@
+{
+  "expo": {
+    "name": "VEGETA Core Preview",
+    "slug": "vegeta-core-preview",
+    "web": { "bundler": "metro" }
+  }
+}

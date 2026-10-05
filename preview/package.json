@@ -1,0 +1,5 @@
+{
+  "name": "vegeta-ui-preview",
+  "private": true,
+  "main": "index.tsx"
+}

@@ -1,54 +1,18 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, sizes, spacing, typography } from '@/theme';
-
-export const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    marginBottom: spacing.md,
-  },
-  label: {
-    ...typography.inputLabel,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: radius.md,
-    backgroundColor: colors.background.elevated,
-    paddingHorizontal: spacing.md,
-    minHeight: sizes.input.md,
-  },
-  inputWrapperFocused: {
-    borderColor: colors.border.focus,
-  },
-  inputWrapperError: {
-    borderColor: colors.status.danger,
-  },
-  inputWrapperDisabled: {
-    backgroundColor: colors.background.disabled,
-    borderColor: colors.border.disabled,
-  },
-  input: {
-    flex: 1,
-    ...typography.bodyDefault,
-    color: colors.text.primary,
-    paddingVertical: spacing.sm,
-  },
+import { child, variantNode, typography, colors, interactionTokens } from '@/theme';
+const node = (s = 'Default') => variantNode('Input /', `Type=Text, State=${s}`);
+const surface = (s = 'Default') => child(node(s), 'Input surface');
+export const styles = {
+  container: node().style,
+  label: child(node(), 'Field label').style,
+  inputWrapper: surface().style,
+  inputWrapperFocused: surface('Focus').style,
+  inputWrapperError: surface('Error').style,
+  inputWrapperDisabled: surface('Disabled').style,
+  input: child(surface(), 'Value').style,
   toggleButton: {
-    paddingLeft: spacing.sm,
-    paddingVertical: spacing.xs,
+    minHeight: interactionTokens.minimumTouch,
+    justifyContent: 'center' as const,
   },
-  toggleText: {
-    ...typography.chipLabel,
-    color: colors.primary[700],
-  },
-  errorText: {
-    ...typography.helper,
-    color: colors.status.danger,
-    marginTop: spacing.xs,
-    marginLeft: spacing.xs,
-  },
-});
+  toggleText: child(surface(), 'Value').style,
+  errorText: { ...typography.helper, color: colors.status.danger },
+};

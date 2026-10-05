@@ -2,93 +2,93 @@ import React from 'react';
 import {
   Pressable,
   Text,
-  ActivityIndicator,
-  StyleProp,
-  ViewStyle,
-  TextStyle,
+  type PressableProps,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
 } from 'react-native';
-import { styles } from './Button.styles';
-import { colors } from '@/theme';
-
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
-
-export interface ButtonProps {
+import {
+  capitalize,
+  child,
+  containerStyle,
+  interactionTokens,
+  variantNode,
+} from '@/theme';
+export type ButtonVariant =
+  'primary' | 'secondary' | 'outline' | 'ghost' | 'warning' | 'danger';
+export type ButtonState = 'default' | 'pressed' | 'loading' | 'disabled';
+export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> {
   title: string;
-  onPress: () => void;
   variant?: ButtonVariant;
+  state?: ButtonState;
   loading?: boolean;
-  disabled?: boolean;
+  loadingTitle?: string;
   fullWidth?: boolean;
+  width?: ViewStyle['width'];
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
-  testID?: string;
+  preview?: boolean;
 }
-
-export const Button: React.FC<ButtonProps> = ({
+export function Button({
   title,
-  onPress,
   variant = 'primary',
+  state,
   loading = false,
+  loadingTitle = 'Đang xử lý',
   disabled = false,
   fullWidth = true,
+  width,
   style,
   textStyle,
-  testID,
-}) => {
-  const isDisabled = disabled || loading;
-
-  const getVariantStyle = (pressed: boolean) => {
-    if (isDisabled) return styles.disabled;
-    switch (variant) {
-      case 'secondary':
-        return pressed ? styles.secondaryPressed : styles.secondary;
-      case 'outline':
-        return pressed ? styles.outlinePressed : styles.outline;
-      case 'ghost':
-        return pressed ? styles.ghostPressed : styles.ghost;
-      case 'primary':
-      default:
-        return pressed ? styles.primaryPressed : styles.primary;
-    }
-  };
-
-  const getTextStyle = () => {
-    if (isDisabled) return styles.disabledText;
-    switch (variant) {
-      case 'secondary':
-        return styles.secondaryText;
-      case 'outline':
-        return styles.outlineText;
-      case 'ghost':
-        return styles.ghostText;
-      case 'primary':
-      default:
-        return styles.primaryText;
-    }
-  };
-
-  const loaderColor =
-    variant === 'outline' || variant === 'ghost'
-      ? colors.primary[700]
-      : colors.text.inverse;
-
+  preview = false,
+  ...props
+}: ButtonProps) {
+  const current =
+    disabled || state === 'disabled'
+      ? 'disabled'
+      : loading || state === 'loading'
+        ? 'loading'
+        : state;
+  const blocked = current === 'disabled' || current === 'loading';
+  const token = (pressed: boolean) =>
+    variantNode(
+      'Button /',
+      `Style=${capitalize(variant === 'outline' ? 'secondary' : variant)}, State=${capitalize(current ?? (pressed ? 'pressed' : 'default'))}`
+    );
   return (
     <Pressable
-      testID={testID}
-      onPress={onPress}
-      disabled={isDisabled}
+      {...props}
+      disabled={blocked}
+      accessibilityRole="button"
+      accessibilityLabel={props.accessibilityLabel ?? title}
+      accessibilityState={{
+        ...props.accessibilityState,
+        disabled: blocked,
+        busy: current === 'loading',
+      }}
+      aria-busy={current === 'loading'}
+      aria-disabled={blocked}
       style={({ pressed }) => [
-        styles.base,
-        fullWidth && styles.fullWidth,
-        getVariantStyle(pressed),
+        containerStyle(token(pressed), preview),
+        !preview && {
+          alignSelf: fullWidth ? 'stretch' : 'flex-start',
+          minWidth: token(pressed).width,
+        },
+        width !== undefined && { width },
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={loaderColor} size="small" />
-      ) : (
-        <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
+      {({ pressed }) => (
+        <Text
+          style={[
+            child(token(pressed), 'Label').style,
+            interactionTokens.flexibleText,
+            textStyle,
+          ]}
+        >
+          {current === 'loading' ? `•••  ${loadingTitle}` : title}
+        </Text>
       )}
     </Pressable>
   );
-};
+}

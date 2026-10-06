@@ -1,27 +1,34 @@
+import { HooksPreview } from './HooksPreview';
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import {
+  AppText,
+  AppIcon,
+  Surface,
+  Badge,
+  Thumbnail,
+  BackButton,
+  FormField,
+  ProgressBar,
   Button,
   Input,
-  Card,
   Chip,
   Toggle,
-  Summary,
-  Illustration,
   type ButtonVariant,
   type ButtonState,
   type InputType,
   type InputState,
-  type CardKind,
   type ChipKind,
-  type SummaryKind,
 } from '../components/ui';
 import {
+  assetRegistry,
+  type AssetName,
   componentTokens,
   child,
   colors,
   spacing,
   typography,
+  textTokens,
   useDesignFonts,
 } from '../theme';
 import type { DesignNode } from '../theme/designTypes';
@@ -56,15 +63,6 @@ function Sample({ prefix, node }: { prefix: string; node: DesignNode }) {
       />
     );
   }
-  if (prefix === 'Card')
-    return (
-      <Card
-        preview
-        type={parts.Type.toLowerCase() as CardKind}
-        state={parts.State.toLowerCase() as 'default' | 'selected'}
-        onPress={() => setChecked((v) => !v)}
-      />
-    );
   if (prefix === 'Chip')
     return (
       <Chip
@@ -84,31 +82,11 @@ function Sample({ prefix, node }: { prefix: string; node: DesignNode }) {
         state={parts.State.toLowerCase() as 'off' | 'on' | 'disabled'}
       />
     );
-  if (prefix === 'Summary') {
-    const track = child(node, 'UI v2 / progress track');
-    const row = child(node, 'Metric row');
-    return (
-      <Summary
-        preview
-        kind={node.name.split(' / ')[1].toLowerCase() as SummaryKind}
-        value={child(row, 'Value').text!}
-        unit={child(row, 'Unit').text}
-        hint={child(node, 'Hint').text}
-        progress={child(track, 'UI v2 / progress value').width / track.width}
-      />
-    );
-  }
-  return (
-    <View>
-      <Illustration />
-      <Text style={styles.note}>
-        Thiếu asset SVG Mầm; không dựng lại vector từ JSON.
-      </Text>
-    </View>
-  );
+  return null;
 }
 
 export function CorePreview() {
+  const [count, setCount] = useState(0);
   const [loaded, error] = useDesignFonts();
   const [text, setText] = useState('');
   const [on, setOn] = useState(false);
@@ -122,26 +100,33 @@ export function CorePreview() {
         VEGETA v2 · UI core
       </Text>
       <Text style={styles.note}>
-        13 family · 57 variant · 7 Summary · Mầm thiếu asset. Preview độc lập với
-        screen nghiệp vụ.
+        Giai đoạn 0–2 · 49 variant master · 7 SVG gốc. Primitive proposed và
+        derived-master được phân loại trong DESIGN_SYSTEM.md.
       </Text>
-      {componentTokens.map((f) => (
-        <View key={f.id} style={styles.family}>
-          <Text accessibilityRole="header" style={styles.heading}>
-            {f.name}
-          </Text>
-          <View style={styles.grid}>
-            {(f.variants.length ? f.variants : [f.master!]).map((n) => (
-              <View key={n.id} testID={`sample-${n.id}`} style={styles.sample}>
-                <Text style={styles.note}>
-                  {n.name} · {n.width}×{n.height}
-                </Text>
-                <Sample prefix={f.name.split(' / ')[0]} node={n} />
-              </View>
-            ))}
+      <React.StrictMode>
+        <HooksPreview />
+      </React.StrictMode>
+      {componentTokens
+        .filter((f) =>
+          ['Button', 'Input', 'Chip', 'Control'].includes(f.name.split(' / ')[0])
+        )
+        .map((f) => (
+          <View key={f.id} style={styles.family}>
+            <Text accessibilityRole="header" style={styles.heading}>
+              {f.name}
+            </Text>
+            <View style={styles.grid}>
+              {(f.variants.length ? f.variants : [f.master!]).map((n) => (
+                <View key={n.id} testID={`sample-${n.id}`} style={styles.sample}>
+                  <Text style={styles.note}>
+                    {n.name} · {n.width}×{n.height}
+                  </Text>
+                  <Sample prefix={f.name.split(' / ')[0]} node={n} />
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
+        ))}
       <Text accessibilityRole="header" style={styles.heading}>
         Tương tác và nội dung dài
       </Text>
@@ -159,6 +144,13 @@ export function CorePreview() {
           title="Dừng loading"
           variant="secondary"
           onPress={() => setLoading(false)}
+        />
+        <Button
+          title="Chữ lớn mô phỏng 160% · nội dung dài vẫn xuống dòng"
+          textStyle={{
+            fontSize: textTokens.button.fontSize! * 1.6,
+            lineHeight: textTokens.button.lineHeight! * 1.6,
+          }}
         />
         <Input
           label="Focus / filled tự động"
@@ -191,20 +183,61 @@ export function CorePreview() {
           onPress={() => setSelected((v) => !v)}
         />
         <Toggle label="Cho phép nhắc nhở" value={on} onValueChange={setOn} />
-        <Card
-          type="recipe"
-          title="Tên công thức rất dài để kiểm tra nhiều dòng và chiều cao linh hoạt"
-          subtitle="Mô tả rất dài của công thức được truyền qua props để kiểm tra vùng nội dung."
-          selected={selected}
-          onPress={() => setSelected((v) => !v)}
+        <AppText testID="callback-count">Callback: {count}</AppText>
+        <Button
+          testID="blocked-button"
+          title="Disabled"
+          disabled
+          onPress={() => setCount((v) => v + 1)}
         />
-        <Summary
-          kind="water"
-          value="1.250"
-          unit="/ 2.000 ml"
-          hint="Nội dung rất dài để kiểm tra xuống dòng khi người dùng tăng kích thước chữ."
-          progress={0.625}
+        <Button
+          testID="loading-button"
+          title="Gửi thử"
+          loading={loading}
+          onPress={() => {
+            setCount((v) => v + 1);
+            setLoading(true);
+          }}
         />
+        <BackButton onPress={() => setCount((v) => v + 1)} />
+        <BackButton disabled onPress={() => setCount((v) => v + 1)} />
+        <FormField
+          label="FormField proposed"
+          required
+          helper="Helper do caller cung cấp"
+        >
+          <AppText>Không có validation nghiệp vụ.</AppText>
+        </FormField>
+        <Surface bordered padding="lg">
+          <AppText variant="heading3">Primitive derived-master</AppText>
+          <Badge label="Thực vật" selected={false} />
+          <Badge label="Đã chọn" selected />
+          {(['recipe', 'ingredient', 'nutrition', 'reminder'] as const).map(
+            (kind) => (
+              <Thumbnail key={kind} kind={kind} />
+            )
+          )}
+        </Surface>
+        <AppText variant="heading3">SVG gốc · AppIcon proposed</AppText>
+        <View style={styles.grid}>
+          {(Object.keys(assetRegistry) as AssetName[]).map((name) => (
+            <View key={name}>
+              <AppIcon name={name} accessibilityLabel={name} />
+              <AppText variant="caption">{name}</AppText>
+            </View>
+          ))}
+        </View>
+        <AppText variant="heading3">ProgressBar derived-master · clamp</AppText>
+        {[0, 25, 120, -10].map((value) => (
+          <Surface key={value} tone="muted" padding="md">
+            <AppText>{value}/100</AppText>
+            <ProgressBar value={value} max={100} />
+          </Surface>
+        ))}
+        <Surface tone="muted" padding="md">
+          <AppText>max=0</AppText>
+          <ProgressBar value={10} max={0} tone="water" />
+        </Surface>
       </View>
     </ScrollView>
   );

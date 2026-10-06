@@ -1,3 +1,5 @@
+import { coreTokens, componentPresets, textTokens } from './coreTokens';
+import { assetRegistry } from './assets';
 import { componentTokens, globalTokens, palette, semantic } from './designTokens';
 import { colors } from './colors';
 import { radius } from './radius';
@@ -8,6 +10,10 @@ import { typography } from './typography';
 
 export const lightTheme = {
   colors,
+  coreTokens,
+  componentPresets,
+  textTokens,
+  assetRegistry,
   palette,
   semantic,
   globalTokens,

@@ -1,12 +1,14 @@
+import { AppText } from '../AppText';
 import React from 'react';
 import {
   Pressable,
-  Text,
   type PressableProps,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import {
+  componentPresets,
+  type ComponentPreset,
   capitalize,
   child,
   containerStyle,
@@ -22,6 +24,7 @@ export interface ChipProps extends Omit<PressableProps, 'style' | 'children'> {
   state?: 'default' | 'pressed';
   style?: StyleProp<ViewStyle>;
   preview?: boolean;
+  preset?: ComponentPreset;
 }
 export function Chip({
   label,
@@ -31,6 +34,7 @@ export function Chip({
   disabled,
   style,
   preview = false,
+  preset = 'master',
   ...props
 }: ChipProps) {
   const activeKind = selected ? 'selected' : kind;
@@ -55,19 +59,20 @@ export function Chip({
       aria-disabled={!!disabled}
       style={({ pressed }) => [
         containerStyle(token(pressed), preview),
+        !preview && { minHeight: componentPresets[preset].chipHeight },
         { alignSelf: 'flex-start' },
         style,
       ]}
     >
       {({ pressed }) => (
-        <Text
+        <AppText
           style={[
             child(token(pressed), 'Label').style,
             interactionTokens.flexibleText,
           ]}
         >
           {label}
-        </Text>
+        </AppText>
       )}
     </Pressable>
   );

@@ -4,18 +4,29 @@ import crypto from 'node:crypto';
 import { format } from 'prettier';
 
 const root = path.resolve(import.meta.dirname, '..');
-const source = path.resolve(root, process.argv[2] || '../VEGETA-components-v2-core');
+const source = path.resolve(root, process.argv[2] || '../VEGETA-ui-handoff');
 const read = (name) => JSON.parse(fs.readFileSync(path.join(source, name), 'utf8'));
-const tokens = read('tokens.json');
-const spec = read('components.json');
+const tokens = read('source/tokens-v2.json');
+const spec = read('source/masters-v2.json');
+const live = read('source/live-verification.json');
+const manifest = read('assets/manifest.json');
+const patterns = read('source/patterns.json');
 const audit = read('AUDIT.json');
-if (spec.families.length !== audit.families.length)
+if (spec.families.length !== audit.masterFamilies)
   throw new Error('Family coverage mismatch');
-for (const f of audit.families) {
+for (const f of live.families) {
   const actual = spec.families.find((n) => n.id === f.id);
-  if (!actual || (actual.variants?.length ?? 0) !== f.variantCount)
+  if (!actual || (actual.variants?.length ?? 0) !== (f.variants?.length ?? 0))
     throw new Error(`Variant coverage mismatch: ${f.name}`);
+  for (const v of f.variants || []) {
+    const node = actual.variants.find((n) => n.id === v.id);
+    if (!node || node.width !== v.width || node.height !== v.height)
+      throw new Error(`Live dimension mismatch: ${v.id}`);
+  }
 }
+for (const c of live.colors)
+  if (tokens.color[c.name] !== c.resolved)
+    throw new Error(`Live color mismatch: ${c.name}`);
 for (const [name, hash] of Object.entries(audit.sha256)) {
   if (
     crypto
@@ -161,6 +172,7 @@ function node(n) {
     id: n.id,
     name: n.name,
     type: n.type,
+    visible: n.visible !== false,
     width: n.width,
     height: n.name.startsWith('Style=')
       ? 'METRIC:buttonHeight'
@@ -191,6 +203,19 @@ data = data
   .replace(/"RADIUS:([^"]+)"/g, (_, k) => `globalTokens.radius['${k}']`)
   .replace(/"METRIC:([^"]+)"/g, (_, k) => `controlMetrics['${k}']`);
 output += `export const componentTokens: readonly DesignFamily[] = ${data};\nexport interface DesignFamily { id: string; name: string; variants: DesignNode[]; master?: DesignNode }\n`;
+function findNode(nodes, id) {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const found = findNode(n.children || [], id);
+    if (found) return found;
+  }
+}
+const back = findNode(patterns.fullTrees, '217:1761');
+const backNode = JSON.stringify(node(back), null, 2).replace(
+  /"TOKEN:([^"]+)"/g,
+  (_, k) => `${k.startsWith('palette/') ? 'palette' : 'semantic'}['${k}']`
+);
+output += `export const screenPatternTokens = { back: ${backNode}, buttonHeight: 52, chipHeight: 38 } as const;\n`;
 fs.writeFileSync(
   path.join(root, 'src/theme/designTokens.ts'),
   await format(output, {
@@ -198,6 +223,26 @@ fs.writeFileSync(
     singleQuote: true,
     trailingComma: 'all',
   })
+);
+const assetDir = path.join(root, 'assets/vegeta');
+fs.mkdirSync(assetDir, { recursive: true });
+const assets = {};
+for (const asset of manifest) {
+  const xml = fs.readFileSync(path.join(source, 'assets', asset.file), 'utf8');
+  fs.copyFileSync(
+    path.join(source, 'assets', asset.file),
+    path.join(assetDir, asset.file)
+  );
+  const width = asset.width ?? Number(xml.match(/width="([\d.]+)"/)[1]);
+  const height = asset.height ?? Number(xml.match(/height="([\d.]+)"/)[1]);
+  assets[asset.name] = { id: asset.id, width, height, xml };
+}
+fs.writeFileSync(
+  path.join(root, 'src/theme/assets.ts'),
+  await format(
+    `// Generated from audited handoff SVGs; originals in assets/vegeta/.\nexport const assetRegistry = ${JSON.stringify(assets, null, 2)} as const;\nexport type AssetName = keyof typeof assetRegistry;\n`,
+    { parser: 'typescript', singleQuote: true }
+  )
 );
 console.log(
   `Synced ${families.length} families / ${families.reduce((s, f) => s + f.variants.length, 0)} variants; audited hashes verified.`

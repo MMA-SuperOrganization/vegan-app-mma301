@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import { FormField } from '../FormField';
+import { AppText } from '../AppText';
+import React from 'react';
+import { useFieldState, useDisclosure } from '@/hooks';
 import {
   View,
-  Text,
+  Platform,
   TextInput,
   Pressable,
   type TextInputProps,
@@ -10,13 +13,13 @@ import {
   type TextStyle,
 } from 'react-native';
 import {
+  componentPresets,
+  type ComponentPreset,
   capitalize,
   child,
   containerStyle,
   interactionTokens,
   variantNode,
-  typography,
-  colors,
 } from '@/theme';
 export type InputType = 'text' | 'search' | 'password' | 'select';
 export type InputState = 'default' | 'focus' | 'filled' | 'error' | 'disabled';
@@ -24,6 +27,8 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   value: string;
   onChangeText: (value: string) => void;
   label?: string;
+  helper?: string;
+  required?: boolean;
   type?: InputType;
   state?: InputState;
   error?: string | null;
@@ -32,9 +37,12 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   inputStyle?: StyleProp<TextStyle>;
   onSelect?: () => void;
   preview?: boolean;
+  preset?: ComponentPreset;
 }
 export function Input({
   label,
+  helper,
+  required,
   type,
   state,
   value,
@@ -46,6 +54,7 @@ export function Input({
   style,
   inputStyle,
   preview = false,
+  preset = 'master',
   onSelect,
   onFocus,
   onBlur,
@@ -53,8 +62,10 @@ export function Input({
   autoCorrect = false,
   ...props
 }: InputProps) {
-  const [focused, setFocused] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const field = useFieldState();
+  const visibility = useDisclosure();
+  const focused = field.focused;
+  const visible = visibility.isOpen;
   const kind = type ?? (secureTextEntry ? 'password' : 'text');
   const blocked = disabled || props.editable === false || state === 'disabled';
   const current = blocked
@@ -72,24 +83,34 @@ export function Input({
   const caption = label ?? (preview ? child(node, 'Field label').text : undefined);
   const surfaceStyle = [
     containerStyle(surface),
-    { width: '100%' as const },
-    !preview && { paddingVertical: 0 },
+    {
+      width: '100%' as const,
+      flexShrink: 0,
+      minHeight: componentPresets[preset].inputHeight,
+    },
     preview && { height: surface.height },
   ];
+  const webSemantics =
+    Platform.OS === 'web'
+      ? { 'aria-invalid': current === 'error', 'aria-required': required }
+      : {};
   const a11y = props.accessibilityLabel ?? caption ?? placeholder;
   return (
-    <View
+    <FormField
+      label={caption}
+      helper={helper}
+      error={error}
+      required={required}
+      labelStyle={child(node, 'Field label').style}
       style={[
         node.style,
         preview && { width: node.width, height: node.height },
         style,
       ]}
     >
-      {caption ? (
-        <Text style={child(node, 'Field label').style}>{caption}</Text>
-      ) : null}
       {kind === 'select' ? (
         <Pressable
+          {...webSemantics}
           testID={props.testID}
           style={surfaceStyle}
           onPress={onSelect}
@@ -100,15 +121,15 @@ export function Input({
           accessibilityState={{ disabled: blocked }}
           aria-disabled={blocked}
           onFocus={(e) => {
-            setFocused(true);
+            field.onFocus();
             onFocus?.(e);
           }}
           onBlur={(e) => {
-            setFocused(false);
+            field.onBlur();
             onBlur?.(e);
           }}
         >
-          <Text
+          <AppText
             style={[
               valueNode.style,
               interactionTokens.flexibleText,
@@ -117,17 +138,18 @@ export function Input({
             ]}
           >
             {value || placeholder || valueNode.text}
-          </Text>
+          </AppText>
           {icon && (
-            <Text accessible={false} style={icon.style}>
+            <AppText accessible={false} style={icon.style}>
               {icon.text}
-            </Text>
+            </AppText>
           )}
         </Pressable>
       ) : (
         <View style={surfaceStyle}>
           <TextInput
             {...props}
+            {...webSemantics}
             accessibilityLabel={a11y}
             accessibilityState={{ disabled: blocked }}
             aria-disabled={blocked}
@@ -147,11 +169,11 @@ export function Input({
             autoCapitalize={autoCapitalize}
             autoCorrect={autoCorrect}
             onFocus={(e) => {
-              setFocused(true);
+              field.onFocus();
               onFocus?.(e);
             }}
             onBlur={(e) => {
-              setFocused(false);
+              field.onBlur();
               onBlur?.(e);
             }}
           />
@@ -159,7 +181,7 @@ export function Input({
             (kind === 'password' ? (
               <Pressable
                 disabled={blocked}
-                onPress={() => setVisible((v) => !v)}
+                onPress={visibility.toggle}
                 hitSlop={interactionTokens.iconHitSlop}
                 accessibilityRole="button"
                 accessibilityLabel={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
@@ -167,26 +189,17 @@ export function Input({
                 aria-pressed={visible}
                 aria-disabled={blocked}
               >
-                <Text accessible={false} style={icon.style}>
+                <AppText accessible={false} style={icon.style}>
                   {icon.text}
-                </Text>
+                </AppText>
               </Pressable>
             ) : (
-              <Text accessible={false} style={icon.style}>
+              <AppText accessible={false} style={icon.style}>
                 {icon.text}
-              </Text>
+              </AppText>
             ))}
         </View>
       )}
-      {error ? (
-        <Text
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          style={[typography.helper, { color: colors.status.danger }]}
-        >
-          {error}
-        </Text>
-      ) : null}
-    </View>
+    </FormField>
   );
 }

@@ -16,6 +16,7 @@ export function DesignNode({
   fixed?: boolean;
   fixedChildren?: boolean;
 }) {
+  if (node.visible === false) return null;
   if (Object.prototype.hasOwnProperty.call(slots, node.name))
     return <>{slots[node.name]}</>;
   if (node.type === 'TEXT')

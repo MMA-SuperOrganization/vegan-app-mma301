@@ -1,5 +1,6 @@
+import { AppText } from '../AppText';
 import React from 'react';
-import { Pressable, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import {
   capitalize,
   child,
@@ -52,9 +53,9 @@ export function Toggle({
       ]}
     >
       <DesignNode node={child(node, 'Track')} fixed={preview} />
-      <Text style={[child(node, 'Label').style, interactionTokens.flexibleText]}>
+      <AppText style={[child(node, 'Label').style, interactionTokens.flexibleText]}>
         {text}
-      </Text>
+      </AppText>
     </Pressable>
   );
 }

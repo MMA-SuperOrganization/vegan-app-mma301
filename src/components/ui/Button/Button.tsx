@@ -1,13 +1,15 @@
+import { AppText } from '../AppText';
 import React from 'react';
 import {
   Pressable,
-  Text,
   type PressableProps,
   type StyleProp,
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import {
+  componentPresets,
+  type ComponentPreset,
   capitalize,
   child,
   containerStyle,
@@ -28,6 +30,7 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   preview?: boolean;
+  preset?: ComponentPreset;
 }
 export function Button({
   title,
@@ -41,6 +44,7 @@ export function Button({
   style,
   textStyle,
   preview = false,
+  preset = 'master',
   ...props
 }: ButtonProps) {
   const current =
@@ -70,6 +74,7 @@ export function Button({
       aria-disabled={blocked}
       style={({ pressed }) => [
         containerStyle(token(pressed), preview),
+        !preview && { minHeight: componentPresets[preset].buttonHeight },
         !preview && {
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
           minWidth: token(pressed).width,
@@ -79,7 +84,7 @@ export function Button({
       ]}
     >
       {({ pressed }) => (
-        <Text
+        <AppText
           style={[
             child(token(pressed), 'Label').style,
             interactionTokens.flexibleText,
@@ -87,7 +92,7 @@ export function Button({
           ]}
         >
           {current === 'loading' ? `•••  ${loadingTitle}` : title}
-        </Text>
+        </AppText>
       )}
     </Pressable>
   );

@@ -4,6 +4,7 @@ export interface DesignNode {
   id: string;
   name: string;
   type: string;
+  visible?: boolean;
   width: number;
   height: number;
   text?: string;

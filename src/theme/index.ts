@@ -12,3 +12,6 @@ export * from './types';
 export * from './designTokens';
 export * from './fonts';
 export * from './componentTheme';
+
+export * from './coreTokens';
+export * from './assets';

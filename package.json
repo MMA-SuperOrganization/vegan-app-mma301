@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "preview:ui": "cd preview && expo start --web --port 8082",
     "design:sync": "node scripts/sync-design.mjs",
-    "preview:ui:export": "cd preview && expo export --platform all --output-dir ../dist/ui-core"
+    "preview:ui:export": "cd preview && expo export --platform all --output-dir ../dist/ui-core",
+    "test:ui": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/montserrat": "^0.4.2",
@@ -33,6 +34,7 @@
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.3",
     "zustand": "^5.0.15"
   },

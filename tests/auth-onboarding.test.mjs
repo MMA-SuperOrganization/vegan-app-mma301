@@ -15,6 +15,35 @@ import {
   initialOnboardingDraft,
   parseOnboardingDraft,
 } from '../src/features/onboarding/draftSchema.ts';
+import { AppError, toAppErrorDetails } from '../src/services/errors/appError.ts';
+
+test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
+  const details = toAppErrorDetails(
+    new AppError('Firebase chưa được cấu hình.', 'FIREBASE_NOT_CONFIGURED', 503),
+    'auth.login.password',
+    'Không thể đăng nhập.'
+  );
+
+  assert.equal(details.message, 'Firebase chưa được cấu hình.');
+  assert.equal(details.code, 'FIREBASE_NOT_CONFIGURED');
+  assert.equal(details.status, 503);
+  assert.equal(details.operation, 'auth.login.password');
+  assert.match(details.timestamp, /^\d{4}-\d{2}-\d{2}T/);
+  assert.equal('password' in details, false);
+  assert.equal('token' in details, false);
+});
+
+test('unknown auth failures receive a stable fallback code', () => {
+  const details = toAppErrorDetails(
+    'unexpected',
+    'auth.login.google.oauth',
+    'Không thể đăng nhập bằng Google.',
+    'GOOGLE_LOGIN_FAILED'
+  );
+
+  assert.equal(details.message, 'Không thể đăng nhập bằng Google.');
+  assert.equal(details.code, 'GOOGLE_LOGIN_FAILED');
+});
 
 test('auth validation rejects empty and malformed credentials', () => {
   assert.equal(validateEmail(''), 'Vui lòng nhập email.');

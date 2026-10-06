@@ -5,6 +5,7 @@ import { AppButton, AppIcon, AppInput, AppText, ScreenWrapper } from '@/componen
 import { colors, spacing } from '@/theme';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { useAuthStore } from '../store/authStore';
 import { validateRegistration } from '../validations/loginValidation';
 
@@ -113,7 +114,8 @@ export function RegisterScreen() {
             Đã có tài khoản? Đăng nhập
           </AppText>
         </Pressable>
-        {storeError ? <AuthMessage message={storeError} /> : null}
+        <GoogleSignInButton />
+        {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
         title="Đăng ký"

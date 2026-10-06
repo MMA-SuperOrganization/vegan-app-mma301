@@ -1,8 +1,20 @@
 import { create } from 'zustand';
+import { logAppError, toAppErrorDetails } from '@/services/errors';
 import { authApi } from '../services/authApi';
 import type { AuthState, User } from '../types/auth.types';
 
 export type { User, AuthState };
+
+function captureError(
+  error: unknown,
+  operation: string,
+  fallbackMessage: string,
+  fallbackCode: string
+) {
+  const details = toAppErrorDetails(error, operation, fallbackMessage, fallbackCode);
+  logAppError(details);
+  return details;
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -22,7 +34,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Không thể đăng nhập.',
+        error: captureError(
+          error,
+          'auth.login.password',
+          'Không thể đăng nhập.',
+          'PASSWORD_LOGIN_FAILED'
+        ),
+      });
+      return false;
+    }
+  },
+
+  loginWithGoogle: async (googleIdToken, requestUri) => {
+    if (get().isLoading) return false;
+    set({ isLoading: true, error: null });
+    try {
+      const { user, token } = await authApi.loginWithGoogle(
+        googleIdToken,
+        requestUri
+      );
+      set({ user, token, isAuthenticated: true, isLoading: false });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: captureError(
+          error,
+          'auth.login.google.firebase',
+          'Không thể đăng nhập bằng Google.',
+          'GOOGLE_LOGIN_FAILED'
+        ),
       });
       return false;
     }
@@ -38,7 +79,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Không thể tạo tài khoản.',
+        error: captureError(
+          error,
+          'auth.register.password',
+          'Không thể tạo tài khoản.',
+          'REGISTER_FAILED'
+        ),
       });
       return false;
     }
@@ -54,7 +100,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Không thể gửi liên kết.',
+        error: captureError(
+          error,
+          'auth.password_reset',
+          'Không thể gửi liên kết.',
+          'PASSWORD_RESET_FAILED'
+        ),
       });
       return false;
     }
@@ -94,5 +145,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set((state) => ({
       user: state.user ? { ...state.user, onboardingCompleted: true } : null,
     })),
+  reportError: (error, operation, fallbackMessage, fallbackCode) =>
+    set({
+      error: captureError(
+        error,
+        operation,
+        fallbackMessage,
+        fallbackCode ?? 'AUTH_FAILED'
+      ),
+    }),
   clearError: () => set({ error: null }),
 }));

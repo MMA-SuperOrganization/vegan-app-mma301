@@ -1,4 +1,5 @@
 import type { AxiosResponse } from 'axios';
+import { AppError } from '@/services/errors';
 import { normalizeApiError } from './apiError';
 
 export interface ApiEnvelope<T> {
@@ -12,6 +13,11 @@ export async function unwrapApiRequest<T>(
   try {
     return (await request()).data.data;
   } catch (error) {
-    throw new Error(normalizeApiError(error).message);
+    const normalized = normalizeApiError(error);
+    throw new AppError(
+      normalized.message,
+      normalized.code ?? 'API_REQUEST_FAILED',
+      normalized.status
+    );
   }
 }

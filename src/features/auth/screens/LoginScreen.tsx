@@ -5,6 +5,7 @@ import { AppButton, AppInput, ScreenWrapper } from '@/components';
 import { spacing } from '@/theme';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { useAuthStore } from '../store/authStore';
 import { validateLogin } from '../validations/loginValidation';
 
@@ -80,7 +81,10 @@ export function LoginScreen() {
             onPress={() => router.push('/(auth)/register')}
           />
         </View>
-        {storeError ? <AuthMessage message={storeError} /> : null}
+        <View style={styles.google}>
+          <GoogleSignInButton />
+        </View>
+        {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
         title="Đăng nhập"
@@ -97,5 +101,6 @@ const styles = StyleSheet.create({
   screen: { flexGrow: 1, justifyContent: 'space-between', padding: spacing.xl },
   fields: { gap: spacing.xl },
   links: { gap: spacing.lg, marginTop: spacing.xl },
+  google: { marginTop: spacing.xl },
   submit: { marginTop: spacing['3xl'] },
 });

@@ -63,7 +63,7 @@ export function ForgotPasswordScreen() {
             message="Đã gửi liên kết. Hãy kiểm tra hộp thư email của bạn."
           />
         ) : null}
-        {storeError ? <AuthMessage message={storeError} /> : null}
+        {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
         title="Gửi liên kết"

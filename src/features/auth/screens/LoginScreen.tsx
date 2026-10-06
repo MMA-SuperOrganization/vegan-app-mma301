@@ -1,17 +1,8 @@
 import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, Input, Screen } from '@/components';
+import { Button, Card, Input, ScreenWrapper } from '@/components';
 import { colors, radius, sizes, spacing, typography } from '@/theme';
 import { useAuthStore } from '../store/authStore';
 import { validateLogin } from '../validations/loginValidation';
@@ -36,104 +27,90 @@ export function LoginScreen() {
     if (errors.email || errors.password) return;
 
     const success = await login(email.trim(), password);
-    if (success) router.replace('/');
+    if (success) router.replace('/(tabs)');
   };
 
   return (
-    <Screen style={styles.screen}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+    <ScreenWrapper
+      scrollable
+      style={styles.screen}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <View style={styles.header}>
+        <View style={styles.logoBadge}>
+          <Text style={styles.logoIcon}>🌿</Text>
+        </View>
+        <Text style={styles.title}>Vegan App</Text>
+        <Text style={styles.subtitle}>
+          Vegan Lifestyle & Nutrition Support App — MMA302
+        </Text>
+      </View>
+
+      <Card variant="default">
+        <Input
+          label="Email Address"
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (emailError) setEmailError(null);
+            if (storeError) clearError();
+          }}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          error={emailError}
+        />
+        <Input
+          label="Password"
+          placeholder="Enter your password (min. 6 characters)"
+          value={password}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (passwordError) setPasswordError(null);
+            if (storeError) clearError();
+          }}
+          secureTextEntry
+          error={passwordError}
+        />
+
+        <TouchableOpacity
+          onPress={() =>
+            Alert.alert(
+              'Forgot Password',
+              'Password recovery is coming soon in the next release.'
+            )
+          }
+          style={styles.forgotPasswordContainer}
         >
-          <View style={styles.header}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoIcon}>🌿</Text>
-            </View>
-            <Text style={styles.title}>Vegan App</Text>
-            <Text style={styles.subtitle}>
-              Vegan Lifestyle & Nutrition Support App — MMA302
-            </Text>
+          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+        </TouchableOpacity>
+
+        {storeError ? (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{storeError}</Text>
           </View>
+        ) : null}
 
-          <Card variant="default">
-            <Input
-              label="Email Address"
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={(text) => {
-                setEmail(text);
-                if (emailError) setEmailError(null);
-                if (storeError) clearError();
-              }}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              error={emailError}
-            />
-            <Input
-              label="Password"
-              placeholder="Enter your password (min. 6 characters)"
-              value={password}
-              onChangeText={(text) => {
-                setPassword(text);
-                if (passwordError) setPasswordError(null);
-                if (storeError) clearError();
-              }}
-              secureTextEntry
-              error={passwordError}
-            />
+        <Button
+          title="Sign In"
+          loading={isLoading}
+          onPress={handleLogin}
+          style={styles.loginButton}
+        />
+      </Card>
 
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert(
-                  'Forgot Password',
-                  'Password recovery is coming soon in the next release.'
-                )
-              }
-              style={styles.forgotPasswordContainer}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
-
-            {storeError ? (
-              <View style={styles.errorBanner}>
-                <Text style={styles.errorBannerText}>{storeError}</Text>
-              </View>
-            ) : null}
-
-            <Button
-              title="Sign In"
-              loading={isLoading}
-              onPress={handleLogin}
-              style={styles.loginButton}
-            />
-          </Card>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert(
-                  'Create Account',
-                  'User registration is coming soon in the next release.'
-                )
-              }
-            >
-              <Text style={styles.registerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Screen>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Don't have an account? </Text>
+        <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
+          <Text style={styles.registerLink}>Sign Up</Text>
+        </TouchableOpacity>
+      </View>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  keyboardView: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,

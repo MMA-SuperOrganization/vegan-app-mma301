@@ -1,9 +1,9 @@
-import { Redirect } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { LoadingScreen } from '@/components';
 import { useAuthStore } from '@/features/auth';
 
-export default function IndexRoute() {
+export default function AuthLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
 
@@ -11,5 +11,7 @@ export default function IndexRoute() {
     return <LoadingScreen message="Đang khôi phục phiên đăng nhập…" />;
   }
 
-  return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)/login'} />;
+  if (isAuthenticated) return <Redirect href="/(tabs)" />;
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

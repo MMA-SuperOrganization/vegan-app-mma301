@@ -1,13 +1,7 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
-import { colors, radius, shadows, spacing, typography } from '@/theme';
+import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { LoadingSpinner } from '@/components/feedback/LoadingSpinner';
+import { colors, radius, shadows, spacing } from '@/theme';
 
 export interface LoadingProps {
   message?: string;
@@ -28,8 +22,7 @@ export const Loading: React.FC<LoadingProps> = ({
     return (
       <View style={[styles.fullScreenContainer, style]}>
         <View style={styles.card}>
-          <ActivityIndicator size={size} color={color} />
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+          <LoadingSpinner size={size} color={color} text={message} />
         </View>
       </View>
     );
@@ -37,8 +30,7 @@ export const Loading: React.FC<LoadingProps> = ({
 
   return (
     <View style={[styles.inlineContainer, style]}>
-      <ActivityIndicator size={size} color={color} />
-      {message ? <Text style={styles.message}>{message}</Text> : null}
+      <LoadingSpinner size={size} color={color} text={message} />
     </View>
   );
 };
@@ -64,11 +56,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 140,
     ...shadows.modal,
-  },
-  message: {
-    ...typography.bodySmall,
-    color: colors.text.secondary,
-    marginTop: spacing.sm,
-    textAlign: 'center',
   },
 });

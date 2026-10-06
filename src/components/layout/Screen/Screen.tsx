@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../ScreenWrapper';
 import { styles } from './Screen.styles';
 import type { ScreenProps } from './Screen.types';
 
@@ -11,16 +11,12 @@ export const Screen: React.FC<ScreenProps> = ({
   testID,
 }) => {
   return (
-    <SafeAreaView
+    <ScreenWrapper
       testID={testID}
       edges={edges}
-      style={[
-        styles.container,
-        backgroundColor ? { backgroundColor } : null,
-        style,
-      ]}
+      style={[styles.container, backgroundColor ? { backgroundColor } : null, style]}
     >
       {children}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };

@@ -1,26 +1,24 @@
-import { Redirect } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Button, Card, Loading, Screen } from '@/components';
+import { Badge, Button, Card, CustomHeader, ScreenWrapper } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { colors, sizes, spacing, typography } from '@/theme';
 
 export function HomeScreen() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const currentUser = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const isLoading = useAuthStore((state) => state.isLoading);
 
-  if (isRestoringSession) {
-    return <Loading fullScreen message="Loading your session..." />;
-  }
-
-  if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
-
   return (
-    <Screen style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <ScreenWrapper
+      scrollable
+      edges={['top', 'left', 'right']}
+      keyboardAvoiding={false}
+      style={styles.screen}
+      contentContainerStyle={styles.container}
+    >
+      <CustomHeader title="Trang chủ" showBack={false} />
+      <View style={styles.body}>
         <View style={styles.header}>
           <Badge
             label="🌱 VEGETA UI · MMA302"
@@ -59,8 +57,8 @@ export function HomeScreen() {
             onPress={logout}
           />
         </View>
-      </ScrollView>
-    </Screen>
+      </View>
+    </ScreenWrapper>
   );
 }
 
@@ -83,7 +81,8 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  container: { padding: spacing.lg },
+  container: { flexGrow: 1 },
+  body: { padding: spacing.lg },
   header: { marginBottom: spacing.xl },
   badge: {
     marginBottom: spacing.xs,

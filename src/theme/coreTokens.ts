@@ -4,7 +4,7 @@ import { colors } from './colors';
 import { radius } from './radius';
 import { spacing } from './spacing';
 import { sizes } from './sizes';
-import { typography } from './typography';
+import { fontFamily, typography } from './typography';
 import { controlMetrics, screenPatternTokens } from './designTokens';
 
 const card = variantNode('Card /', 'Type=Recipe, State=Default');
@@ -86,6 +86,25 @@ export const coreTokens = {
   ),
   icon: { defaultSize: sizes.icon.md, defaultColor: colors.primary[700] },
   back: screenPatternTokens.back,
+  navigation: {
+    headerHeight: 52,
+    headerSideWidth: sizes.touchTarget.comfortable,
+    tabBarHeight: 78,
+    tabIconSize: 22,
+    tabItemWidth: 64,
+    tabItemHeight: 58,
+    tabItemRadius: radius.lg,
+    tabLabel: {
+      ...typography.tab,
+      fontFamily: fontFamily.medium,
+      fontSize: 10,
+      lineHeight: 14,
+    },
+    activeTabLabel: { fontFamily: fontFamily.semiBold },
+    tabBarShadow: {
+      boxShadow: '0 -4px 20px rgba(23, 51, 33, 0.06)',
+    } satisfies ViewStyle,
+  },
   formField: {
     gap: input.style.gap,
     label: child(input, 'Field label').style,

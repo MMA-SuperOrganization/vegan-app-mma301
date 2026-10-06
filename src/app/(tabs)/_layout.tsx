@@ -7,12 +7,16 @@ import { useAuthStore } from '@/features/auth';
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
+  const user = useAuthStore((state) => state.user);
 
   if (isRestoringSession) {
     return <LoadingScreen message="Đang khôi phục phiên đăng nhập…" />;
   }
 
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+  if (!user?.onboardingCompleted) {
+    return <Redirect href="/(onboarding)/diet-goals" />;
+  }
 
   return (
     <Tabs

@@ -1,4 +1,8 @@
 export const storageKeys = {
   authToken: 'auth_token',
-  authUser: 'auth_user',
+  authRefreshToken: 'auth_refresh_token',
+  authTokenExpiresAt: 'auth_token_expires_at',
+  authFirebaseUserId: 'auth_firebase_user_id',
+  onboardingDraftPrefix: 'onboarding_draft:',
+  aiProfileConsentPrefix: 'ai_profile_consent:',
 } as const;

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-
-import { Button, Card, Input, ScreenWrapper } from '@/components';
-import { colors, radius, sizes, spacing, typography } from '@/theme';
+import { StyleSheet, View } from 'react-native';
+import { AppButton, AppInput, ScreenWrapper } from '@/components';
+import { spacing } from '@/theme';
+import { AuthHeader } from '../components/AuthHeader';
+import { AuthMessage } from '../components/AuthMessage';
 import { useAuthStore } from '../store/authStore';
 import { validateLogin } from '../validations/loginValidation';
 
@@ -15,156 +16,86 @@ export function LoginScreen() {
   const clearError = useAuthStore((state) => state.clearError);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [errors, setErrors] = useState({
+    email: null as string | null,
+    password: null as string | null,
+  });
 
   const handleLogin = async () => {
-    const errors = validateLogin(email, password);
-    setEmailError(errors.email);
-    setPasswordError(errors.password);
+    const nextErrors = validateLogin(email, password);
+    setErrors(nextErrors);
     clearError();
+    if (nextErrors.email || nextErrors.password) return;
 
-    if (errors.email || errors.password) return;
-
-    const success = await login(email.trim(), password);
-    if (success) router.replace('/(tabs)');
+    if (await login(email.trim(), password)) {
+      const user = useAuthStore.getState().user;
+      router.replace(
+        user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
+      );
+    }
   };
 
   return (
-    <ScreenWrapper
-      scrollable
-      style={styles.screen}
-      contentContainerStyle={styles.scrollContent}
-    >
-      <View style={styles.header}>
-        <View style={styles.logoBadge}>
-          <Text style={styles.logoIcon}>🌿</Text>
+    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+      <View>
+        <AuthHeader title="Đăng nhập" subtitle="Chào mừng bạn trở lại" />
+        <View style={styles.fields}>
+          <AppInput
+            label="Email"
+            placeholder="minh@email.com"
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              setErrors((current) => ({ ...current, email: null }));
+              clearError();
+            }}
+            keyboardType="email-address"
+            autoComplete="email"
+            error={errors.email}
+          />
+          <AppInput
+            type="password"
+            label="Mật khẩu"
+            placeholder="Nhập mật khẩu"
+            value={password}
+            onChangeText={(value) => {
+              setPassword(value);
+              setErrors((current) => ({ ...current, password: null }));
+              clearError();
+            }}
+            autoComplete="current-password"
+            error={errors.password}
+            onSubmitEditing={handleLogin}
+          />
         </View>
-        <Text style={styles.title}>Vegan App</Text>
-        <Text style={styles.subtitle}>
-          Vegan Lifestyle & Nutrition Support App — MMA302
-        </Text>
+        <View style={styles.links}>
+          <AppButton
+            title="Quên mật khẩu?"
+            variant="secondary"
+            onPress={() => router.push('/(auth)/forgot-password')}
+          />
+          <AppButton
+            title="Chưa có tài khoản? Đăng ký"
+            variant="secondary"
+            onPress={() => router.push('/(auth)/register')}
+          />
+        </View>
+        {storeError ? <AuthMessage message={storeError} /> : null}
       </View>
-
-      <Card variant="default">
-        <Input
-          label="Email Address"
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            if (emailError) setEmailError(null);
-            if (storeError) clearError();
-          }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          error={emailError}
-        />
-        <Input
-          label="Password"
-          placeholder="Enter your password (min. 6 characters)"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            if (passwordError) setPasswordError(null);
-            if (storeError) clearError();
-          }}
-          secureTextEntry
-          error={passwordError}
-        />
-
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert(
-              'Forgot Password',
-              'Password recovery is coming soon in the next release.'
-            )
-          }
-          style={styles.forgotPasswordContainer}
-        >
-          <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-        </TouchableOpacity>
-
-        {storeError ? (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{storeError}</Text>
-          </View>
-        ) : null}
-
-        <Button
-          title="Sign In"
-          loading={isLoading}
-          onPress={handleLogin}
-          style={styles.loginButton}
-        />
-      </Card>
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => router.push('/(auth)/register')}>
-          <Text style={styles.registerLink}>Sign Up</Text>
-        </TouchableOpacity>
-      </View>
+      <AppButton
+        title="Đăng nhập"
+        preset="screen"
+        loading={isLoading}
+        onPress={handleLogin}
+        style={styles.submit}
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xl,
-    justifyContent: 'center',
-  },
-  header: { alignItems: 'center', marginBottom: spacing.xl },
-  logoBadge: {
-    width: sizes.avatar.xl,
-    height: sizes.avatar.xl,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primary[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.primary[300],
-  },
-  logoIcon: { fontSize: sizes.icon.lg },
-  title: {
-    ...typography.heading1,
-    color: colors.primary[700],
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    color: colors.text.secondary,
-    textAlign: 'center',
-  },
-  forgotPasswordContainer: {
-    alignSelf: 'flex-end',
-    marginBottom: spacing.lg,
-  },
-  forgotPasswordText: { ...typography.bodyStrong, color: colors.text.link },
-  errorBanner: {
-    backgroundColor: colors.background.base,
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.status.danger,
-  },
-  errorBannerText: {
-    ...typography.bodySmall,
-    color: colors.status.danger,
-    textAlign: 'center',
-  },
-  loginButton: { marginBottom: spacing.md },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  footerText: { ...typography.bodySmall, color: colors.text.secondary },
-  registerLink: { ...typography.bodyStrong, color: colors.text.link },
+  screen: { flexGrow: 1, justifyContent: 'space-between', padding: spacing.xl },
+  fields: { gap: spacing.xl },
+  links: { gap: spacing.lg, marginTop: spacing.xl },
+  submit: { marginTop: spacing['3xl'] },
 });

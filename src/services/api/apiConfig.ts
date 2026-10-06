@@ -1,4 +1,6 @@
+import { appConfig } from '@/config';
+
 export const apiConfig = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || '',
+  baseURL: appConfig.apiBaseUrl,
   timeout: 10_000,
 } as const;

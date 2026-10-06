@@ -11,5 +11,11 @@ export default function IndexRoute() {
     return <LoadingScreen message="Đang khôi phục phiên đăng nhập…" />;
   }
 
-  return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)/login'} />;
+  const user = useAuthStore.getState().user;
+  if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
+  return (
+    <Redirect
+      href={user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'}
+    />
+  );
 }

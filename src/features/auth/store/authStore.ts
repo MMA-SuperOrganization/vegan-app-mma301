@@ -4,7 +4,7 @@ import type { AuthState, User } from '../types/auth.types';
 
 export type { User, AuthState };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
@@ -12,33 +12,56 @@ export const useAuthStore = create<AuthState>((set) => ({
   isRestoringSession: true,
   error: null,
 
-  login: async (email: string, password: string): Promise<boolean> => {
+  login: async (email, password) => {
+    if (get().isLoading) return false;
     set({ isLoading: true, error: null });
-
     try {
       const { user, token } = await authApi.login(email, password);
-      set({
-        user,
-        token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      });
+      set({ user, token, isAuthenticated: true, isLoading: false });
       return true;
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred during login. Please try again.';
+    } catch (error) {
       set({
         isLoading: false,
-        error: message,
+        error: error instanceof Error ? error.message : 'Không thể đăng nhập.',
+      });
+      return false;
+    }
+  },
+
+  register: async (name, email, password) => {
+    if (get().isLoading) return false;
+    set({ isLoading: true, error: null });
+    try {
+      const { user, token } = await authApi.register(name, email, password);
+      set({ user, token, isAuthenticated: true, isLoading: false });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Không thể tạo tài khoản.',
+      });
+      return false;
+    }
+  },
+
+  sendPasswordReset: async (email) => {
+    if (get().isLoading) return false;
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.sendPasswordReset(email);
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Không thể gửi liên kết.',
       });
       return false;
     }
   },
 
   logout: async () => {
+    if (get().isLoading) return;
     set({ isLoading: true });
     try {
       await authApi.logout();
@@ -57,21 +80,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isRestoringSession: true });
     try {
       const result = await authApi.restoreSession();
-      if (result) {
-        set({
-          token: result.token,
-          user: result.user,
-          isAuthenticated: true,
-          isRestoringSession: false,
-        });
-        return;
-      }
-    } catch {
-      // Session restore failed, clear state
+      set({
+        token: result?.token ?? null,
+        user: result?.user ?? null,
+        isAuthenticated: !!result,
+      });
     } finally {
       set({ isRestoringSession: false });
     }
   },
 
+  markOnboardingCompleted: () =>
+    set((state) => ({
+      user: state.user ? { ...state.user, onboardingCompleted: true } : null,
+    })),
   clearError: () => set({ error: null }),
 }));

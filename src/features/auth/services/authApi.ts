@@ -1,51 +1,85 @@
-import { storage, storageKeys } from '@/services/storage';
+import { apiClient, unwrapApiRequest } from '@/services/api';
+import { authSession, firebaseAuth } from '@/services/auth';
 import type { User } from '../types/auth.types';
+
+interface AccountDto {
+  _id: string;
+  userId: string;
+  email?: string | null;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+  role: 'user' | 'admin';
+  status: 'active' | 'suspended' | 'deleted';
+  onboardingCompleted?: boolean | null;
+}
 
 export interface LoginResponse {
   user: User;
   token: string;
 }
 
+function toUser(account: AccountDto): User {
+  return {
+    id: account.userId || account._id,
+    name: account.displayName || account.email?.split('@')[0] || 'Bạn',
+    email: account.email || '',
+    avatarUrl: account.avatarUrl || undefined,
+    role: account.role,
+    status: account.status,
+    onboardingCompleted: account.onboardingCompleted === true,
+  };
+}
+
+async function syncAccount(token: string): Promise<LoginResponse> {
+  const account = await unwrapApiRequest<AccountDto>(() =>
+    apiClient.post('/auth/sync', {})
+  );
+  return { user: toUser(account), token };
+}
+
 export const authApi = {
   async login(email: string, password: string): Promise<LoginResponse> {
-    // Simulate network latency for authentic feel
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Mock authentication validation
-    if (!email.includes('@') || password.length < 6) {
-      throw new Error(
-        'Invalid email address or password must be at least 6 characters.'
-      );
+    const session = await firebaseAuth.signIn(email, password);
+    await authSession.save(session);
+    try {
+      return await syncAccount(session.idToken);
+    } catch (error) {
+      await authSession.clear();
+      throw error;
     }
-
-    const mockUser: User = {
-      id: 'usr_001',
-      name: email.split('@')[0] || 'Vegan Explorer',
-      email,
-    };
-    const mockToken = `mock_jwt_token_${Date.now()}`;
-
-    // Persist session to local storage
-    await storage.setItem(storageKeys.authToken, mockToken);
-    await storage.setItem(storageKeys.authUser, JSON.stringify(mockUser));
-
-    return { user: mockUser, token: mockToken };
   },
 
-  async logout(): Promise<void> {
-    await storage.removeItem(storageKeys.authToken);
-    await storage.removeItem(storageKeys.authUser);
+  async register(
+    name: string,
+    email: string,
+    password: string
+  ): Promise<LoginResponse> {
+    let session = await firebaseAuth.signUp(email, password);
+    session = await firebaseAuth.updateDisplayName(session, name);
+    await authSession.save(session);
+    try {
+      return await syncAccount(session.idToken);
+    } catch (error) {
+      await authSession.clear();
+      throw error;
+    }
+  },
+
+  sendPasswordReset(email: string) {
+    return firebaseAuth.sendPasswordReset(email);
+  },
+
+  logout() {
+    return authSession.clear();
   },
 
   async restoreSession(): Promise<LoginResponse | null> {
-    const storedToken = await storage.getItem(storageKeys.authToken);
-    const storedUser = await storage.getItem(storageKeys.authUser);
-
-    if (storedToken && storedUser) {
-      const user = JSON.parse(storedUser) as User;
-      return { user, token: storedToken };
+    try {
+      const token = await authSession.getValidToken();
+      return token ? await syncAccount(token) : null;
+    } catch {
+      await authSession.clear();
+      return null;
     }
-
-    return null;
   },
 };

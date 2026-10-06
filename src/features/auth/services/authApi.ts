@@ -65,6 +65,20 @@ export const authApi = {
     }
   },
 
+  async loginWithGoogle(
+    googleIdToken: string,
+    requestUri: string
+  ): Promise<LoginResponse> {
+    const session = await firebaseAuth.signInWithGoogle(googleIdToken, requestUri);
+    await authSession.save(session);
+    try {
+      return await syncAccount(session.idToken);
+    } catch (error) {
+      await authSession.clear();
+      throw error;
+    }
+  },
+
   sendPasswordReset(email: string) {
     return firebaseAuth.sendPasswordReset(email);
   },

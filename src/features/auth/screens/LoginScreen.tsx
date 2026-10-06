@@ -5,6 +5,8 @@ import { AppButton, AppInput, ScreenWrapper } from '@/components';
 import { spacing } from '@/theme';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
+import { AuthTextLink } from '../components/AuthTextLink';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { useAuthStore } from '../store/authStore';
 import { validateLogin } from '../validations/loginValidation';
 
@@ -68,19 +70,19 @@ export function LoginScreen() {
             onSubmitEditing={handleLogin}
           />
         </View>
-        <View style={styles.links}>
-          <AppButton
-            title="Quên mật khẩu?"
-            variant="secondary"
+        <View style={styles.actions}>
+          <AuthTextLink
+            align="flex-end"
             onPress={() => router.push('/(auth)/forgot-password')}
-          />
-          <AppButton
-            title="Chưa có tài khoản? Đăng ký"
-            variant="secondary"
-            onPress={() => router.push('/(auth)/register')}
-          />
+          >
+            Quên mật khẩu?
+          </AuthTextLink>
+          <GoogleSignInButton />
+          <AuthTextLink onPress={() => router.push('/(auth)/register')}>
+            Chưa có tài khoản? Đăng ký
+          </AuthTextLink>
         </View>
-        {storeError ? <AuthMessage message={storeError} /> : null}
+        {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
         title="Đăng nhập"
@@ -96,6 +98,6 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   screen: { flexGrow: 1, justifyContent: 'space-between', padding: spacing.xl },
   fields: { gap: spacing.xl },
-  links: { gap: spacing.lg, marginTop: spacing.xl },
+  actions: { gap: spacing.sm, marginTop: spacing.sm },
   submit: { marginTop: spacing['3xl'] },
 });

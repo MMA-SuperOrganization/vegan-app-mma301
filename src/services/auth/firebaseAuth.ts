@@ -50,10 +50,14 @@ function requireApiKey() {
 }
 
 function mapFirebaseError(error: unknown): never {
+  if (error instanceof AuthServiceError) throw error;
+
   if (!axios.isAxiosError(error)) {
     throw new AuthServiceError(
-      'Đã có lỗi không mong muốn. Vui lòng thử lại.',
-      'UNKNOWN'
+      error instanceof Error
+        ? `Lỗi xác thực trên thiết bị: ${error.message}`
+        : 'Đã có lỗi không mong muốn. Vui lòng thử lại.',
+      'AUTH_CLIENT_ERROR'
     );
   }
 
@@ -72,6 +76,9 @@ function mapFirebaseError(error: unknown): never {
     TOKEN_EXPIRED: 'Phiên đăng nhập đã hết hạn.',
     INVALID_REFRESH_TOKEN: 'Phiên đăng nhập không còn hợp lệ.',
     PROJECT_NUMBER_MISMATCH: 'Cấu hình Firebase không khớp với dự án.',
+    INVALID_IDP_RESPONSE: 'Thông tin đăng nhập Google không hợp lệ hoặc đã hết hạn.',
+    FEDERATED_USER_ID_ALREADY_LINKED:
+      'Tài khoản Google này đã được liên kết với người dùng khác.',
     NETWORK_ERROR: 'Không thể kết nối tới dịch vụ đăng nhập.',
   };
 
@@ -116,6 +123,28 @@ export const firebaseAuth = {
 
   signUp(email: string, password: string) {
     return passwordRequest('signUp', email, password);
+  },
+
+  async signInWithGoogle(googleIdToken: string, requestUri: string) {
+    try {
+      const postBody = new URLSearchParams({
+        id_token: googleIdToken,
+        providerId: 'google.com',
+      }).toString();
+      const response = await axios.post<FirebaseAuthResponse>(
+        `${identityBaseUrl}/accounts:signInWithIdp?key=${requireApiKey()}`,
+        {
+          postBody,
+          requestUri,
+          returnIdpCredential: true,
+          returnSecureToken: true,
+        },
+        { timeout: 15_000 }
+      );
+      return toSession(response.data);
+    } catch (error) {
+      return mapFirebaseError(error);
+    }
   },
 
   async updateDisplayName(session: FirebaseSession, displayName: string) {

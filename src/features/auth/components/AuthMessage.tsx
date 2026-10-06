@@ -1,14 +1,20 @@
 import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
+import type { AppErrorDetails } from '@/services/errors';
 
 export function AuthMessage({
   message,
+  error,
   success = false,
 }: {
-  message: string;
+  message?: string;
+  error?: AppErrorDetails;
   success?: boolean;
 }) {
+  const visibleMessage = error?.message ?? message;
+  if (!visibleMessage) return null;
+
   return (
     <View style={[styles.container, success ? styles.success : styles.error]}>
       <AppText
@@ -16,8 +22,14 @@ export function AuthMessage({
         color={success ? colors.status.success : colors.status.danger}
         style={styles.text}
       >
-        {message}
+        {visibleMessage}
       </AppText>
+      {error ? (
+        <AppText variant="caption" color={colors.status.danger} style={styles.code}>
+          Mã lỗi: {error.code}
+          {error.status ? ` · HTTP ${error.status}` : ''}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -38,4 +50,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.selected,
   },
   text: { textAlign: 'center' },
+  code: { textAlign: 'center', marginTop: spacing.xs },
 });

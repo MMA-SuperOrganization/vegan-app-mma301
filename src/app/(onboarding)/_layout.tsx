@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { LoadingScreen } from '@/components';
 import { useAuthStore } from '@/features/auth';
-import { useOnboardingStore } from '@/features/onboarding';
+import { useOnboardingStore } from '@/features/onboarding/onboardingStore';
 
 export default function OnboardingLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

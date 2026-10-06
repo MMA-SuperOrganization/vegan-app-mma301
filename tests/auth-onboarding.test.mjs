@@ -15,6 +15,58 @@ import {
   initialOnboardingDraft,
   parseOnboardingDraft,
 } from '../src/features/onboarding/draftSchema.ts';
+import {
+  AppError,
+  logAppError,
+  toAppErrorDetails,
+} from '../src/services/errors/appError.ts';
+
+test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
+  const details = toAppErrorDetails(
+    new AppError('Firebase chưa được cấu hình.', 'FIREBASE_NOT_CONFIGURED', 503),
+    'auth.login.password',
+    'Không thể đăng nhập.'
+  );
+
+  assert.equal(details.message, 'Firebase chưa được cấu hình.');
+  assert.equal(details.code, 'FIREBASE_NOT_CONFIGURED');
+  assert.equal(details.status, 503);
+  assert.equal(details.operation, 'auth.login.password');
+  assert.match(details.timestamp, /^\d{4}-\d{2}-\d{2}T/);
+  assert.equal('password' in details, false);
+  assert.equal('token' in details, false);
+});
+
+test('unknown auth failures receive a stable fallback code', () => {
+  const details = toAppErrorDetails(
+    'unexpected',
+    'auth.login.google.oauth',
+    'Không thể đăng nhập bằng Google.',
+    'GOOGLE_LOGIN_FAILED'
+  );
+
+  assert.equal(details.message, 'Không thể đăng nhập bằng Google.');
+  assert.equal(details.code, 'GOOGLE_LOGIN_FAILED');
+});
+
+test('diagnostic logging does not trigger the Expo error overlay', (t) => {
+  const calls = [];
+  t.mock.method(console, 'log', (...args) => calls.push(args));
+  t.mock.method(console, 'error', () => {
+    throw new Error('console.error must not be used for handled auth failures');
+  });
+
+  logAppError({
+    message: 'Không thể đăng nhập.',
+    code: 'INVALID_LOGIN_CREDENTIALS',
+    operation: 'auth.login.password',
+    timestamp: '2026-10-06T00:00:00.000Z',
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], '[VEGETA_ERROR]');
+  assert.equal(calls[0][1].code, 'INVALID_LOGIN_CREDENTIALS');
+});
 
 test('auth validation rejects empty and malformed credentials', () => {
   assert.equal(validateEmail(''), 'Vui lòng nhập email.');

@@ -50,10 +50,14 @@ function requireApiKey() {
 }
 
 function mapFirebaseError(error: unknown): never {
+  if (error instanceof AuthServiceError) throw error;
+
   if (!axios.isAxiosError(error)) {
     throw new AuthServiceError(
-      'Đã có lỗi không mong muốn. Vui lòng thử lại.',
-      'UNKNOWN'
+      error instanceof Error
+        ? `Lỗi xác thực trên thiết bị: ${error.message}`
+        : 'Đã có lỗi không mong muốn. Vui lòng thử lại.',
+      'AUTH_CLIENT_ERROR'
     );
   }
 

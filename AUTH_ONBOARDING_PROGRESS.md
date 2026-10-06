@@ -30,6 +30,7 @@ Copy `.env.example` to `.env` and replace the Firebase placeholder before testin
 - Onboarding drafts and AI-profile consent are scoped by Firebase user ID.
 - Onboarding is marked complete locally only after `PUT /onboarding`, optional profile update, and `POST /onboarding/complete` succeed.
 - Camera and notification access are optional. A denied permission does not block onboarding completion.
+- Android Expo Go does not load `expo-notifications` because remote notifications are unsupported there from SDK 53 onward; the notification action is disabled with a development-build label. Development and production builds continue to use the native permission API.
 
 ## Maintainability safeguards
 
@@ -43,6 +44,7 @@ Copy `.env.example` to `.env` and replace the Firebase placeholder before testin
 - Draft schema/parsing, persistence, completion orchestration, Zustand state, native permission handling, and screen rendering live in separate modules with one reason to change each.
 - Native camera/notification state is isolated in `useDevicePermissions`; the permissions screen only coordinates presentation and navigation.
 - The onboarding completion use-case is isolated from the store, keeping Zustand focused on observable state transitions.
+- Expo Router route files import their screen/store directly, so an optional native module failure cannot invalidate unrelated route default exports through a feature barrel.
 
 ## Contract notes and intentional limitations
 

@@ -56,6 +56,7 @@ export function PermissionsScreen() {
         <AppButton
           title={permissionLabel('thông báo', notifications)}
           variant="secondary"
+          disabled={notifications === 'unsupported'}
           onPress={() => void safelyRequest(requestNotifications)}
         />
         <AppButton

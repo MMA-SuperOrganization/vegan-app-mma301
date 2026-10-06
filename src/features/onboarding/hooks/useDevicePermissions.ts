@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Linking } from 'react-native';
+import { isRunningInExpoGo } from 'expo';
 import { Camera } from 'expo-camera';
-import * as Notifications from 'expo-notifications';
 
-export type PermissionState = 'idle' | 'granted' | 'denied' | 'settings';
+export type PermissionState =
+  'idle' | 'granted' | 'denied' | 'settings' | 'unsupported';
+
+const notificationsSupported = !isRunningInExpoGo();
+
+async function loadNotifications() {
+  return notificationsSupported ? import('expo-notifications') : null;
+}
 
 function toPermissionState(result: {
   granted: boolean;
@@ -17,19 +24,25 @@ export function permissionLabel(kind: string, state: PermissionState) {
   if (state === 'granted') return `✓ Đã cho phép ${kind}`;
   if (state === 'settings') return `Mở Cài đặt cho ${kind}`;
   if (state === 'denied') return `Thử lại quyền ${kind}`;
+  if (state === 'unsupported') return `${kind} cần development build`;
   return `Cho phép ${kind}`;
 }
 
 export function useDevicePermissions() {
   const [camera, setCamera] = useState<PermissionState>('idle');
-  const [notifications, setNotifications] = useState<PermissionState>('idle');
+  const [notifications, setNotifications] = useState<PermissionState>(
+    notificationsSupported ? 'idle' : 'unsupported'
+  );
 
   useEffect(() => {
     void Camera.getCameraPermissionsAsync()
       .then((result) => setCamera(toPermissionState(result)))
       .catch(() => setCamera('idle'));
-    void Notifications.getPermissionsAsync()
-      .then((result) => setNotifications(toPermissionState(result)))
+    void loadNotifications()
+      .then((module) => module?.getPermissionsAsync())
+      .then((result) => {
+        if (result) setNotifications(toPermissionState(result));
+      })
       .catch(() => setNotifications('idle'));
   }, []);
 
@@ -39,10 +52,12 @@ export function useDevicePermissions() {
   };
 
   const requestNotifications = async () => {
+    if (!notificationsSupported) return;
     if (notifications === 'settings') return Linking.openSettings();
-    setNotifications(
-      toPermissionState(await Notifications.requestPermissionsAsync())
-    );
+    const module = await loadNotifications();
+    if (module) {
+      setNotifications(toPermissionState(await module.requestPermissionsAsync()));
+    }
   };
 
   return { camera, notifications, requestCamera, requestNotifications };

@@ -1,5 +1,5 @@
 import { storage, storageKeys } from '@/services/storage';
-import { parseOnboardingDraft, type OnboardingDraft } from './types';
+import { parseOnboardingDraft, type OnboardingDraft } from './draftSchema';
 
 const draftKey = (userId: string) => `${storageKeys.onboardingDraftPrefix}${userId}`;
 

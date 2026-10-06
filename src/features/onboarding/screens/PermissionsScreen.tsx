@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
-import { Camera } from 'expo-camera';
-import * as Notifications from 'expo-notifications';
 import { AppButton } from '@/components';
 import { appConfig } from '@/config';
 import { spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
-
-type PermissionState = 'idle' | 'granted' | 'denied' | 'settings';
+import {
+  permissionLabel,
+  useDevicePermissions,
+} from '../hooks/useDevicePermissions';
 
 export function PermissionsScreen() {
   const router = useRouter();
@@ -19,63 +18,22 @@ export function PermissionsScreen() {
   const error = useOnboardingStore((state) => state.error);
   const draft = useOnboardingStore((state) => state.draft);
   const setDraft = useOnboardingStore((state) => state.setDraft);
-  const [camera, setCamera] = useState<PermissionState>('idle');
-  const [notifications, setNotifications] = useState<PermissionState>('idle');
-
-  useEffect(() => {
-    void Camera.getCameraPermissionsAsync()
-      .then((result) => {
-        if (result.granted) setCamera('granted');
-        else if (!result.canAskAgain) setCamera('settings');
-      })
-      .catch(() => setCamera('idle'));
-    void Notifications.getPermissionsAsync()
-      .then((result) => {
-        if (result.granted) setNotifications('granted');
-        else if (!result.canAskAgain) setNotifications('settings');
-      })
-      .catch(() => setNotifications('idle'));
-  }, []);
-
-  const requestCamera = async () => {
-    if (camera === 'settings') return Linking.openSettings();
-    try {
-      const result = await Camera.requestCameraPermissionsAsync();
-      setCamera(
-        result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'settings'
-      );
-    } catch {
-      Alert.alert(
-        'Không thể xin quyền',
-        'Thiết bị hiện không hỗ trợ yêu cầu quyền máy ảnh.'
-      );
-    }
-  };
-
-  const requestNotifications = async () => {
-    if (notifications === 'settings') return Linking.openSettings();
-    try {
-      const result = await Notifications.requestPermissionsAsync();
-      setNotifications(
-        result.granted ? 'granted' : result.canAskAgain ? 'denied' : 'settings'
-      );
-    } catch {
-      Alert.alert(
-        'Không thể xin quyền',
-        'Thiết bị hiện không hỗ trợ yêu cầu quyền thông báo.'
-      );
-    }
-  };
+  const { camera, notifications, requestCamera, requestNotifications } =
+    useDevicePermissions();
 
   const finish = async () => {
     if (await complete()) router.replace('/(tabs)');
   };
 
-  const permissionLabel = (kind: string, state: PermissionState) => {
-    if (state === 'granted') return `✓ Đã cho phép ${kind}`;
-    if (state === 'settings') return `Mở Cài đặt cho ${kind}`;
-    if (state === 'denied') return `Thử lại quyền ${kind}`;
-    return `Cho phép ${kind}`;
+  const safelyRequest = async (request: () => Promise<unknown>) => {
+    try {
+      await request();
+    } catch {
+      Alert.alert(
+        'Không thể xin quyền',
+        'Thiết bị hiện không hỗ trợ yêu cầu quyền này.'
+      );
+    }
   };
 
   return (
@@ -93,12 +51,12 @@ export function PermissionsScreen() {
         <AppButton
           title={permissionLabel('máy ảnh khi nhận diện', camera)}
           variant="secondary"
-          onPress={requestCamera}
+          onPress={() => void safelyRequest(requestCamera)}
         />
         <AppButton
           title={permissionLabel('thông báo', notifications)}
           variant="secondary"
-          onPress={requestNotifications}
+          onPress={() => void safelyRequest(requestNotifications)}
         />
         <AppButton
           title={

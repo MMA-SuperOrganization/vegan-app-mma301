@@ -14,7 +14,7 @@ import {
 import {
   initialOnboardingDraft,
   parseOnboardingDraft,
-} from '../src/features/onboarding/types.ts';
+} from '../src/features/onboarding/draftSchema.ts';
 
 test('auth validation rejects empty and malformed credentials', () => {
   assert.equal(validateEmail(''), 'Vui lòng nhập email.');

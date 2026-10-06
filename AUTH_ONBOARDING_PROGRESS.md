@@ -40,6 +40,9 @@ Copy `.env.example` to `.env` and replace the Firebase placeholder before testin
 - Persisted onboarding drafts are runtime-sanitized before entering application state.
 - Draft writes are serialized and flushed before deletion, preventing a late write from recreating a completed draft.
 - The onboarding store imports the auth store directly instead of through the feature barrel, avoiding an unnecessary feature-level dependency cycle.
+- Draft schema/parsing, persistence, completion orchestration, Zustand state, native permission handling, and screen rendering live in separate modules with one reason to change each.
+- Native camera/notification state is isolated in `useDevicePermissions`; the permissions screen only coordinates presentation and navigation.
+- The onboarding completion use-case is isolated from the store, keeping Zustand focused on observable state transitions.
 
 ## Contract notes and intentional limitations
 

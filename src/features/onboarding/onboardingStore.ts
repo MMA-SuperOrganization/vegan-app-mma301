@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { storage, storageKeys } from '@/services/storage';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { completeOnboarding } from './onboardingCompletion';
 import { onboardingDraftStorage } from './draftStorage';
 import { onboardingApi } from './onboardingApi';
 import {
@@ -8,7 +8,7 @@ import {
   type Allergen,
   type OnboardingDraft,
 } from './types';
-import { dateInputToIso, parseDecimal, toggleAllergenSelection } from './validation';
+import { toggleAllergenSelection } from './validation';
 
 interface OnboardingState {
   draft: OnboardingDraft;
@@ -99,44 +99,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   complete: async () => {
     if (get().isSaving) return false;
     const { draft, draftUserId } = get();
-    const dateOfBirth = dateInputToIso(draft.dateOfBirth);
-    const heightCm = parseDecimal(draft.heightCm);
-    const currentWeightKg = parseDecimal(draft.currentWeightKg);
-    if (
-      !draft.dietType ||
-      !draft.goal ||
-      !draft.activityLevel ||
-      !draft.allergyAnswered ||
-      !dateOfBirth ||
-      heightCm === null ||
-      currentWeightKg === null
-    ) {
-      set({ error: 'Thông tin onboarding chưa đầy đủ.' });
-      return false;
-    }
-
     set({ isSaving: true, error: null });
     try {
-      await onboardingApi.updateProfile(dateOfBirth);
-      await onboardingApi.update({
-        dietType: draft.dietType,
-        goal: draft.goal,
-        activityLevel: draft.activityLevel,
-        heightCm,
-        currentWeightKg,
-        allergenIds: draft.allergenIds,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      });
-      const status = await onboardingApi.complete();
-      if (!status.completed)
-        throw new Error('Máy chủ chưa xác nhận hoàn tất onboarding.');
-      if (draftUserId) {
-        await storage.setItem(
-          `${storageKeys.aiProfileConsentPrefix}${draftUserId}`,
-          String(draft.aiProfileConsent)
-        );
-        await onboardingDraftStorage.remove(draftUserId);
-      }
+      await completeOnboarding(draft, draftUserId);
       useAuthStore.getState().markOnboardingCompleted();
       set({ isSaving: false, draft: initialOnboardingDraft });
       return true;

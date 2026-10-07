@@ -16,22 +16,16 @@ import {
 type TabBarRenderer = NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>;
 export type CustomTabBarProps = Parameters<TabBarRenderer>[0];
 
-const TAB_CONFIG: Record<
-  string,
-  { labelKey: TranslationKey; icon: AssetName }
-> = {
+const TAB_CONFIG: Record<string, { labelKey: TranslationKey; icon: AssetName }> = {
   index: { labelKey: 'nav.home', icon: 'home' },
+  explore: { labelKey: 'nav.explore', icon: 'explore' },
   'meal-plan': {
-    labelKey: 'nav.mealPlan',
+    labelKey: 'nav.mam',
     icon: 'spark',
   },
   grocery: {
-    labelKey: 'nav.grocery',
+    labelKey: 'nav.pantry',
     icon: 'pantry',
-  },
-  diary: {
-    labelKey: 'nav.diary',
-    icon: 'explore',
   },
   profile: {
     labelKey: 'nav.profile',
@@ -39,7 +33,7 @@ const TAB_CONFIG: Record<
   },
 };
 
-const TAB_ORDER = ['index', 'meal-plan', 'grocery', 'diary', 'profile'];
+const TAB_ORDER = ['index', 'explore', 'meal-plan', 'grocery', 'profile'];
 
 export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -68,7 +62,8 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
           const isFocused = state.index === routeIndex;
           const color = isFocused ? colors.primary[700] : colors.text.secondary;
           const accessibilityLabel =
-            descriptor.options.tabBarAccessibilityLabel ?? t('nav.open', { screen: label });
+            descriptor.options.tabBarAccessibilityLabel ??
+            t('nav.open', { screen: label });
 
           const onPress = () => {
             const event = navigation.emit({

@@ -3,6 +3,7 @@ import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '../types';
 import { useTranslation, type TranslationKey } from '@/i18n';
+import { RecipeImage } from './RecipeImage';
 
 const typeLabels = {
   recipe: 'discover.typeRecipe',
@@ -11,14 +12,24 @@ const typeLabels = {
   video: 'discover.typeVideo',
 } as const;
 
-export function ContentResultCard({ item, onPress }: { item: ContentCardData; onPress?: () => void }) {
+export function ContentResultCard({
+  item,
+  onPress,
+}: {
+  item: ContentCardData;
+  onPress?: () => void;
+}) {
   const { t } = useTranslation();
   const title = item.title ?? item.name ?? t('discover.untitled');
   const metadata = [
     t((item.type ? typeLabels[item.type] : 'discover.typeRecipe') as TranslationKey),
     item.totalMinutes ? t('common.minutes', { count: item.totalMinutes }) : null,
-    item.ratingAverage != null ? `${item.ratingAverage.toFixed(1)} ★` : null,
-  ].filter(Boolean).join(' · ');
+    (item.ratingCount ?? 0) > 0 && item.ratingAverage != null
+      ? `${item.ratingAverage.toFixed(1)} ★`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Pressable
@@ -27,12 +38,23 @@ export function ContentResultCard({ item, onPress }: { item: ContentCardData; on
       disabled={!onPress}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.thumbnail}><AppText variant="heading2">🌱</AppText></View>
+      <RecipeImage
+        uri={item.coverImageUrl ?? item.imageUrl}
+        style={styles.thumbnail}
+      />
       <View style={styles.content}>
-        <AppText variant="bodyStrong" numberOfLines={2}>{title}</AppText>
-        <AppText variant="bodySmall" color={colors.primary[700]}>{metadata}</AppText>
+        <AppText variant="bodyStrong" numberOfLines={2}>
+          {title}
+        </AppText>
+        <AppText variant="bodySmall" color={colors.primary[700]}>
+          {metadata}
+        </AppText>
         {item.description || item.excerpt ? (
-          <AppText variant="bodySmall" color={colors.text.secondary} numberOfLines={2}>
+          <AppText
+            variant="bodySmall"
+            color={colors.text.secondary}
+            numberOfLines={2}
+          >
             {item.description ?? item.excerpt}
           </AppText>
         ) : null}
@@ -42,8 +64,16 @@ export function ContentResultCard({ item, onPress }: { item: ContentCardData; on
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.background.surface, borderWidth: 1, borderColor: colors.border.default },
-  thumbnail: { width: 72, height: 72, borderRadius: radius.md, backgroundColor: colors.background.selected, alignItems: 'center', justifyContent: 'center' },
+  card: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  thumbnail: { width: 72, height: 72, borderRadius: radius.md },
   content: { flex: 1, gap: spacing.xs, justifyContent: 'center' },
   pressed: { opacity: 0.72 },
 });

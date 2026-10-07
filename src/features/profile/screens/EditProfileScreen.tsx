@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppInput, AppText, ScreenWrapper } from '@/components';
+import {
+  AppButton,
+  AppInput,
+  AppText,
+  CustomHeader,
+  ScreenWrapper,
+} from '@/components';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -15,8 +21,12 @@ export function EditProfileScreen() {
   const isSaving = useProfileStore((state) => state.isSaving);
   const storeError = useProfileStore((state) => state.error);
   const [name, setName] = useState(data?.user.name ?? '');
-  const [height, setHeight] = useState(data?.nutritionProfile?.heightCm?.toString() ?? '');
-  const [weight, setWeight] = useState(data?.nutritionProfile?.currentWeightKg?.toString() ?? '');
+  const [height, setHeight] = useState(
+    data?.nutritionProfile?.heightCm?.toString() ?? ''
+  );
+  const [weight, setWeight] = useState(
+    data?.nutritionProfile?.currentWeightKg?.toString() ?? ''
+  );
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   const save = async () => {
@@ -36,23 +46,57 @@ export function EditProfileScreen() {
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <View style={styles.header}>
-        <AppButton title={`‹ ${t('common.back')}`} variant="ghost" fullWidth={false} onPress={goBack} />
-        <AppText variant="heading1">{t('profile.edit')}</AppText>
-        <AppText color={colors.text.secondary}>{t('profile.editDescription')}</AppText>
+        <CustomHeader
+          title={t('profile.edit')}
+          showBack
+          onBack={goBack}
+          backFallbackHref="/(tabs)/profile"
+        />
+        <AppText color={colors.text.secondary}>
+          {t('profile.editDescription')}
+        </AppText>
       </View>
       <View style={styles.fields}>
-        <AppInput label={t('auth.displayName')} value={name} onChangeText={setName} error={errors.name} />
-        <AppInput label={t('onboarding.heightCm')} value={height} onChangeText={setHeight} keyboardType="decimal-pad" error={errors.height} />
-        <AppInput label={t('onboarding.weightKg')} value={weight} onChangeText={setWeight} keyboardType="decimal-pad" error={errors.weight} />
-        {storeError ? <AppText color={colors.status.danger}>{storeError}</AppText> : null}
+        <AppInput
+          label={t('auth.displayName')}
+          value={name}
+          onChangeText={setName}
+          error={errors.name}
+        />
+        <AppInput
+          label={t('onboarding.heightCm')}
+          value={height}
+          onChangeText={setHeight}
+          keyboardType="decimal-pad"
+          error={errors.height}
+        />
+        <AppInput
+          label={t('onboarding.weightKg')}
+          value={weight}
+          onChangeText={setWeight}
+          keyboardType="decimal-pad"
+          error={errors.weight}
+        />
+        {storeError ? (
+          <AppText color={colors.status.danger}>{storeError}</AppText>
+        ) : null}
       </View>
-      <AppButton title={t('profile.save')} loading={isSaving} onPress={() => void save()} />
+      <AppButton
+        title={t('profile.save')}
+        loading={isSaving}
+        onPress={() => void save()}
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: spacing.xl, gap: spacing['3xl'], justifyContent: 'space-between' },
-  header: { gap: spacing.sm },
+  screen: {
+    flexGrow: 1,
+    padding: spacing.xl,
+    gap: spacing['3xl'],
+    justifyContent: 'space-between',
+  },
+  header: { gap: spacing.lg },
   fields: { gap: spacing.xl },
 });

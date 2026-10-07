@@ -29,10 +29,11 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: t('nav.home') }} />
-      <Tabs.Screen name="meal-plan" options={{ title: t('nav.mealPlan') }} />
-      <Tabs.Screen name="grocery" options={{ title: t('nav.grocery') }} />
-      <Tabs.Screen name="diary" options={{ title: t('nav.diary') }} />
+      <Tabs.Screen name="explore" options={{ title: t('nav.explore') }} />
+      <Tabs.Screen name="meal-plan" options={{ title: t('nav.mam') }} />
+      <Tabs.Screen name="grocery" options={{ title: t('nav.pantry') }} />
       <Tabs.Screen name="profile" options={{ title: t('nav.profile') }} />
+      <Tabs.Screen name="diary" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -7,11 +7,14 @@ export interface ContentCardData {
   name?: string;
   description?: string;
   excerpt?: string;
+  coverImageUrl?: string;
+  imageUrl?: string;
   type?: ContentType;
   tags?: string[];
   difficulty?: 'easy' | 'medium' | 'hard';
   totalMinutes?: number;
   ratingAverage?: number;
+  ratingCount?: number;
   nutritionPerServing?: { caloriesKcal?: number; proteinG?: number };
 }
 

@@ -5,4 +5,6 @@ export { RecipeDetailScreen } from './screens/RecipeDetailScreen';
 export { CookingStepsScreen } from './screens/CookingStepsScreen';
 export { SavedLibraryScreen } from './screens/SavedLibraryScreen';
 export { ContentResultCard } from './components/ContentResultCard';
+export { FeaturedRecipeCard } from './components/FeaturedRecipeCard';
+export { RecipeImage } from './components/RecipeImage';
 export { useHomeFeed } from './hooks';

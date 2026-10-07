@@ -1,5 +1,7 @@
 import { apiClient, unwrapApiRequest } from '@/services/api';
 import { authSession, firebaseAuth } from '@/services/auth';
+import { storage, storageKeys } from '@/services/storage';
+import { AppError } from '@/services/errors';
 import type { User } from '../types/auth.types';
 
 interface AccountDto {
@@ -34,7 +36,22 @@ async function syncAccount(token: string): Promise<LoginResponse> {
   const account = await unwrapApiRequest<AccountDto>(() =>
     apiClient.post('/auth/sync', {})
   );
-  return { user: toUser(account), token };
+  const user = toUser(account);
+  await storage.setItem(storageKeys.authUser, JSON.stringify(user));
+  return { user, token };
+}
+
+async function readCachedUser(): Promise<User | null> {
+  try {
+    const value = await storage.getItem(storageKeys.authUser);
+    if (!value) return null;
+    const user = JSON.parse(value) as Partial<User>;
+    return typeof user.id === 'string' && typeof user.email === 'string'
+      ? (user as User)
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export const authApi = {
@@ -84,16 +101,26 @@ export const authApi = {
   },
 
   logout() {
-    return authSession.clear();
+    return Promise.all([
+      authSession.clear(),
+      storage.removeItem(storageKeys.authUser),
+    ]).then(() => undefined);
   },
 
   async restoreSession(): Promise<LoginResponse | null> {
     try {
       const token = await authSession.getValidToken();
       return token ? await syncAccount(token) : null;
-    } catch {
-      await authSession.clear();
-      return null;
+    } catch (error) {
+      if (error instanceof AppError && error.status === 401) {
+        await authSession.clear();
+        await storage.removeItem(storageKeys.authUser);
+        return null;
+      }
+      const token = await authSession.getValidToken().catch(() => null);
+      const user = await readCachedUser();
+      if (token && user) return { token, user };
+      throw error;
     }
   },
 };

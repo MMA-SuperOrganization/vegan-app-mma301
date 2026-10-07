@@ -1,126 +1,100 @@
-import { StyleSheet, Text, View } from 'react-native';
-
-import { Badge, Button, Card, CustomHeader, ScreenWrapper } from '@/components';
-import { useAuthStore } from '@/features/auth';
-import { colors, sizes, spacing, typography } from '@/theme';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { AppText, ScreenWrapper } from '@/components';
+import { colors, radius, spacing } from '@/theme';
+import { useProfileStore } from '../profileStore';
 
 export function HomeScreen() {
-  const currentUser = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
-  const isLoading = useAuthStore((state) => state.isLoading);
+  const router = useRouter();
+  const profile = useProfileStore((state) => state.data);
+  const firstName = profile?.user.name.trim().split(/\s+/).at(-1) || 'bạn';
 
   return (
     <ScreenWrapper
       scrollable
-      edges={['top', 'left', 'right']}
       keyboardAvoiding={false}
-      style={styles.screen}
-      contentContainerStyle={styles.container}
+      edges={['top', 'left', 'right']}
+      contentContainerStyle={styles.screen}
     >
-      <CustomHeader title="Trang chủ" showBack={false} />
-      <View style={styles.body}>
-        <View style={styles.header}>
-          <Badge
-            label="🌱 VEGETA UI · MMA302"
-            variant="primary"
-            style={styles.badge}
-          />
-          <Text style={styles.greeting}>
-            Welcome back, {currentUser?.name || 'Explorer'}!
-          </Text>
-          <Text style={styles.subGreeting}>
-            Your everyday companion for clean, compassionate living.
-          </Text>
-        </View>
+      <View style={styles.hero}>
+        <AppText variant="heading1">Xin chào, {firstName} 👋</AppText>
+        <AppText variant="bodyLarge" color={colors.text.secondary}>
+          Hôm nay bạn muốn ăn gì?
+        </AppText>
+      </View>
 
-        <Card variant="default" style={styles.card}>
-          <Text style={styles.cardTitle}>Account Overview</Text>
-          <InfoRow label="Email:" value={currentUser?.email} />
-          <InfoRow label="User ID:" value={currentUser?.id} />
-          <InfoRow label="Session Status:" value="Active (Mock Auth)" isSuccess />
-        </Card>
+      <View>
+        <AppText variant="heading3" style={styles.sectionTitle}>Khám phá</AppText>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => Alert.alert('Sắp ra mắt', 'Tìm kiếm công thức đang được hoàn thiện.')}
+          style={({ pressed }) => [styles.search, pressed && styles.pressed]}
+        >
+          <AppText color={colors.text.secondary}>Tìm công thức, bài viết, video…</AppText>
+          <AppText color={colors.primary[700]}>⌕</AppText>
+        </Pressable>
+      </View>
 
-        <Card variant="accent" style={styles.card}>
-          <Text style={styles.tipIcon}>🥗</Text>
-          <Text style={styles.tipTitle}>Daily Vegan Nutrition Insight</Text>
-          <Text style={styles.tipText}>
-            Pair iron-rich legumes and dark leafy greens with vitamin C sources (like
-            bell peppers or lemon juice) to optimize plant-based iron absorption!
-          </Text>
-        </Card>
+      <View style={styles.featured}>
+        <AppText variant="overline" color={colors.text.inverse}>GỢI Ý HÔM NAY</AppText>
+        <AppText variant="heading1" color={colors.text.inverse}>Bữa ăn xanh của bạn</AppText>
+        <AppText color={colors.text.inverse}>
+          Gợi ý sẽ được cá nhân hóa theo {profile?.profile?.dietType ? 'chế độ ăn đã chọn' : 'hồ sơ của bạn'}.
+        </AppText>
+      </View>
 
-        <View style={styles.actionsContainer}>
-          <Button
-            title="Sign Out"
-            variant="outline"
-            loading={isLoading}
-            onPress={logout}
-          />
+      <View>
+        <AppText variant="heading2" style={styles.sectionTitle}>Bắt đầu nhanh</AppText>
+        <View style={styles.cards}>
+          <QuickCard title="Thực đơn" subtitle="Lên kế hoạch bữa ăn" onPress={() => router.push('/(tabs)/meal-plan')} />
+          <QuickCard title="Mua sắm" subtitle="Chuẩn bị danh sách" onPress={() => router.push('/(tabs)/grocery')} />
+          <QuickCard title="Hồ sơ của bạn" subtitle="Xem dữ liệu dinh dưỡng" onPress={() => router.push('/(tabs)/profile')} />
         </View>
       </View>
     </ScreenWrapper>
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  isSuccess = false,
-}: {
-  label: string;
-  value?: string;
-  isSuccess?: boolean;
-}) {
+function QuickCard({ title, subtitle, onPress }: { title: string; subtitle: string; onPress: () => void }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.value, isSuccess && styles.statusActive]}>{value}</Text>
-    </View>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
+      <AppText variant="heading3">{title}</AppText>
+      <AppText color={colors.text.secondary}>{subtitle}</AppText>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  container: { flexGrow: 1 },
-  body: { padding: spacing.lg },
-  header: { marginBottom: spacing.xl },
-  badge: {
-    marginBottom: spacing.xs,
-  },
-  greeting: {
-    ...typography.heading1,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  subGreeting: { ...typography.bodyDefault, color: colors.text.secondary },
-  card: {
-    marginBottom: spacing.lg,
-  },
-  cardTitle: {
-    ...typography.heading3,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  row: {
+  screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing['3xl'] },
+  hero: { gap: spacing.xs, paddingTop: spacing.md },
+  sectionTitle: { marginBottom: spacing.md },
+  search: {
+    minHeight: 56,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing.lg,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingVertical: spacing.xs,
   },
-  label: { ...typography.bodySmall, color: colors.text.secondary },
-  value: {
-    ...typography.bodyStrong,
-    color: colors.text.primary,
-    flexShrink: 1,
-    textAlign: 'right',
+  featured: {
+    minHeight: 190,
+    borderRadius: radius.xl,
+    backgroundColor: colors.primary[700],
+    padding: spacing.xl,
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
-  statusActive: { color: colors.status.success },
-  tipIcon: { fontSize: sizes.icon.lg, marginBottom: spacing.xs },
-  tipTitle: {
-    ...typography.bodyStrong,
-    color: colors.primary[700],
-    marginBottom: spacing.xs,
+  cards: { gap: spacing.md },
+  card: {
+    backgroundColor: colors.background.surface,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    gap: spacing.xs,
   },
-  tipText: { ...typography.bodyDefault, color: colors.text.secondary },
-  actionsContainer: { marginTop: spacing.md },
+  pressed: { opacity: 0.72 },
 });

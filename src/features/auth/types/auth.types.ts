@@ -25,6 +25,7 @@ export interface AuthState {
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
   markOnboardingCompleted: () => void;
+  syncUser: (user: User) => void;
   reportError: (
     error: unknown,
     operation: string,

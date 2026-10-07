@@ -40,6 +40,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background.surface,
+    borderWidth: 1,
+    borderColor: colors.primary[700],
+    borderRadius: 16,
+    width: '100%',
   },
   pressed: { opacity: 0.65 },
 });

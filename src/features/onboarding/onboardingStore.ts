@@ -3,6 +3,7 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { completeOnboarding } from './onboardingCompletion';
 import { onboardingDraftStorage } from './draftStorage';
 import { onboardingApi } from './onboardingApi';
+import { useProfileStore } from '@/features/profile/profileStore';
 import {
   initialOnboardingDraft,
   type Allergen,
@@ -103,6 +104,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     try {
       await completeOnboarding(draft, draftUserId);
       useAuthStore.getState().markOnboardingCompleted();
+      if (draftUserId && !(await useProfileStore.getState().load(draftUserId, true))) {
+        throw new Error('Đã lưu dữ liệu nhưng chưa thể tải lại hồ sơ. Vui lòng thử lại.');
+      }
       set({ isSaving: false, draft: initialOnboardingDraft });
       return true;
     } catch (error) {

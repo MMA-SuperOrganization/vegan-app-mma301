@@ -145,6 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set((state) => ({
       user: state.user ? { ...state.user, onboardingCompleted: true } : null,
     })),
+  syncUser: (user) => set({ user, isAuthenticated: true }),
   reportError: (error, operation, fallbackMessage, fallbackCode) =>
     set({
       error: captureError(

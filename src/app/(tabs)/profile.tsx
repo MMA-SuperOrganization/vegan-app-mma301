@@ -1,5 +1,5 @@
-import { PlaceholderTabScreen } from '@/components/navigation';
+import { ProfileScreen } from '@/features/profile';
 
 export default function ProfileRoute() {
-  return <PlaceholderTabScreen title="Cá nhân" />;
+  return <ProfileScreen />;
 }

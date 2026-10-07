@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.ngocthang.veganapp",
       "adaptiveIcon": {
         "backgroundColor": "#F7F2EB",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -36,7 +37,10 @@
           "color": "#247A52"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin",
+      "expo-dev-client",
+      "./plugins/withAndroidBuildStability.cjs"
     ]
   }
 }

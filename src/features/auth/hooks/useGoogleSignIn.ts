@@ -18,12 +18,6 @@ const googleDiscovery: AuthSession.DiscoveryDocument = {
   revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
 };
 
-function platformClientId() {
-  if (Platform.OS === 'android') return appConfig.googleAndroidClientId;
-  if (Platform.OS === 'ios') return appConfig.googleIosClientId;
-  return appConfig.googleWebClientId;
-}
-
 export function useGoogleSignIn() {
   const router = useRouter();
   const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
@@ -32,14 +26,14 @@ export function useGoogleSignIn() {
   const storeLoading = useAuthStore((state) => state.isLoading);
   const [isPrompting, setIsPrompting] = useState(false);
   const handledResponse = useRef<unknown>(null);
-  const clientId = platformClientId();
+  const webClientId = appConfig.googleWebClientId;
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'veganapp',
     path: 'oauthredirect',
   });
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: clientId ?? placeholderClientId,
+      clientId: webClientId ?? placeholderClientId,
       responseType: AuthSession.ResponseType.Code,
       scopes: ['openid', 'profile', 'email'],
       usePKCE: true,
@@ -49,8 +43,16 @@ export function useGoogleSignIn() {
     googleDiscovery
   );
 
+  const finishLogin = async (idToken: string, requestUri: string) => {
+    if (!(await loginWithGoogle(idToken, requestUri))) return;
+    const user = useAuthStore.getState().user;
+    router.replace(user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals');
+  };
+
   useEffect(() => {
-    if (!response || handledResponse.current === response) return;
+    if (Platform.OS !== 'web' || !response || handledResponse.current === response) {
+      return;
+    }
 
     if (response.type === 'success') {
       handledResponse.current = response;
@@ -70,7 +72,7 @@ export function useGoogleSignIn() {
 
       void AuthSession.exchangeCodeAsync(
         {
-          clientId: clientId ?? placeholderClientId,
+          clientId: webClientId ?? placeholderClientId,
           code,
           redirectUri,
           extraParams: { code_verifier: request.codeVerifier },
@@ -85,11 +87,7 @@ export function useGoogleSignIn() {
               'GOOGLE_ID_TOKEN_MISSING'
             );
           }
-          if (!(await loginWithGoogle(authentication.idToken, redirectUri))) return;
-          const user = useAuthStore.getState().user;
-          router.replace(
-            user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
-          );
+          await finishLogin(authentication.idToken, redirectUri);
         })
         .catch((error) => {
           setIsPrompting(false);
@@ -115,79 +113,86 @@ export function useGoogleSignIn() {
         'Không thể đăng nhập bằng Google.'
       );
     }
-  }, [
-    clientId,
-    loginWithGoogle,
-    redirectUri,
-    reportError,
-    request,
-    response,
-    router,
-  ]);
+  }, [redirectUri, reportError, request, response, webClientId]);
+
+  const startNative = async () => {
+    if (expoGo) {
+      throw new AppError(
+        'Google Sign-In không có trong Expo Go. Chạy `npm run android` để cài development build.',
+        'GOOGLE_REQUIRES_DEV_BUILD'
+      );
+    }
+
+    if (!webClientId) {
+      throw new AppError(
+        'Thiếu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.',
+        'GOOGLE_OAUTH_NOT_CONFIGURED'
+      );
+    }
+
+    const google = await import('@react-native-google-signin/google-signin');
+    google.GoogleSignin.configure({ webClientId });
+    if (Platform.OS === 'android') {
+      await google.GoogleSignin.hasPlayServices({
+        showPlayServicesUpdateDialog: true,
+      });
+    }
+    const result = await google.GoogleSignin.signIn();
+    if (!google.isSuccessResponse(result)) return;
+    if (!result.data.idToken) {
+      throw new AppError(
+        'Google không trả về ID token. Kiểm tra Web OAuth client ID.',
+        'GOOGLE_ID_TOKEN_MISSING'
+      );
+    }
+
+    // Firebase REST requires this field, but the native SDK already completed
+    // the real Google callback before this request is sent.
+    await finishLogin(result.data.idToken, 'http://localhost');
+  };
+
+  const startWeb = async () => {
+    if (!webClientId) {
+      throw new AppError(
+        'Thiếu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.',
+        'GOOGLE_OAUTH_NOT_CONFIGURED'
+      );
+    }
+    if (!request) {
+      throw new AppError(
+        'Yêu cầu Google OAuth chưa sẵn sàng. Vui lòng thử lại.',
+        'GOOGLE_OAUTH_NOT_READY'
+      );
+    }
+    handledResponse.current = null;
+    await promptAsync();
+  };
 
   const start = async () => {
     clearError();
 
-    if (expoGo) {
-      reportError(
-        new AppError(
-          'Đăng nhập Google cần development build; Expo Go không hỗ trợ OAuth callback riêng của ứng dụng.',
-          'GOOGLE_REQUIRES_DEV_BUILD'
-        ),
-        'auth.login.google.setup',
-        'Không thể mở đăng nhập Google.'
-      );
-      return;
-    }
-
-    if (!clientId) {
-      reportError(
-        new AppError(
-          `Thiếu Google OAuth client ID cho ${Platform.OS}.`,
-          'GOOGLE_OAUTH_NOT_CONFIGURED'
-        ),
-        'auth.login.google.setup',
-        'Đăng nhập Google chưa được cấu hình.'
-      );
-      return;
-    }
-
     if (!appConfig.firebaseApiKey) {
       reportError(
-        new AppError(
-          'Thiếu EXPO_PUBLIC_FIREBASE_API_KEY.',
-          'FIREBASE_NOT_CONFIGURED'
-        ),
+        new AppError('Thiếu EXPO_PUBLIC_FIREBASE_API_KEY.', 'FIREBASE_NOT_CONFIGURED'),
         'auth.login.google.setup',
         'Firebase chưa được cấu hình.'
       );
       return;
     }
 
-    if (!request) {
-      reportError(
-        new AppError(
-          'Yêu cầu Google OAuth chưa sẵn sàng. Vui lòng thử lại.',
-          'GOOGLE_OAUTH_NOT_READY'
-        ),
-        'auth.login.google.oauth',
-        'Đăng nhập Google chưa sẵn sàng.'
-      );
-      return;
-    }
-
-    handledResponse.current = null;
     setIsPrompting(true);
     try {
-      await promptAsync();
+      if (Platform.OS === 'web') await startWeb();
+      else await startNative();
     } catch (error) {
-      setIsPrompting(false);
       reportError(
         error,
         'auth.login.google.oauth',
-        'Không thể mở cửa sổ đăng nhập Google.',
+        'Không thể mở đăng nhập Google.',
         'GOOGLE_OAUTH_PROMPT_FAILED'
       );
+    } finally {
+      if (Platform.OS !== 'web') setIsPrompting(false);
     }
   };
 

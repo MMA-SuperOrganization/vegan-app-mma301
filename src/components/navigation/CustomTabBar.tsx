@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppIcon, AppText } from '@/components/ui';
+import { useTranslation, type TranslationKey } from '@/i18n';
 import {
   colors,
   coreTokens,
@@ -17,28 +18,24 @@ export type CustomTabBarProps = Parameters<TabBarRenderer>[0];
 
 const TAB_CONFIG: Record<
   string,
-  { label: string; icon: AssetName; accessibilityLabel: string }
+  { labelKey: TranslationKey; icon: AssetName }
 > = {
-  index: { label: 'Trang chủ', icon: 'home', accessibilityLabel: 'Mở Trang chủ' },
+  index: { labelKey: 'nav.home', icon: 'home' },
   'meal-plan': {
-    label: 'Thực đơn',
+    labelKey: 'nav.mealPlan',
     icon: 'spark',
-    accessibilityLabel: 'Mở Thực đơn',
   },
   grocery: {
-    label: 'Mua sắm',
+    labelKey: 'nav.grocery',
     icon: 'pantry',
-    accessibilityLabel: 'Mở Mua sắm',
   },
   diary: {
-    label: 'Nhật ký',
+    labelKey: 'nav.diary',
     icon: 'explore',
-    accessibilityLabel: 'Mở Nhật ký',
   },
   profile: {
-    label: 'Cá nhân',
+    labelKey: 'nav.profile',
     icon: 'profile',
-    accessibilityLabel: 'Mở Cá nhân',
   },
 };
 
@@ -46,6 +43,7 @@ const TAB_ORDER = ['index', 'meal-plan', 'grocery', 'diary', 'profile'];
 
 export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -65,11 +63,12 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
 
           const route = state.routes[routeIndex];
           const config = TAB_CONFIG[routeName];
+          const label = t(config.labelKey);
           const descriptor = descriptors[route.key];
           const isFocused = state.index === routeIndex;
           const color = isFocused ? colors.primary[700] : colors.text.secondary;
           const accessibilityLabel =
-            descriptor.options.tabBarAccessibilityLabel ?? config.accessibilityLabel;
+            descriptor.options.tabBarAccessibilityLabel ?? t('nav.open', { screen: label });
 
           const onPress = () => {
             const event = navigation.emit({
@@ -109,7 +108,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
                   numberOfLines={1}
                   style={[styles.label, { color }, isFocused && styles.activeLabel]}
                 >
-                  {config.label}
+                  {label}
                 </AppText>
               </View>
             </Pressable>

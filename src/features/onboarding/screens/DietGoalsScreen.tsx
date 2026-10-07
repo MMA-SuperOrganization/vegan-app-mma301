@@ -3,7 +3,8 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { useAuthStore } from '@/features/auth';
 import { spacing } from '@/theme';
-import { dietOptions, goalOptions } from '../constants';
+import { useTranslation } from '@/i18n';
+import { getDietOptions, getGoalOptions } from '../constants';
 import { useOnboardingStore } from '../onboardingStore';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
@@ -11,6 +12,9 @@ import { SelectionField } from '../components/SelectionField';
 
 export function DietGoalsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const dietOptions = getDietOptions(t);
+  const goalOptions = getGoalOptions(t);
   const logout = useAuthStore((state) => state.logout);
   const draft = useOnboardingStore((state) => state.draft);
   const setDraft = useOnboardingStore((state) => state.setDraft);
@@ -21,8 +25,8 @@ export function DietGoalsScreen() {
 
   const next = () => {
     const nextErrors = {
-      diet: draft.dietType ? null : 'Vui lòng chọn loại chế độ ăn.',
-      goal: draft.goal ? null : 'Vui lòng chọn mục tiêu sức khỏe.',
+      diet: draft.dietType ? null : t('onboarding.validation.diet'),
+      goal: draft.goal ? null : t('onboarding.validation.goal'),
     };
     setErrors(nextErrors);
     if (!nextErrors.diet && !nextErrors.goal)
@@ -31,8 +35,8 @@ export function DietGoalsScreen() {
 
   return (
     <OnboardingScreen
-      title="Chế độ ăn & mục tiêu"
-      subtitle="Hai lựa chọn riêng để cá nhân hóa gợi ý"
+      title={t('onboarding.dietTitle')}
+      subtitle={t('onboarding.dietSubtitle')}
       step={1}
       onBack={async () => {
         await logout();
@@ -42,8 +46,8 @@ export function DietGoalsScreen() {
     >
       <View style={styles.fields}>
         <SelectionField
-          label="Loại chế độ ăn"
-          placeholder="Chọn chế độ ăn"
+          label={t('onboarding.dietType')}
+          placeholder={t('onboarding.selectDiet')}
           value={draft.dietType}
           options={dietOptions}
           onChange={(dietType) => {
@@ -53,12 +57,12 @@ export function DietGoalsScreen() {
           error={errors.diet}
         />
         <InfoCard
-          title="Chế độ ăn"
-          description="Chọn theo loại chế độ ăn được hệ thống hỗ trợ."
+          title={t('onboarding.dietType')}
+          description={t('onboarding.dietInfo')}
         />
         <SelectionField
-          label="Mục tiêu sức khỏe"
-          placeholder="Chọn mục tiêu"
+          label={t('onboarding.goal')}
+          placeholder={t('onboarding.selectGoal')}
           value={draft.goal}
           options={goalOptions}
           onChange={(goal) => {
@@ -68,8 +72,8 @@ export function DietGoalsScreen() {
           error={errors.goal}
         />
         <InfoCard
-          title="Thông tin tham khảo"
-          description="Gợi ý dinh dưỡng không thay thế tư vấn chuyên môn."
+          title={t('onboarding.referenceInfo')}
+          description={t('onboarding.referenceDescription')}
         />
       </View>
     </OnboardingScreen>

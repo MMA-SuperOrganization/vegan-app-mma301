@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { appConfig } from '@/config';
+import { getActiveLocale, translate, type TranslationKey } from '@/i18n';
 
 const identityBaseUrl = 'https://identitytoolkit.googleapis.com/v1';
 const tokenBaseUrl = 'https://securetoken.googleapis.com/v1';
@@ -42,7 +43,7 @@ export class AuthServiceError extends Error {
 function requireApiKey() {
   if (!appConfig.firebaseApiKey) {
     throw new AuthServiceError(
-      'Ứng dụng chưa được cấu hình Firebase. Hãy thêm EXPO_PUBLIC_FIREBASE_API_KEY.',
+      translate('firebase.notConfigured'),
       'FIREBASE_NOT_CONFIGURED'
     );
   }
@@ -55,35 +56,34 @@ function mapFirebaseError(error: unknown): never {
   if (!axios.isAxiosError(error)) {
     throw new AuthServiceError(
       error instanceof Error
-        ? `Lỗi xác thực trên thiết bị: ${error.message}`
-        : 'Đã có lỗi không mong muốn. Vui lòng thử lại.',
+        ? translate('firebase.deviceError', { message: error.message })
+        : translate('firebase.unexpected'),
       'AUTH_CLIENT_ERROR'
     );
   }
 
   const rawCode = String(error.response?.data?.error?.message ?? 'NETWORK_ERROR');
   const code = rawCode.split(' : ')[0];
-  const messages: Record<string, string> = {
-    EMAIL_EXISTS: 'Email này đã được sử dụng.',
-    EMAIL_NOT_FOUND: 'Không tìm thấy tài khoản với email này.',
-    INVALID_LOGIN_CREDENTIALS: 'Email hoặc mật khẩu không đúng.',
-    INVALID_PASSWORD: 'Email hoặc mật khẩu không đúng.',
-    USER_DISABLED: 'Tài khoản đã bị vô hiệu hóa.',
-    TOO_MANY_ATTEMPTS_TRY_LATER: 'Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.',
-    OPERATION_NOT_ALLOWED: 'Phương thức đăng nhập này chưa được bật.',
-    WEAK_PASSWORD: 'Mật khẩu phải có ít nhất 6 ký tự.',
-    INVALID_EMAIL: 'Email không hợp lệ.',
-    TOKEN_EXPIRED: 'Phiên đăng nhập đã hết hạn.',
-    INVALID_REFRESH_TOKEN: 'Phiên đăng nhập không còn hợp lệ.',
-    PROJECT_NUMBER_MISMATCH: 'Cấu hình Firebase không khớp với dự án.',
-    INVALID_IDP_RESPONSE: 'Thông tin đăng nhập Google không hợp lệ hoặc đã hết hạn.',
-    FEDERATED_USER_ID_ALREADY_LINKED:
-      'Tài khoản Google này đã được liên kết với người dùng khác.',
-    NETWORK_ERROR: 'Không thể kết nối tới dịch vụ đăng nhập.',
+  const messageKeys: Record<string, TranslationKey> = {
+    EMAIL_EXISTS: 'firebase.emailExists',
+    EMAIL_NOT_FOUND: 'firebase.emailNotFound',
+    INVALID_LOGIN_CREDENTIALS: 'firebase.invalidCredentials',
+    INVALID_PASSWORD: 'firebase.invalidCredentials',
+    USER_DISABLED: 'error.accountDisabled',
+    TOO_MANY_ATTEMPTS_TRY_LATER: 'firebase.tooManyAttempts',
+    OPERATION_NOT_ALLOWED: 'firebase.operationNotAllowed',
+    WEAK_PASSWORD: 'firebase.weakPassword',
+    INVALID_EMAIL: 'auth.validation.emailInvalid',
+    TOKEN_EXPIRED: 'error.tokenExpired',
+    INVALID_REFRESH_TOKEN: 'error.tokenInvalid',
+    PROJECT_NUMBER_MISMATCH: 'firebase.projectMismatch',
+    INVALID_IDP_RESPONSE: 'firebase.invalidIdp',
+    FEDERATED_USER_ID_ALREADY_LINKED: 'firebase.federatedUserConflict',
+    NETWORK_ERROR: 'firebase.network',
   };
 
   throw new AuthServiceError(
-    messages[code] ?? 'Không thể xác thực tài khoản. Vui lòng thử lại.',
+    messageKeys[code] ? translate(messageKeys[code]) : translate('firebase.authFailed'),
     code
   );
 }
@@ -165,7 +165,7 @@ export const firebaseAuth = {
       await axios.post(
         `${identityBaseUrl}/accounts:sendOobCode?key=${requireApiKey()}`,
         { requestType: 'PASSWORD_RESET', email },
-        { timeout: 15_000, headers: { 'X-Firebase-Locale': 'vi' } }
+        { timeout: 15_000, headers: { 'X-Firebase-Locale': getActiveLocale() } }
       );
     } catch (error) {
       return mapFirebaseError(error);

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { logAppError, toAppErrorDetails } from '@/services/errors';
 import { authApi } from '../services/authApi';
 import type { AuthState, User } from '../types/auth.types';
+import { translate } from '@/i18n';
 
 export type { User, AuthState };
 
@@ -37,7 +38,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: captureError(
           error,
           'auth.login.password',
-          'Không thể đăng nhập.',
+          translate('auth.error.login'),
           'PASSWORD_LOGIN_FAILED'
         ),
       });
@@ -61,7 +62,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: captureError(
           error,
           'auth.login.google.firebase',
-          'Không thể đăng nhập bằng Google.',
+          translate('auth.error.googleLogin'),
           'GOOGLE_LOGIN_FAILED'
         ),
       });
@@ -82,7 +83,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: captureError(
           error,
           'auth.register.password',
-          'Không thể tạo tài khoản.',
+          translate('auth.error.register'),
           'REGISTER_FAILED'
         ),
       });
@@ -103,7 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: captureError(
           error,
           'auth.password_reset',
-          'Không thể gửi liên kết.',
+          translate('auth.error.reset'),
           'PASSWORD_RESET_FAILED'
         ),
       });

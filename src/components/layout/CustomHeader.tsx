@@ -1,8 +1,9 @@
 import React, { type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useNavigation, useRouter, type Href } from 'expo-router';
+import { useNavigation, type Href } from 'expo-router';
 
 import { AppIcon, AppText, BackButton } from '@/components/ui';
+import { useSafeBack } from '@/hooks';
 import {
   colors,
   coreTokens,
@@ -37,14 +38,13 @@ export function CustomHeader({
   testID,
 }: CustomHeaderProps) {
   const navigation = useNavigation();
-  const router = useRouter();
   const canGoBack = navigation.canGoBack();
   const backVisible = showBack === 'auto' ? canGoBack : showBack;
+  const safeBack = useSafeBack(backFallbackHref);
 
   const handleBack = () => {
     if (onBack) return onBack();
-    if (canGoBack) return router.back();
-    router.replace(backFallbackHref);
+    safeBack();
   };
 
   return (

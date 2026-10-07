@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppButton, AppInput, AppText, ScreenWrapper } from '@/components';
 import { colors, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
 import { useAuthStore } from '../store/authStore';
@@ -10,6 +11,7 @@ import { validateEmail } from '../validations/loginValidation';
 
 export function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const sendPasswordReset = useAuthStore((state) => state.sendPasswordReset);
   const isLoading = useAuthStore((state) => state.isLoading);
   const storeError = useAuthStore((state) => state.error);
@@ -30,11 +32,11 @@ export function ForgotPasswordScreen() {
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <View>
         <AuthHeader
-          title="Khôi phục tài khoản"
-          subtitle="Nhập email để nhận liên kết xác minh qua email"
+          title={t('auth.recoverTitle')}
+          subtitle={t('auth.recoverSubtitle')}
         />
         <AppInput
-          label="Email"
+          label={t('auth.email')}
           placeholder="minh@email.com"
           value={email}
           onChangeText={(value) => {
@@ -54,19 +56,19 @@ export function ForgotPasswordScreen() {
           style={styles.loginLink}
         >
           <AppText variant="bodyStrong" color={colors.primary[700]}>
-            Đã có tài khoản? Đăng nhập
+            {t('auth.accountLogin')}
           </AppText>
         </Pressable>
         {sent ? (
           <AuthMessage
             success
-            message="Đã gửi liên kết. Hãy kiểm tra hộp thư email của bạn."
+            message={t('auth.resetSent')}
           />
         ) : null}
         {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
-        title="Gửi liên kết"
+        title={t('auth.sendLink')}
         preset="screen"
         loading={isLoading}
         disabled={sent}

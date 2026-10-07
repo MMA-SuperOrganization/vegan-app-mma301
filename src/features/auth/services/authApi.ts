@@ -2,6 +2,7 @@ import { apiClient, unwrapApiRequest } from '@/services/api';
 import { authSession, firebaseAuth } from '@/services/auth';
 import { storage, storageKeys } from '@/services/storage';
 import { AppError } from '@/services/errors';
+import { translate } from '@/i18n';
 import type { User } from '../types/auth.types';
 
 interface AccountDto {
@@ -23,7 +24,7 @@ export interface LoginResponse {
 function toUser(account: AccountDto): User {
   return {
     id: account.userId || account._id,
-    name: account.displayName || account.email?.split('@')[0] || 'Bạn',
+    name: account.displayName || account.email?.split('@')[0] || translate('common.userFallback'),
     email: account.email || '',
     avatarUrl: account.avatarUrl || undefined,
     role: account.role,

@@ -1,5 +1,7 @@
 import { PlaceholderTabScreen } from '@/components/navigation';
+import { useTranslation } from '@/i18n';
 
 export default function DiaryRoute() {
-  return <PlaceholderTabScreen title="Nhật ký" />;
+  const { t } = useTranslation();
+  return <PlaceholderTabScreen title={t('nav.diary')} />;
 }

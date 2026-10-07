@@ -7,6 +7,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { family } from '@/theme';
+import { useTranslation } from '@/i18n';
 
 export interface IllustrationProps {
   /** Verified Mầm raster asset, or an SVG component supplied through children. */
@@ -21,18 +22,19 @@ export interface IllustrationProps {
 export function Illustration({
   source,
   children,
-  accessibilityLabel = 'Mầm companion',
+  accessibilityLabel,
   decorative = false,
   style,
   testID,
 }: IllustrationProps) {
+  const { t } = useTranslation();
   const node = family('Illustration /').master!;
   return (
     <View
       testID={testID}
       accessible={!decorative && !!(source || children)}
       accessibilityRole={source || children ? 'image' : undefined}
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? t('auth.mascotLabel')}
       style={[{ width: node.width, height: node.height }, style]}
     >
       {source ? (

@@ -3,8 +3,10 @@ import { Redirect, Stack } from 'expo-router';
 import { LoadingScreen } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { useOnboardingStore } from '@/features/onboarding/onboardingStore';
+import { useTranslation } from '@/i18n';
 
 export default function OnboardingLayout() {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const user = useAuthStore((state) => state.user);
@@ -16,7 +18,7 @@ export default function OnboardingLayout() {
   }, [hydrate, user?.id, user?.onboardingCompleted]);
 
   if (isRestoringSession || (isAuthenticated && isHydrating)) {
-    return <LoadingScreen message="Đang chuẩn bị hồ sơ…" />;
+    return <LoadingScreen message={t('onboarding.preparing')} />;
   }
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
   if (user?.onboardingCompleted) return <Redirect href="/(tabs)" />;

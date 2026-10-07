@@ -1,3 +1,5 @@
+import { translate } from '../../i18n/translator.ts';
+
 export function parseDecimal(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
   if (!normalized) return null;
@@ -12,8 +14,10 @@ export function validateMeasurement(
   max: number
 ) {
   const parsed = parseDecimal(value);
-  if (parsed === null) return `Vui lòng nhập ${label.toLowerCase()}.`;
-  if (parsed < min || parsed > max) return `${label} phải từ ${min} đến ${max}.`;
+  if (parsed === null)
+    return translate('onboarding.validation.required', { label: label.toLowerCase() });
+  if (parsed < min || parsed > max)
+    return translate('onboarding.validation.range', { label, min, max });
   return null;
 }
 

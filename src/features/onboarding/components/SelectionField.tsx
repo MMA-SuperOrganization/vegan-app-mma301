@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppInput, AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 
 export function SelectionField<T extends string>({
   label,
@@ -19,6 +20,7 @@ export function SelectionField<T extends string>({
   onChange: (value: T) => void;
   error?: string | null;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const selectedLabel =
     options.find((option) => option.value === value)?.label ?? '';
@@ -69,7 +71,7 @@ export function SelectionField<T extends string>({
                 ))}
               </View>
               <AppButton
-                title="Đóng"
+                title={t('common.close')}
                 variant="ghost"
                 onPress={() => setOpen(false)}
               />

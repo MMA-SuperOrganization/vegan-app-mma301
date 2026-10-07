@@ -3,6 +3,7 @@ import { onboardingApi, type OnboardingPayload } from './onboardingApi';
 import { onboardingDraftStorage } from './draftStorage';
 import type { OnboardingDraft } from './types';
 import { dateInputToIso, parseDecimal } from './validation';
+import { translate } from '@/i18n';
 
 interface ValidatedOnboarding {
   dateOfBirth: string;
@@ -23,7 +24,7 @@ function validateDraft(draft: OnboardingDraft): ValidatedOnboarding {
     heightCm === null ||
     currentWeightKg === null
   ) {
-    throw new Error('Thông tin onboarding chưa đầy đủ.');
+    throw new Error(translate('onboarding.error.incomplete'));
   }
 
   return {
@@ -50,7 +51,7 @@ export async function completeOnboarding(
 
   const status = await onboardingApi.complete();
   if (!status.completed) {
-    throw new Error('Máy chủ chưa xác nhận hoàn tất onboarding.');
+    throw new Error(translate('onboarding.error.notConfirmed'));
   }
 
   if (userId) {

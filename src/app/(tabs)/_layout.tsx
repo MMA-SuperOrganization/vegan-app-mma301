@@ -3,14 +3,16 @@ import { Redirect, Tabs } from 'expo-router';
 import { LoadingScreen } from '@/components';
 import { CustomTabBar } from '@/components/navigation';
 import { useAuthStore } from '@/features/auth';
+import { useTranslation } from '@/i18n';
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const user = useAuthStore((state) => state.user);
 
   if (isRestoringSession) {
-    return <LoadingScreen message="Đang khôi phục phiên đăng nhập…" />;
+    return <LoadingScreen message={t('bootstrap.restoringSession')} />;
   }
 
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
@@ -26,11 +28,11 @@ export default function TabsLayout() {
         tabBarHideOnKeyboard: true,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Trang chủ' }} />
-      <Tabs.Screen name="meal-plan" options={{ title: 'Thực đơn' }} />
-      <Tabs.Screen name="grocery" options={{ title: 'Mua sắm' }} />
-      <Tabs.Screen name="diary" options={{ title: 'Nhật ký' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Cá nhân' }} />
+      <Tabs.Screen name="index" options={{ title: t('nav.home') }} />
+      <Tabs.Screen name="meal-plan" options={{ title: t('nav.mealPlan') }} />
+      <Tabs.Screen name="grocery" options={{ title: t('nav.grocery') }} />
+      <Tabs.Screen name="diary" options={{ title: t('nav.diary') }} />
+      <Tabs.Screen name="profile" options={{ title: t('nav.profile') }} />
     </Tabs>
   );
 }

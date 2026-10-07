@@ -2,12 +2,16 @@ import { Image, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppButton, AppText, ScreenWrapper } from '@/components';
 import { useAuthStore } from '@/features/auth';
-import { dietOptions, goalOptions, optionLabel } from '@/features/onboarding/constants';
+import { getDietOptions, getGoalOptions, optionLabel } from '@/features/onboarding/constants';
+import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 
 export function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const dietOptions = getDietOptions(t);
+  const goalOptions = getGoalOptions(t);
   const data = useProfileStore((state) => state.data);
   const resetProfile = useProfileStore((state) => state.reset);
   const logout = useAuthStore((state) => state.logout);
@@ -28,8 +32,8 @@ export function ProfileScreen() {
   return (
     <ScreenWrapper scrollable keyboardAvoiding={false} edges={['top', 'left', 'right']} contentContainerStyle={styles.screen}>
       <View>
-        <AppText variant="heading1">Hồ sơ</AppText>
-        <AppText variant="bodyLarge" color={colors.text.secondary}>Quản lý hành trình ăn chay</AppText>
+        <AppText variant="heading1">{t('profile.title')}</AppText>
+        <AppText variant="bodyLarge" color={colors.text.secondary}>{t('profile.subtitle')}</AppText>
       </View>
 
       <View style={styles.identity}>
@@ -42,32 +46,33 @@ export function ProfileScreen() {
         )}
         <View style={styles.identityText}>
           <AppText variant="heading2">{data.user.name}</AppText>
-          <AppText color={colors.primary[700]}>{data.user.email || 'Chưa có email'}</AppText>
+          <AppText color={colors.primary[700]}>{data.user.email || t('profile.noEmail')}</AppText>
           <AppText variant="overline" color={colors.primary[700]}>
-            {data.profile?.dietType ? optionLabel(dietOptions, data.profile.dietType) : 'CHƯA CHỌN CHẾ ĐỘ ĂN'}
+            {data.profile?.dietType ? optionLabel(dietOptions, data.profile.dietType) : t('profile.noDiet')}
           </AppText>
         </View>
       </View>
 
-      <ProfileSection title="Hồ sơ dinh dưỡng">
-        <Value label="Chiều cao" value={nutrition?.heightCm != null ? `${nutrition.heightCm} cm` : 'Chưa có dữ liệu'} />
-        <Value label="Cân nặng" value={nutrition?.currentWeightKg != null ? `${nutrition.currentWeightKg} kg` : 'Chưa có dữ liệu'} />
-        <Value label="BMI" value={nutrition?.bmi != null ? String(nutrition.bmi) : 'Chưa có dữ liệu'} />
-        <Value label="Mục tiêu" value={nutrition?.goal ? optionLabel(goalOptions, nutrition.goal) : 'Chưa có dữ liệu'} />
+      <ProfileSection title={t('profile.nutrition')}>
+        <Value label={t('onboarding.height')} value={nutrition?.heightCm != null ? `${nutrition.heightCm} cm` : t('common.noData')} />
+        <Value label={t('onboarding.weight')} value={nutrition?.currentWeightKg != null ? `${nutrition.currentWeightKg} kg` : t('common.noData')} />
+        <Value label="BMI" value={nutrition?.bmi != null ? String(nutrition.bmi) : t('common.noData')} />
+        <Value label={t('profile.goal')} value={nutrition?.goal ? optionLabel(goalOptions, nutrition.goal) : t('common.noData')} />
       </ProfileSection>
 
-      <ProfileSection title="Dị nguyên của tôi">
+      <ProfileSection title={t('profile.allergens')}>
         <AppText color={colors.primary[700]}>
           {!nutrition?.allergenSelectionCompleted
-            ? 'Chưa chọn'
+            ? t('profile.notSelected')
             : allergyNames?.length
               ? allergyNames.join(', ')
-              : 'Không có dị nguyên'}
+              : t('onboarding.noAllergens')}
         </AppText>
       </ProfileSection>
 
-      <AppButton title="Chỉnh sửa hồ sơ" variant="outline" onPress={() => router.push('/edit-profile')} />
-      <AppButton title="Đăng xuất" variant="danger" loading={isLoggingOut} onPress={() => void signOut()} />
+      <AppButton title={t('profile.edit')} variant="outline" onPress={() => router.push('/edit-profile')} />
+      <AppButton title={t('profile.language')} variant="outline" onPress={() => router.push('/language')} />
+      <AppButton title={t('profile.logout')} variant="danger" loading={isLoggingOut} onPress={() => void signOut()} />
     </ScreenWrapper>
   );
 }

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { coreTokens } from '@/theme';
 import { progressRatio } from './progress';
+import { useTranslation } from '@/i18n';
 
 export interface ProgressBarProps {
   value: number;
@@ -20,15 +21,16 @@ export function ProgressBar({
   height = coreTokens.progress.height,
   style,
   testID,
-  accessibilityLabel = 'Tiến trình',
+  accessibilityLabel,
 }: ProgressBarProps) {
+  const { t: translate } = useTranslation();
   const t = coreTokens.progress;
   const ratio = progressRatio(value, max);
   return (
     <View
       testID={testID}
       accessibilityRole="progressbar"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? translate('common.progress')}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(ratio * 100) }}
       aria-valuemin={0}
       aria-valuemax={100}

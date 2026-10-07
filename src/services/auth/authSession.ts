@@ -1,5 +1,6 @@
 import { storage, storageKeys } from '@/services/storage';
 import { firebaseAuth, type FirebaseSession } from './firebaseAuth';
+import { translate } from '@/i18n';
 
 const REFRESH_EARLY_MS = 60_000;
 let sessionGeneration = 0;
@@ -21,7 +22,7 @@ function refreshSession(refreshToken: string) {
   const generationAtStart = sessionGeneration;
   const operation = firebaseAuth.refresh(refreshToken).then(async (session) => {
     if (generationAtStart !== sessionGeneration) {
-      throw new Error('Phiên đăng nhập đã thay đổi.');
+      throw new Error(translate('error.sessionChanged'));
     }
     await persistSession(session);
     return session;

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppInput, ScreenWrapper } from '@/components';
 import { spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
 import { AuthTextLink } from '../components/AuthTextLink';
@@ -12,6 +13,7 @@ import { validateLogin } from '../validations/loginValidation';
 
 export function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const login = useAuthStore((state) => state.login);
   const isLoading = useAuthStore((state) => state.isLoading);
   const storeError = useAuthStore((state) => state.error);
@@ -40,10 +42,10 @@ export function LoginScreen() {
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <View>
-        <AuthHeader title="Đăng nhập" subtitle="Chào mừng bạn trở lại" />
+        <AuthHeader title={t('auth.login')} subtitle={t('auth.loginSubtitle')} />
         <View style={styles.fields}>
           <AppInput
-            label="Email"
+            label={t('auth.email')}
             placeholder="minh@email.com"
             value={email}
             onChangeText={(value) => {
@@ -57,8 +59,8 @@ export function LoginScreen() {
           />
           <AppInput
             type="password"
-            label="Mật khẩu"
-            placeholder="Nhập mật khẩu"
+            label={t('auth.password')}
+            placeholder={t('auth.passwordPlaceholder')}
             value={password}
             onChangeText={(value) => {
               setPassword(value);
@@ -75,17 +77,17 @@ export function LoginScreen() {
             align="flex-end"
             onPress={() => router.push('/(auth)/forgot-password')}
           >
-            Quên mật khẩu?
+            {t('auth.forgotPassword')}
           </AuthTextLink>
           <GoogleSignInButton />
           <AuthTextLink onPress={() => router.push('/(auth)/register')}>
-            Chưa có tài khoản? Đăng ký
+            {t('auth.noAccountRegister')}
           </AuthTextLink>
         </View>
         {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
-        title="Đăng nhập"
+        title={t('auth.login')}
         preset="screen"
         loading={isLoading}
         onPress={handleLogin}

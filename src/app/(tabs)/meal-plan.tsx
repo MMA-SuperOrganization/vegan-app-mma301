@@ -1,5 +1,7 @@
 import { PlaceholderTabScreen } from '@/components/navigation';
+import { useTranslation } from '@/i18n';
 
 export default function MealPlanRoute() {
-  return <PlaceholderTabScreen title="Thực đơn" />;
+  const { t } = useTranslation();
+  return <PlaceholderTabScreen title={t('nav.mealPlan')} />;
 }

@@ -1,30 +1,42 @@
+import type { TranslationKey, TranslationParams } from '@/i18n';
 import type { ActivityLevel, DietType, NutritionGoal } from './types';
 
-export const dietOptions: Array<{ value: DietType; label: string }> = [
-  { value: 'vegan', label: 'Thuần chay' },
-  { value: 'vegetarian', label: 'Ăn chay' },
-  { value: 'lacto_vegetarian', label: 'Chay có sữa' },
-  { value: 'ovo_vegetarian', label: 'Chay có trứng' },
-  { value: 'lacto_ovo_vegetarian', label: 'Chay có sữa và trứng' },
-  { value: 'pescatarian', label: 'Chay có cá' },
-  { value: 'flexitarian', label: 'Ăn chay linh hoạt' },
-  { value: 'other', label: 'Khác' },
+type Translator = (key: TranslationKey, params?: TranslationParams) => string;
+type OptionDefinition<T extends string> = { value: T; labelKey: TranslationKey };
+
+const dietDefinitions: Array<OptionDefinition<DietType>> = [
+  { value: 'vegan', labelKey: 'onboarding.diet.vegan' },
+  { value: 'vegetarian', labelKey: 'onboarding.diet.vegetarian' },
+  { value: 'lacto_vegetarian', labelKey: 'onboarding.diet.lacto' },
+  { value: 'ovo_vegetarian', labelKey: 'onboarding.diet.ovo' },
+  { value: 'lacto_ovo_vegetarian', labelKey: 'onboarding.diet.lactoOvo' },
+  { value: 'pescatarian', labelKey: 'onboarding.diet.pescatarian' },
+  { value: 'flexitarian', labelKey: 'onboarding.diet.flexitarian' },
+  { value: 'other', labelKey: 'onboarding.diet.other' },
 ];
 
-export const goalOptions: Array<{ value: NutritionGoal; label: string }> = [
-  { value: 'lose_weight', label: 'Giảm cân' },
-  { value: 'maintain', label: 'Duy trì cân nặng' },
-  { value: 'gain_weight', label: 'Tăng cân' },
-  { value: 'improve_nutrition', label: 'Cải thiện dinh dưỡng' },
+const goalDefinitions: Array<OptionDefinition<NutritionGoal>> = [
+  { value: 'lose_weight', labelKey: 'onboarding.goal.lose' },
+  { value: 'maintain', labelKey: 'onboarding.goal.maintain' },
+  { value: 'gain_weight', labelKey: 'onboarding.goal.gain' },
+  { value: 'improve_nutrition', labelKey: 'onboarding.goal.improve' },
 ];
 
-export const activityOptions: Array<{ value: ActivityLevel; label: string }> = [
-  { value: 'sedentary', label: 'Ít vận động' },
-  { value: 'light', label: 'Nhẹ' },
-  { value: 'moderate', label: 'Vừa phải' },
-  { value: 'active', label: 'Năng động' },
-  { value: 'very_active', label: 'Rất năng động' },
+const activityDefinitions: Array<OptionDefinition<ActivityLevel>> = [
+  { value: 'sedentary', labelKey: 'onboarding.activity.sedentary' },
+  { value: 'light', labelKey: 'onboarding.activity.light' },
+  { value: 'moderate', labelKey: 'onboarding.activity.moderate' },
+  { value: 'active', labelKey: 'onboarding.activity.active' },
+  { value: 'very_active', labelKey: 'onboarding.activity.veryActive' },
 ];
+
+function localizeOptions<T extends string>(definitions: Array<OptionDefinition<T>>, t: Translator) {
+  return definitions.map(({ value, labelKey }) => ({ value, label: t(labelKey) }));
+}
+
+export const getDietOptions = (t: Translator) => localizeOptions(dietDefinitions, t);
+export const getGoalOptions = (t: Translator) => localizeOptions(goalDefinitions, t);
+export const getActivityOptions = (t: Translator) => localizeOptions(activityDefinitions, t);
 
 export function optionLabel<T extends string>(
   options: Array<{ value: T; label: string }>,

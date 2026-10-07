@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import type { AppErrorDetails } from '@/services/errors';
+import { useTranslation } from '@/i18n';
 
 export function AuthMessage({
   message,
@@ -12,6 +13,7 @@ export function AuthMessage({
   error?: AppErrorDetails;
   success?: boolean;
 }) {
+  const { t } = useTranslation();
   const visibleMessage = error?.message ?? message;
   if (!visibleMessage) return null;
 
@@ -26,7 +28,7 @@ export function AuthMessage({
       </AppText>
       {error ? (
         <AppText variant="caption" color={colors.status.danger} style={styles.code}>
-          Mã lỗi: {error.code}
+          {t('common.errorCode', { code: error.code })}
           {error.status ? ` · HTTP ${error.status}` : ''}
         </AppText>
       ) : null}

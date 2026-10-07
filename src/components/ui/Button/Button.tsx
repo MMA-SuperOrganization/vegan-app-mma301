@@ -16,6 +16,7 @@ import {
   interactionTokens,
   variantNode,
 } from '@/theme';
+import { useTranslation } from '@/i18n';
 export type ButtonVariant =
   'primary' | 'secondary' | 'outline' | 'ghost' | 'warning' | 'danger';
 export type ButtonState = 'default' | 'pressed' | 'loading' | 'disabled';
@@ -37,7 +38,7 @@ export function Button({
   variant = 'primary',
   state,
   loading = false,
-  loadingTitle = 'Đang xử lý',
+  loadingTitle,
   disabled = false,
   fullWidth = true,
   width,
@@ -47,6 +48,8 @@ export function Button({
   preset = 'master',
   ...props
 }: ButtonProps) {
+  const { t } = useTranslation();
+  const visibleLoadingTitle = loadingTitle ?? t('common.processing');
   const current =
     disabled || state === 'disabled'
       ? 'disabled'
@@ -91,7 +94,7 @@ export function Button({
             textStyle,
           ]}
         >
-          {current === 'loading' ? `•••  ${loadingTitle}` : title}
+          {current === 'loading' ? `•••  ${visibleLoadingTitle}` : title}
         </AppText>
       )}
     </Pressable>

@@ -2,9 +2,11 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppIcon, AppText, ScreenWrapper } from '@/components';
 import { colors, radius, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 
 export function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   return (
     <ScreenWrapper
       scrollable
@@ -16,36 +18,35 @@ export function WelcomeScreen() {
           <AppIcon
             name="mam-companion"
             size={190}
-            accessibilityLabel="Linh vật Mầm"
+            accessibilityLabel={t('auth.mascotLabel')}
           />
           <AppText
             variant="heading4"
             color={colors.primary[700]}
             style={styles.tagline}
           >
-            ĂN XANH · SỐNG LÀNH
+            {t('auth.tagline')}
           </AppText>
         </View>
         <AppText variant="display" style={styles.title}>
-          Ăn chay dễ dàng hơn cùng Mầm
+          {t('auth.welcomeTitle')}
         </AppText>
         <AppText
           variant="bodyLarge"
           color={colors.text.secondary}
           style={styles.description}
         >
-          Khám phá công thức, quản lý nguyên liệu và lên thực đơn phù hợp với cơ thể
-          bạn.
+          {t('auth.welcomeDescription')}
         </AppText>
       </View>
       <View style={styles.actions}>
         <AppButton
-          title="Bắt đầu"
+          title={t('auth.getStarted')}
           preset="screen"
           onPress={() => router.push('/(auth)/register')}
         />
         <AppButton
-          title="Tôi đã có tài khoản"
+          title={t('auth.haveAccount')}
           variant="secondary"
           preset="screen"
           onPress={() => router.push('/(auth)/login')}

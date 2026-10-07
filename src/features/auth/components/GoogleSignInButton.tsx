@@ -1,16 +1,18 @@
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import { AppText } from '@/components';
 import { colors, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
 import { GoogleMark } from './GoogleMark';
 
 export function GoogleSignInButton() {
   const { start, isLoading } = useGoogleSignIn();
+  const { t } = useTranslation();
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Đăng nhập bằng Google"
+      accessibilityLabel={t('auth.googleLabel')}
       accessibilityState={{ busy: isLoading, disabled: isLoading }}
       disabled={isLoading}
       onPress={start}

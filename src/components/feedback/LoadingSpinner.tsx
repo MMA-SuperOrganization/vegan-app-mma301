@@ -10,6 +10,7 @@ import {
 
 import { AppText } from '@/components/ui/AppText';
 import { colors, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 
 export interface LoadingSpinnerProps {
   size?: ActivityIndicatorProps['size'];
@@ -26,12 +27,13 @@ export function LoadingSpinner({
   style,
   testID,
 }: LoadingSpinnerProps) {
+  const { t } = useTranslation();
   return (
     <View
       testID={testID}
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={text ?? 'Đang tải'}
+      accessibilityLabel={text ?? t('common.loadingA11y')}
       accessibilityLiveRegion="polite"
       style={[styles.container, style]}
     >

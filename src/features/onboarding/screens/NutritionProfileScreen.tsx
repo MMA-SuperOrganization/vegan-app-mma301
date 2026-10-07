@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AppInput } from '@/components';
+import { useSafeBack } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
-import { activityOptions } from '../constants';
+import { getActivityOptions } from '../constants';
 import { useOnboardingStore } from '../onboardingStore';
 import { dateInputToIso, validateMeasurement } from '../validation';
 import { InfoCard } from '../components/InfoCard';
@@ -12,6 +14,9 @@ import { SelectionField } from '../components/SelectionField';
 
 export function NutritionProfileScreen() {
   const router = useRouter();
+  const goBack = useSafeBack('/(onboarding)/diet-goals');
+  const { t } = useTranslation();
+  const activityOptions = getActivityOptions(t);
   const draft = useOnboardingStore((state) => state.draft);
   const setDraft = useOnboardingStore((state) => state.setDraft);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
@@ -20,15 +25,15 @@ export function NutritionProfileScreen() {
     const nextErrors = {
       dateOfBirth: dateInputToIso(draft.dateOfBirth)
         ? null
-        : 'Dùng định dạng DD/MM/YYYY và ngày không ở tương lai.',
-      heightCm: validateMeasurement(draft.heightCm, 'Chiều cao', 50, 250),
+        : t('onboarding.validation.birthDate'),
+      heightCm: validateMeasurement(draft.heightCm, t('onboarding.height'), 50, 250),
       currentWeightKg: validateMeasurement(
         draft.currentWeightKg,
-        'Cân nặng',
+        t('onboarding.weight'),
         10,
         500
       ),
-      activityLevel: draft.activityLevel ? null : 'Vui lòng chọn mức vận động.',
+      activityLevel: draft.activityLevel ? null : t('onboarding.validation.activity'),
     };
     setErrors(nextErrors);
     if (!Object.values(nextErrors).some(Boolean))
@@ -43,15 +48,15 @@ export function NutritionProfileScreen() {
 
   return (
     <OnboardingScreen
-      title="Hồ sơ dinh dưỡng"
-      subtitle="Thông tin dùng tính nhu cầu ước tính"
+      title={t('onboarding.nutritionTitle')}
+      subtitle={t('onboarding.nutritionSubtitle')}
       step={2}
-      onBack={() => router.back()}
+      onBack={goBack}
       onPrimary={next}
     >
       <View style={styles.fields}>
         <AppInput
-          label="Ngày sinh"
+          label={t('onboarding.birthDate')}
           placeholder="DD/MM/YYYY"
           value={draft.dateOfBirth}
           onChangeText={update('dateOfBirth')}
@@ -59,7 +64,7 @@ export function NutritionProfileScreen() {
           error={errors.dateOfBirth}
         />
         <AppInput
-          label="Chiều cao (cm)"
+          label={t('onboarding.heightCm')}
           placeholder="170"
           value={draft.heightCm}
           onChangeText={update('heightCm')}
@@ -67,7 +72,7 @@ export function NutritionProfileScreen() {
           error={errors.heightCm}
         />
         <AppInput
-          label="Cân nặng (kg)"
+          label={t('onboarding.weightKg')}
           placeholder="65"
           value={draft.currentWeightKg}
           onChangeText={update('currentWeightKg')}
@@ -75,8 +80,8 @@ export function NutritionProfileScreen() {
           error={errors.currentWeightKg}
         />
         <SelectionField
-          label="Mức vận động"
-          placeholder="Chọn mức vận động"
+          label={t('onboarding.activity')}
+          placeholder={t('onboarding.selectActivity')}
           value={draft.activityLevel}
           options={activityOptions}
           onChange={(activityLevel) => {
@@ -86,8 +91,8 @@ export function NutritionProfileScreen() {
           error={errors.activityLevel}
         />
         <InfoCard
-          title="Dữ liệu riêng tư"
-          description="Thông tin sức khỏe không hiển thị công khai."
+          title={t('onboarding.privateData')}
+          description={t('onboarding.privateDataDescription')}
         />
       </View>
     </OnboardingScreen>

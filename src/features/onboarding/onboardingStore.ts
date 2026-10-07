@@ -10,6 +10,7 @@ import {
   type OnboardingDraft,
 } from './types';
 import { toggleAllergenSelection } from './validation';
+import { translate } from '@/i18n';
 
 interface OnboardingState {
   draft: OnboardingDraft;
@@ -92,7 +93,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         error:
           error instanceof Error
             ? error.message
-            : 'Không thể tải danh sách dị nguyên.',
+            : translate('onboarding.error.loadAllergens'),
       });
     }
   },
@@ -105,14 +106,14 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       await completeOnboarding(draft, draftUserId);
       useAuthStore.getState().markOnboardingCompleted();
       if (draftUserId && !(await useProfileStore.getState().load(draftUserId, true))) {
-        throw new Error('Đã lưu dữ liệu nhưng chưa thể tải lại hồ sơ. Vui lòng thử lại.');
+        throw new Error(translate('onboarding.error.reloadProfile'));
       }
       set({ isSaving: false, draft: initialOnboardingDraft });
       return true;
     } catch (error) {
       set({
         isSaving: false,
-        error: error instanceof Error ? error.message : 'Không thể lưu hồ sơ.',
+        error: error instanceof Error ? error.message : translate('onboarding.error.saveProfile'),
       });
       return false;
     }

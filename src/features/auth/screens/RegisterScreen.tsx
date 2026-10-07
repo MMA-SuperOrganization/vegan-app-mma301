@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppButton, AppIcon, AppInput, AppText, ScreenWrapper } from '@/components';
 import { colors, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { AuthHeader } from '../components/AuthHeader';
 import { AuthMessage } from '../components/AuthMessage';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
@@ -18,6 +19,7 @@ const emptyErrors = {
 
 export function RegisterScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const register = useAuthStore((state) => state.register);
   const isLoading = useAuthStore((state) => state.isLoading);
   const storeError = useAuthStore((state) => state.error);
@@ -54,30 +56,30 @@ export function RegisterScreen() {
           <AppIcon
             name="mam-companion"
             size={72}
-            accessibilityLabel="Linh vật Mầm"
+            accessibilityLabel={t('auth.mascotLabel')}
           />
           <View>
             <AppText variant="heading3" color={colors.primary[700]}>
               VEGETA
             </AppText>
             <AppText variant="bodySmall" color={colors.text.secondary}>
-              Ăn xanh dễ dàng hơn
+              {t('auth.brandSubtitle')}
             </AppText>
           </View>
         </View>
-        <AuthHeader title="Tạo tài khoản" subtitle="Bắt đầu hành trình ăn chay" />
+        <AuthHeader title={t('auth.createAccount')} subtitle={t('auth.registerSubtitle')} />
         <View style={styles.fields}>
           <AppInput
-            label="Tên hiển thị"
-            placeholder="Nhập tên hiển thị"
+            label={t('auth.displayName')}
+            placeholder={t('auth.displayNamePlaceholder')}
             value={name}
             onChangeText={update('name', setName)}
             error={errors.name}
             autoCapitalize="words"
           />
           <AppInput
-            label="Email"
-            placeholder="Nhập email"
+            label={t('auth.email')}
+            placeholder={t('auth.emailPlaceholder')}
             value={email}
             onChangeText={update('email', setEmail)}
             error={errors.email}
@@ -86,18 +88,18 @@ export function RegisterScreen() {
           />
           <AppInput
             type="password"
-            label="Mật khẩu"
-            placeholder="Nhập mật khẩu"
+            label={t('auth.password')}
+            placeholder={t('auth.passwordPlaceholder')}
             value={password}
             onChangeText={update('password', setPassword)}
             error={errors.password}
             autoComplete="new-password"
-            helper="Tối thiểu 6 ký tự"
+            helper={t('auth.passwordHelper')}
           />
           <AppInput
             type="password"
-            label="Xác nhận mật khẩu"
-            placeholder="Nhập xác nhận mật khẩu"
+            label={t('auth.confirmPassword')}
+            placeholder={t('auth.confirmPasswordPlaceholder')}
             value={confirmation}
             onChangeText={update('confirmation', setConfirmation)}
             error={errors.confirmation}
@@ -111,14 +113,14 @@ export function RegisterScreen() {
           style={styles.loginLink}
         >
           <AppText variant="bodyStrong" color={colors.primary[700]}>
-            Đã có tài khoản? Đăng nhập
+            {t('auth.accountLogin')}
           </AppText>
         </Pressable>
         <GoogleSignInButton />
         {storeError ? <AuthMessage error={storeError} /> : null}
       </View>
       <AppButton
-        title="Đăng ký"
+        title={t('auth.register')}
         preset="screen"
         loading={isLoading}
         onPress={handleRegister}

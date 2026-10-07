@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Linking } from 'react-native';
 import { isRunningInExpoGo } from 'expo';
 import { Camera } from 'expo-camera';
+import { translate } from '@/i18n';
 
 export type PermissionState =
   'idle' | 'granted' | 'denied' | 'settings' | 'unsupported';
@@ -21,11 +22,11 @@ function toPermissionState(result: {
 }
 
 export function permissionLabel(kind: string, state: PermissionState) {
-  if (state === 'granted') return `✓ Đã cho phép ${kind}`;
-  if (state === 'settings') return `Mở Cài đặt cho ${kind}`;
-  if (state === 'denied') return `Thử lại quyền ${kind}`;
-  if (state === 'unsupported') return `${kind} cần development build`;
-  return `Cho phép ${kind}`;
+  if (state === 'granted') return translate('onboarding.permission.allowed', { name: kind });
+  if (state === 'settings') return translate('onboarding.permission.settings', { name: kind });
+  if (state === 'denied') return translate('onboarding.permission.retry', { name: kind });
+  if (state === 'unsupported') return translate('onboarding.permission.devBuild', { name: kind });
+  return translate('onboarding.permission.request', { name: kind });
 }
 
 export function useDevicePermissions() {

@@ -8,13 +8,14 @@ import {
   ScreenWrapper,
 } from '@/components';
 import { colors, spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
 
 export function OnboardingScreen({
   title,
   subtitle,
   step,
   children,
-  primaryLabel = 'Tiếp tục',
+  primaryLabel,
   onPrimary,
   onBack,
   loading = false,
@@ -30,6 +31,7 @@ export function OnboardingScreen({
   loading?: boolean;
   error?: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <View>
@@ -61,7 +63,7 @@ export function OnboardingScreen({
         ) : null}
       </View>
       <AppButton
-        title={primaryLabel}
+        title={primaryLabel ?? t('common.continue')}
         preset="screen"
         loading={loading}
         onPress={onPrimary}

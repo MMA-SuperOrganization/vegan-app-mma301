@@ -8,6 +8,8 @@ import {
   LoadingSpinner,
   Toggle,
 } from '@/components';
+import { useSafeBack } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
 import { InfoCard } from '../components/InfoCard';
@@ -15,6 +17,8 @@ import { OnboardingScreen } from '../components/OnboardingScreen';
 
 export function AllergiesScreen() {
   const router = useRouter();
+  const goBack = useSafeBack('/(onboarding)/nutrition-profile');
+  const { t } = useTranslation();
   const draft = useOnboardingStore((state) => state.draft);
   const allergens = useOnboardingStore((state) => state.allergens);
   const isLoading = useOnboardingStore((state) => state.isLoadingAllergens);
@@ -32,7 +36,7 @@ export function AllergiesScreen() {
   const next = () => {
     if (!draft.allergyAnswered) {
       setValidationError(
-        'Vui lòng chọn dị nguyên hoặc xác nhận không có dị nguyên.'
+        t('onboarding.allergyRequired')
       );
       return;
     }
@@ -41,16 +45,16 @@ export function AllergiesScreen() {
 
   return (
     <OnboardingScreen
-      title="Dị nguyên cần tránh"
-      subtitle="Chọn nhiều mục nếu cần"
+      title={t('onboarding.allergyTitle')}
+      subtitle={t('onboarding.allergySubtitle')}
       step={3}
-      onBack={() => router.back()}
+      onBack={goBack}
       onPrimary={next}
-      primaryLabel="Lưu và tiếp tục"
+      primaryLabel={t('onboarding.saveContinue')}
       error={validationError}
     >
       <View style={styles.list}>
-        {isLoading ? <LoadingSpinner text="Đang tải dị nguyên…" /> : null}
+        {isLoading ? <LoadingSpinner text={t('onboarding.loadingAllergens')} /> : null}
         {!isLoading && allergens.length
           ? allergens.map((allergen) => (
               <Toggle
@@ -66,8 +70,8 @@ export function AllergiesScreen() {
           : null}
         {!isLoading && !allergens.length && !error ? (
           <EmptyState
-            title="Chưa có danh mục dị nguyên"
-            description="Backend hiện chưa có master data dị nguyên. Bạn có thể xác nhận không có dị nguyên để tiếp tục."
+            title={t('onboarding.noAllergensTitle')}
+            description={t('onboarding.noAllergensDescription')}
           />
         ) : null}
         {error ? (
@@ -80,7 +84,7 @@ export function AllergiesScreen() {
               {error}
             </AppText>
             <AppButton
-              title="Thử tải lại"
+              title={t('common.retry')}
               variant="secondary"
               onPress={() => {
                 clearError();
@@ -90,14 +94,14 @@ export function AllergiesScreen() {
           </View>
         ) : null}
         <InfoCard
-          title="Không có dị nguyên"
-          description="Không chọn mục nào nếu bạn không có dị nguyên cần tránh. Lựa chọn này không dùng đồng thời với các dị nguyên."
+          title={t('onboarding.noAllergens')}
+          description={t('onboarding.noAllergensDescription2')}
         />
         <AppButton
           title={
             draft.allergyAnswered && !draft.allergenIds.length
-              ? '✓ Không có dị nguyên'
-              : 'Tôi không có dị nguyên'
+              ? t('onboarding.noAllergensSelected')
+              : t('onboarding.confirmNoAllergens')
           }
           variant="secondary"
           onPress={() => {
@@ -106,12 +110,12 @@ export function AllergiesScreen() {
           }}
         />
         <AppButton
-          title="Tìm hiểu thông tin dị nguyên"
+          title={t('onboarding.allergenInfo')}
           variant="ghost"
           onPress={() =>
             Alert.alert(
-              'Thông tin dị nguyên',
-              'Danh sách được tải từ dữ liệu chuẩn của VEGETA. Nếu có phản ứng nghiêm trọng, hãy tham khảo chuyên gia y tế.'
+              t('onboarding.allergenInfoTitle'),
+              t('onboarding.allergenInfoDescription')
             )
           }
         />

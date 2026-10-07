@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { AppButton } from '@/components';
 import { appConfig } from '@/config';
+import { useSafeBack } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
 import { InfoCard } from '../components/InfoCard';
@@ -13,6 +15,8 @@ import {
 
 export function PermissionsScreen() {
   const router = useRouter();
+  const goBack = useSafeBack('/(onboarding)/allergies');
+  const { t } = useTranslation();
   const complete = useOnboardingStore((state) => state.complete);
   const isSaving = useOnboardingStore((state) => state.isSaving);
   const error = useOnboardingStore((state) => state.error);
@@ -30,31 +34,31 @@ export function PermissionsScreen() {
       await request();
     } catch {
       Alert.alert(
-        'Không thể xin quyền',
-        'Thiết bị hiện không hỗ trợ yêu cầu quyền này.'
+        t('onboarding.permissionRequestError'),
+        t('onboarding.permissionUnsupported')
       );
     }
   };
 
   return (
     <OnboardingScreen
-      title="Quyền truy cập"
-      subtitle="Có thể cấp quyền sau khi sử dụng tính năng"
+      title={t('onboarding.permissionsTitle')}
+      subtitle={t('onboarding.permissionsSubtitle')}
       step={4}
-      onBack={() => router.back()}
+      onBack={goBack}
       onPrimary={finish}
-      primaryLabel="Hoàn tất"
+      primaryLabel={t('onboarding.complete')}
       loading={isSaving}
       error={error}
     >
       <View style={styles.actions}>
         <AppButton
-          title={permissionLabel('máy ảnh khi nhận diện', camera)}
+          title={permissionLabel(t('onboarding.cameraPermission'), camera)}
           variant="secondary"
           onPress={() => void safelyRequest(requestCamera)}
         />
         <AppButton
-          title={permissionLabel('thông báo', notifications)}
+          title={permissionLabel(t('onboarding.notificationPermission'), notifications)}
           variant="secondary"
           disabled={notifications === 'unsupported'}
           onPress={() => void safelyRequest(requestNotifications)}
@@ -62,25 +66,25 @@ export function PermissionsScreen() {
         <AppButton
           title={
             draft.aiProfileConsent
-              ? '✓ Đã cho phép dùng hồ sơ cho AI'
-              : 'Cho phép dùng hồ sơ cho AI'
+              ? t('onboarding.aiAllowed')
+              : t('onboarding.aiAllow')
           }
           variant="secondary"
           onPress={() => setDraft({ aiProfileConsent: !draft.aiProfileConsent })}
         />
         <InfoCard
-          title="Bạn có thể bỏ qua"
-          description="Không cấp quyền máy ảnh vẫn có thể thêm nguyên liệu thủ công."
+          title={t('onboarding.canSkip')}
+          description={t('onboarding.canSkipDescription')}
         />
         <AppButton
-          title="Chính sách dữ liệu"
+          title={t('onboarding.dataPolicy')}
           variant="secondary"
           onPress={() =>
             appConfig.privacyPolicyUrl
               ? Linking.openURL(appConfig.privacyPolicyUrl)
               : Alert.alert(
-                  'Chưa cấu hình đường dẫn',
-                  'Thiết lập EXPO_PUBLIC_PRIVACY_POLICY_URL để mở chính sách dữ liệu.'
+                  t('onboarding.urlMissing'),
+                  t('onboarding.urlMissingDescription')
                 )
           }
         />

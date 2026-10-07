@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { EmptyState, LoadingScreen, ScreenWrapper } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { useProfileStore } from '@/features/profile';
+import { useI18nStore, useTranslation } from '@/i18n';
 import { colors, typography, useDesignFonts } from '@/theme';
 
 const queryClient = new QueryClient({
@@ -15,6 +16,9 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useDesignFonts();
+  const { t } = useTranslation();
+  const hydrateI18n = useI18nStore((state) => state.hydrate);
+  const i18nHydrated = useI18nStore((state) => state.isHydrated);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -24,6 +28,10 @@ export default function RootLayout() {
   const profileError = useProfileStore((state) => state.error);
   const loadProfile = useProfileStore((state) => state.load);
   const resetProfile = useProfileStore((state) => state.reset);
+
+  useEffect(() => {
+    void hydrateI18n();
+  }, [hydrateI18n]);
 
   useEffect(() => {
     void restoreSession();
@@ -36,24 +44,24 @@ export default function RootLayout() {
   }, [isAuthenticated, isRestoringSession, loadProfile, resetProfile, user?.id]);
 
   if (fontError) throw fontError;
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !i18nHydrated) return null;
 
   let content: React.ReactNode;
   if (isRestoringSession) {
-    content = <LoadingScreen message="Đang khôi phục phiên đăng nhập…" />;
+    content = <LoadingScreen message={t('bootstrap.restoringSession')} />;
   } else if (
     isAuthenticated &&
     user?.id &&
     (profileUserId !== user.id || profileStatus === 'idle' || profileStatus === 'loading')
   ) {
-    content = <LoadingScreen message="Đang tải hồ sơ…" />;
+    content = <LoadingScreen message={t('bootstrap.loadingProfile')} />;
   } else if (isAuthenticated && user?.id && profileStatus === 'error') {
     content = (
       <ScreenWrapper keyboardAvoiding={false}>
         <EmptyState
-          title="Chưa thể tải hồ sơ"
-          description={profileError ?? 'Kiểm tra kết nối rồi thử lại.'}
-          actionLabel="Thử lại"
+          title={t('bootstrap.profileErrorTitle')}
+          description={profileError ?? t('bootstrap.profileErrorDescription')}
+          actionLabel={t('common.retry')}
           onAction={() => void loadProfile(user.id, true)}
         />
       </ScreenWrapper>
@@ -72,7 +80,9 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(discover)" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="language" options={{ headerShown: false }} />
       </Stack>
     );
   }

@@ -1,13 +1,20 @@
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppText, ScreenWrapper } from '@/components';
+import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
+import { ContentResultCard, useHomeFeed } from '@/features/recipes';
+import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 
 export function HomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const profile = useProfileStore((state) => state.data);
-  const firstName = profile?.user.name.trim().split(/\s+/).at(-1) || 'bạn';
+  const home = useHomeFeed();
+  const firstName = profile?.user.name.trim().split(/\s+/).at(-1) || t('common.youLower');
+  const recommendations = home.data?.personalized?.recipes?.length
+    ? home.data.personalized.recipes
+    : home.data?.featured.recipes ?? [];
 
   return (
     <ScreenWrapper
@@ -17,38 +24,70 @@ export function HomeScreen() {
       contentContainerStyle={styles.screen}
     >
       <View style={styles.hero}>
-        <AppText variant="heading1">Xin chào, {firstName} 👋</AppText>
+        <AppText variant="heading1">{t('home.greeting', { name: firstName })}</AppText>
         <AppText variant="bodyLarge" color={colors.text.secondary}>
-          Hôm nay bạn muốn ăn gì?
+          {t('home.question')}
         </AppText>
       </View>
 
       <View>
-        <AppText variant="heading3" style={styles.sectionTitle}>Khám phá</AppText>
+        <AppText variant="heading3" style={styles.sectionTitle}>{t('home.explore')}</AppText>
         <Pressable
           accessibilityRole="button"
-          onPress={() => Alert.alert('Sắp ra mắt', 'Tìm kiếm công thức đang được hoàn thiện.')}
+          onPress={() => router.push('/(discover)/search')}
           style={({ pressed }) => [styles.search, pressed && styles.pressed]}
         >
-          <AppText color={colors.text.secondary}>Tìm công thức, bài viết, video…</AppText>
+          <AppText color={colors.text.secondary}>{t('home.searchPlaceholder')}</AppText>
           <AppText color={colors.primary[700]}>⌕</AppText>
         </Pressable>
       </View>
 
-      <View style={styles.featured}>
-        <AppText variant="overline" color={colors.text.inverse}>GỢI Ý HÔM NAY</AppText>
-        <AppText variant="heading1" color={colors.text.inverse}>Bữa ăn xanh của bạn</AppText>
-        <AppText color={colors.text.inverse}>
-          Gợi ý sẽ được cá nhân hóa theo {profile?.profile?.dietType ? 'chế độ ăn đã chọn' : 'hồ sơ của bạn'}.
-        </AppText>
+      <View style={styles.recommendations}>
+        <View style={styles.sectionHeading}>
+          <View style={styles.sectionHeadingText}>
+            <AppText variant="overline" color={colors.primary[700]}>{t('home.todaySuggestions')}</AppText>
+            <AppText variant="heading2">{t('home.forUser', { name: firstName })}</AppText>
+          </View>
+          <Pressable onPress={() => router.push('/(discover)/explore')}>
+            <AppText variant="bodyStrong" color={colors.primary[700]}>{t('home.viewAll')}</AppText>
+          </Pressable>
+        </View>
+        {home.isLoading ? <LoadingSpinner text={t('home.loadingSuggestions')} /> : null}
+        {home.isError ? (
+          <EmptyState
+            title={t('home.suggestionError')}
+            description={home.error.message}
+            actionLabel={t('common.retry')}
+            onAction={() => void home.refetch()}
+          />
+        ) : null}
+        {!home.isLoading && !home.isError && recommendations.length === 0 ? (
+          <EmptyState
+            title={t('home.noSuggestions')}
+            description={t('home.noSuggestionsDescription')}
+            actionLabel={t('home.explore')}
+            onAction={() => router.push('/(discover)/explore')}
+          />
+        ) : null}
+        {recommendations.slice(0, 3).map((item) => (
+          <ContentResultCard
+            key={item._id}
+            item={{ ...item, type: 'recipe' }}
+            onPress={() => router.push({
+              pathname: '/(discover)/recipe/[id]',
+              params: { id: item.slug ?? item._id },
+            })}
+          />
+        ))}
       </View>
 
       <View>
-        <AppText variant="heading2" style={styles.sectionTitle}>Bắt đầu nhanh</AppText>
+        <AppText variant="heading2" style={styles.sectionTitle}>{t('home.quickStart')}</AppText>
         <View style={styles.cards}>
-          <QuickCard title="Thực đơn" subtitle="Lên kế hoạch bữa ăn" onPress={() => router.push('/(tabs)/meal-plan')} />
-          <QuickCard title="Mua sắm" subtitle="Chuẩn bị danh sách" onPress={() => router.push('/(tabs)/grocery')} />
-          <QuickCard title="Hồ sơ của bạn" subtitle="Xem dữ liệu dinh dưỡng" onPress={() => router.push('/(tabs)/profile')} />
+          <QuickCard title={t('home.explore')} subtitle={t('home.newRecipes')} onPress={() => router.push('/(discover)/explore')} />
+          <QuickCard title={t('nav.mealPlan')} subtitle={t('home.planMeals')} onPress={() => router.push('/(tabs)/meal-plan')} />
+          <QuickCard title={t('nav.grocery')} subtitle={t('home.prepareList')} onPress={() => router.push('/(tabs)/grocery')} />
+          <QuickCard title={t('home.yourProfile')} subtitle={t('home.profileSubtitle')} onPress={() => router.push('/(tabs)/profile')} />
         </View>
       </View>
     </ScreenWrapper>
@@ -79,14 +118,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  featured: {
-    minHeight: 190,
-    borderRadius: radius.xl,
-    backgroundColor: colors.primary[700],
-    padding: spacing.xl,
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
-  },
+  recommendations: { gap: spacing.md },
+  sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: spacing.md },
+  sectionHeadingText: { flex: 1, gap: spacing.xs },
   cards: { gap: spacing.md },
   card: {
     backgroundColor: colors.background.surface,

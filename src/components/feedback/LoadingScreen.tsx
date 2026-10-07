@@ -3,6 +3,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ScreenWrapper } from '@/components/layout';
 import { LoadingSpinner } from './LoadingSpinner';
+import { useTranslation } from '@/i18n';
 
 export interface LoadingScreenProps {
   message?: string;
@@ -12,14 +13,16 @@ export interface LoadingScreenProps {
 }
 
 export function LoadingScreen({
-  message = 'Đang tải…',
+  message,
   withinScreen = false,
   style,
   testID,
 }: LoadingScreenProps) {
+  const { t } = useTranslation();
+  const visibleMessage = message ?? t('common.loading');
   const spinner = (
     <View style={[styles.container, style]}>
-      <LoadingSpinner text={message} testID={testID} />
+      <LoadingSpinner text={visibleMessage} testID={testID} />
     </View>
   );
 

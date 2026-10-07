@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { coreTokens, type AssetName } from '@/theme';
 import { AppIcon } from '../AppIcon';
+import { useTranslation } from '@/i18n';
 
 export interface IconButtonProps extends Omit<
   PressableProps,
@@ -48,12 +49,13 @@ export function IconButton({
   );
 }
 export function BackButton({
-  accessibilityLabel = 'Quay lại',
+  accessibilityLabel,
   ...props
 }: Omit<IconButtonProps, 'icon' | 'accessibilityLabel'> & {
   accessibilityLabel?: string;
 }) {
+  const { t } = useTranslation();
   return (
-    <IconButton {...props} icon="back" accessibilityLabel={accessibilityLabel} />
+    <IconButton {...props} icon="back" accessibilityLabel={accessibilityLabel ?? t('common.back')} />
   );
 }

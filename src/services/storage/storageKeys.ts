@@ -6,4 +6,5 @@ export const storageKeys = {
   authUser: 'auth_user',
   onboardingDraftPrefix: 'onboarding_draft:',
   aiProfileConsentPrefix: 'ai_profile_consent:',
+  locale: 'app_locale',
 } as const;

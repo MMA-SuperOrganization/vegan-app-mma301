@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { translate } from '@/i18n';
 import { useAuthStore } from '@/features/auth';
 import { AppError } from '@/services/errors';
 import { profileApi } from './profileApi';
@@ -49,7 +50,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       if (get().userId === userId) {
         set({
           status: 'error',
-          error: error instanceof Error ? error.message : 'Không thể tải hồ sơ.',
+          error: error instanceof Error ? error.message : translate('profile.error.load'),
         });
       }
       return false;
@@ -68,7 +69,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (error) {
       set({
         isSaving: false,
-        error: error instanceof Error ? error.message : 'Không thể lưu hồ sơ.',
+        error: error instanceof Error ? error.message : translate('profile.error.save'),
       });
       return false;
     }

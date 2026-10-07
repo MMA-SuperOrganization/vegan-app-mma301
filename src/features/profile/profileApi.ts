@@ -1,6 +1,7 @@
 import { apiClient, unwrapApiRequest } from '@/services/api';
 import type { Allergen } from '@/features/onboarding/types';
 import type { ProfileUpdate, UserProfile } from './types';
+import { translate } from '@/i18n';
 
 interface AccountDto {
   _id: string;
@@ -38,7 +39,7 @@ export const profileApi = {
         name:
           summary.user.displayName ||
           summary.user.email?.split('@')[0] ||
-          'Bạn',
+          translate('common.userFallback'),
         email: summary.user.email || '',
         avatarUrl: summary.user.avatarUrl || undefined,
         role: summary.user.role,

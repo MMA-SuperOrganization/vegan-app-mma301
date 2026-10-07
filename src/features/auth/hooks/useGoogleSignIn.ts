@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { appConfig } from '@/config';
 import { AppError } from '@/services/errors';
+import { translate } from '@/i18n';
 import { useAuthStore } from '../store/authStore';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -61,11 +62,11 @@ export function useGoogleSignIn() {
         setIsPrompting(false);
         reportError(
           new AppError(
-            'Google không trả về authorization code hợp lệ.',
+            translate('auth.google.authCodeMissing'),
             'GOOGLE_AUTH_CODE_MISSING'
           ),
           'auth.login.google.oauth',
-          'Không thể nhận thông tin đăng nhập từ Google.'
+          translate('auth.google.receiveFailed')
         );
         return;
       }
@@ -83,7 +84,7 @@ export function useGoogleSignIn() {
           setIsPrompting(false);
           if (!authentication.idToken) {
             throw new AppError(
-              'Google không trả về ID token để đăng nhập Firebase.',
+              translate('auth.google.firebaseTokenMissing'),
               'GOOGLE_ID_TOKEN_MISSING'
             );
           }
@@ -94,7 +95,7 @@ export function useGoogleSignIn() {
           reportError(
             error,
             'auth.login.google.token_exchange',
-            'Không thể đổi mã Google thành phiên đăng nhập.',
+            translate('auth.google.exchangeFailed'),
             'GOOGLE_TOKEN_EXCHANGE_FAILED'
           );
         });
@@ -106,11 +107,11 @@ export function useGoogleSignIn() {
     if (response.type === 'error') {
       reportError(
         new AppError(
-          response.error?.description || 'Google đã từ chối yêu cầu đăng nhập.',
+          response.error?.description || translate('auth.google.denied'),
           response.error?.params.error || 'GOOGLE_OAUTH_ERROR'
         ),
         'auth.login.google.oauth',
-        'Không thể đăng nhập bằng Google.'
+        translate('auth.error.googleLogin')
       );
     }
   }, [redirectUri, reportError, request, response, webClientId]);
@@ -118,14 +119,14 @@ export function useGoogleSignIn() {
   const startNative = async () => {
     if (expoGo) {
       throw new AppError(
-        'Google Sign-In không có trong Expo Go. Chạy `npm run android` để cài development build.',
+        translate('auth.google.requiresBuild'),
         'GOOGLE_REQUIRES_DEV_BUILD'
       );
     }
 
     if (!webClientId) {
       throw new AppError(
-        'Thiếu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.',
+        translate('auth.google.webClientMissing'),
         'GOOGLE_OAUTH_NOT_CONFIGURED'
       );
     }
@@ -141,7 +142,7 @@ export function useGoogleSignIn() {
     if (!google.isSuccessResponse(result)) return;
     if (!result.data.idToken) {
       throw new AppError(
-        'Google không trả về ID token. Kiểm tra Web OAuth client ID.',
+        translate('auth.google.idTokenMissing'),
         'GOOGLE_ID_TOKEN_MISSING'
       );
     }
@@ -154,13 +155,13 @@ export function useGoogleSignIn() {
   const startWeb = async () => {
     if (!webClientId) {
       throw new AppError(
-        'Thiếu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.',
+        translate('auth.google.webClientMissing'),
         'GOOGLE_OAUTH_NOT_CONFIGURED'
       );
     }
     if (!request) {
       throw new AppError(
-        'Yêu cầu Google OAuth chưa sẵn sàng. Vui lòng thử lại.',
+        translate('auth.google.notReady'),
         'GOOGLE_OAUTH_NOT_READY'
       );
     }
@@ -173,9 +174,9 @@ export function useGoogleSignIn() {
 
     if (!appConfig.firebaseApiKey) {
       reportError(
-        new AppError('Thiếu EXPO_PUBLIC_FIREBASE_API_KEY.', 'FIREBASE_NOT_CONFIGURED'),
+        new AppError(translate('auth.google.firebaseKeyMissing'), 'FIREBASE_NOT_CONFIGURED'),
         'auth.login.google.setup',
-        'Firebase chưa được cấu hình.'
+        translate('auth.google.firebaseNotConfigured')
       );
       return;
     }
@@ -188,7 +189,7 @@ export function useGoogleSignIn() {
       reportError(
         error,
         'auth.login.google.oauth',
-        'Không thể mở đăng nhập Google.',
+        translate('auth.google.openFailed'),
         'GOOGLE_OAUTH_PROMPT_FAILED'
       );
     } finally {

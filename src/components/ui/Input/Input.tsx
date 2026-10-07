@@ -21,6 +21,7 @@ import {
   interactionTokens,
   variantNode,
 } from '@/theme';
+import { useTranslation } from '@/i18n';
 export type InputType = 'text' | 'search' | 'password' | 'select';
 export type InputState = 'default' | 'focus' | 'filled' | 'error' | 'disabled';
 export interface InputProps extends Omit<TextInputProps, 'style'> {
@@ -62,6 +63,7 @@ export function Input({
   autoCorrect = false,
   ...props
 }: InputProps) {
+  const { t } = useTranslation();
   const field = useFieldState();
   const visibility = useDisclosure();
   const focused = field.focused;
@@ -117,7 +119,7 @@ export function Input({
           disabled={blocked}
           accessibilityRole="button"
           accessibilityLabel={a11y}
-          accessibilityHint="Mở lựa chọn"
+          accessibilityHint={t('common.openSelection')}
           accessibilityState={{ disabled: blocked }}
           aria-disabled={blocked}
           onFocus={(e) => {
@@ -184,7 +186,7 @@ export function Input({
                 onPress={visibility.toggle}
                 hitSlop={interactionTokens.iconHitSlop}
                 accessibilityRole="button"
-                accessibilityLabel={visible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                accessibilityLabel={visible ? t('common.hidePassword') : t('common.showPassword')}
                 accessibilityState={{ disabled: blocked, selected: visible }}
                 aria-pressed={visible}
                 aria-disabled={blocked}

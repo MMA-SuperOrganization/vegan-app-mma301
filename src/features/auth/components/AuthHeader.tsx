@@ -1,6 +1,6 @@
-import { useNavigation, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AppText, BackButton } from '@/components';
+import { useSafeBack } from '@/hooks';
 import { colors, spacing } from '@/theme';
 
 export function AuthHeader({
@@ -10,18 +10,13 @@ export function AuthHeader({
   title: string;
   subtitle?: string;
 }) {
-  const navigation = useNavigation();
-  const router = useRouter();
+  const goBack = useSafeBack('/(auth)/welcome');
   return (
     <View style={styles.container}>
       <View style={styles.row}>
         <View style={styles.back}>
           <BackButton
-            onPress={() =>
-              navigation.canGoBack()
-                ? router.back()
-                : router.replace('/(auth)/welcome')
-            }
+            onPress={goBack}
           />
         </View>
         <AppText

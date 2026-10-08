@@ -6,6 +6,7 @@ import { colors, radius, spacing } from '@/theme';
 
 import type { ContentCardData } from '../types';
 import { RecipeImage } from './RecipeImage';
+import { RecipeSaveButton } from './RecipeSaveButton';
 
 export function FeaturedRecipeCard({
   item,
@@ -38,6 +39,9 @@ export function FeaturedRecipeCard({
         style={styles.image}
         fallbackSize="large"
       />
+      <View style={styles.save}>
+        <RecipeSaveButton recipe={item} compact />
+      </View>
       <View style={styles.content}>
         <AppText variant="overline" color={colors.text.inverse}>
           {t('home.featuredToday')}
@@ -64,4 +68,5 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: 176, borderRadius: 0 },
   content: { padding: spacing.lg, gap: spacing.xs },
   pressed: { opacity: 0.82 },
+  save: { position: 'absolute', top: spacing.md, right: spacing.md },
 });

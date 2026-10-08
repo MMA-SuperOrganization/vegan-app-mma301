@@ -11,6 +11,7 @@ import {
 import { colors, radius, spacing } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ContentResultCard } from '../components/ContentResultCard';
+import { RecipeHeader } from '../components/RecipeHeader';
 import { useExploreRecipes, useHomeFeed } from '../hooks';
 import type { ContentType } from '../types';
 
@@ -29,9 +30,10 @@ export function ExploreScreen() {
   const [type, setType] = useState<'recipe' | 'post' | 'video'>('recipe');
   const recipes = useExploreRecipes();
   const home = useHomeFeed();
+  const recipeContent = recipes.data?.pages.flatMap((page) => page.data) ?? [];
   const content =
     type === 'recipe'
-      ? (recipes.data ?? [])
+      ? recipeContent
       : type === 'post'
         ? (home.data?.featured.posts ?? [])
         : (home.data?.featured.videos ?? []);
@@ -44,18 +46,23 @@ export function ExploreScreen() {
       keyboardAvoiding={false}
       contentContainerStyle={styles.screen}
     >
-      <View style={styles.header}>
-        <View style={styles.heading}>
-          <AppText variant="heading1">{t('discover.exploreTitle')}</AppText>
-          <AppText color={colors.text.secondary}>
-            {t('discover.exploreSubtitle')}
-          </AppText>
-        </View>
+      <RecipeHeader
+        title={t('discover.exploreTitle')}
+        subtitle={t('discover.exploreSubtitle')}
+        backFallbackHref="/(tabs)"
+      />
+      <View style={styles.headerActions}>
         <AppButton
           title={t('discover.search')}
           variant="outline"
           fullWidth={false}
           onPress={() => router.push('/(discover)/search')}
+        />
+        <AppButton
+          title={t('discover.savedContent')}
+          variant="outline"
+          fullWidth={false}
+          onPress={() => router.push('/(discover)/saved')}
         />
       </View>
       <View style={styles.filters}>
@@ -110,19 +117,21 @@ export function ExploreScreen() {
           />
         ))}
       </View>
-      <AppButton
-        title={t('discover.savedContent')}
-        variant="outline"
-        onPress={() => router.push('/(discover)/saved')}
-      />
+      {type === 'recipe' && recipes.hasNextPage ? (
+        <AppButton
+          title={t('discover.loadMore')}
+          variant="outline"
+          loading={recipes.isFetchingNextPage}
+          onPress={() => void recipes.fetchNextPage()}
+        />
+      ) : null}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, gap: spacing.xl },
-  header: { gap: spacing.lg },
-  heading: { gap: spacing.xs },
+  headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   filter: {
     minHeight: 38,

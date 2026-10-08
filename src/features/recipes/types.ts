@@ -15,7 +15,16 @@ export interface ContentCardData {
   totalMinutes?: number;
   ratingAverage?: number;
   ratingCount?: number;
-  nutritionPerServing?: { caloriesKcal?: number; proteinG?: number };
+  allergenIds?: string[];
+  nutritionPerServing?: NutritionFacts;
+}
+
+export interface NutritionFacts {
+  caloriesKcal?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+  fiberG?: number;
 }
 
 export interface RecipeDetail extends ContentCardData {
@@ -23,12 +32,14 @@ export interface RecipeDetail extends ContentCardData {
   servings?: number;
   prepMinutes?: number;
   cookMinutes?: number;
+  saved?: boolean;
   ingredients?: Array<{
     foodItemId: string;
     foodNameSnapshot: string;
     quantity: number;
     unit: string;
     note?: string;
+    allergenIds?: string[];
   }>;
   steps?: Array<{
     order: number;
@@ -36,6 +47,46 @@ export interface RecipeDetail extends ContentCardData {
     timerSeconds?: number;
   }>;
   isSaved?: boolean;
+}
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PageResult<T> {
+  data: T[];
+  meta?: PaginationMeta;
+}
+
+export type RecipeDifficulty = 'easy' | 'medium' | 'hard';
+export type RecipeDietType = 'vegan' | 'vegetarian';
+export type RecipeSort = 'newest' | 'popular' | 'rating' | 'quickest';
+
+export interface RecipeFilters {
+  category?: string;
+  difficulty?: RecipeDifficulty;
+  maxTotalMinutes?: number;
+  dietType?: RecipeDietType;
+  sort?: RecipeSort;
+  avoidProfileAllergens?: boolean;
+}
+
+export interface RecipeQuery extends RecipeFilters {
+  page?: number;
+  limit?: number;
+  q?: string;
+  type?: ContentType | 'all';
+  excludeAllergenIds?: string[];
+}
+
+export interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+  type: 'food' | 'recipe' | 'post';
 }
 
 export interface RecentSearch {

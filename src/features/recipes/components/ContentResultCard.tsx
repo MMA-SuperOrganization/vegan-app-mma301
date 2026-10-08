@@ -4,6 +4,7 @@ import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '../types';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { RecipeImage } from './RecipeImage';
+import { RecipeSaveButton } from './RecipeSaveButton';
 
 const typeLabels = {
   recipe: 'discover.typeRecipe',
@@ -59,6 +60,9 @@ export function ContentResultCard({
           </AppText>
         ) : null}
       </View>
+      {item.type === 'recipe' || !item.type ? (
+        <RecipeSaveButton recipe={item} compact />
+      ) : null}
     </Pressable>
   );
 }
@@ -74,6 +78,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
   },
   thumbnail: { width: 72, height: 72, borderRadius: radius.md },
-  content: { flex: 1, gap: spacing.xs, justifyContent: 'center' },
+  content: { flex: 1, minWidth: 0, gap: spacing.xs, justifyContent: 'center' },
   pressed: { opacity: 0.72 },
 });

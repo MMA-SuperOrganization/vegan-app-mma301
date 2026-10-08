@@ -1,6 +1,6 @@
 # VEGETA v2 implementation progress
 
-Updated: 2026-10-07. This is a checkpoint, not a completion claim.
+Updated: 2026-10-08. This is a checkpoint, not a completion claim.
 
 ## Group 1 — Auth and onboarding
 
@@ -8,23 +8,27 @@ Status: implemented in production routes (screens 02–09). Session restoration,
 
 ## Group 2 — Discovery and recipes
 
-Status: implemented core path for Home → Explore/Search → Recipe detail → Cooking → Saved.
+Status: complete for the requested Recipe + Saved scope (screens 10–15, 17 and filter panel 102): Home → Explore/Search → Filter → Recipe detail → Cooking → Saved.
 
 - Home reads the real `/home` feed and never substitutes demo recommendations.
-- Search suggestions, recent searches, result filters and Explore use real backend queries; no static “popular” result data is substituted.
-- Recipe detail and cooking steps use `/recipes/:idOrSlug`.
-- Saved library uses the real saved-item query and mutations, with server errors surfaced to the user.
-- Loading, empty, network-error and retry states are present.
-- Android visual inspection completed for Search and Explore empty states. Search header alignment was corrected during that check.
+- Search suggestions, recent searches, result filters, pagination and Explore use real backend queries; both the current envelope and legacy search shapes are normalized explicitly.
+- The filter panel applies category, duration, difficulty, diet, sort and the profile's selected allergens; apply/clear creates a new query key and resets pagination.
+- Recipe detail displays only returned servings, prep/cook times, nutrition, ingredients and allergens. An empty allergen list is disclosed as unknown safety, not as allergy-safe.
+- Cooking uses real recipe steps and an absolute-deadline timer for timed steps, so background/foreground transitions do not pause elapsed wall time.
+- Saved state is account-scoped and synchronized across Home, Explore, Search, Detail and Saved. Mutations are deduplicated, optimistic and rolled back on failure.
+- Backend saved mutations first use a transaction and safely fall back to compensated standalone writes when MongoDB has no replica set.
+- Loading, empty, network-error and retry states are present; missing recipes use the real request error.
+- Android visual inspection completed with real backend data for Home, Search, filtered Search results, Filter, Explore, Detail, Cooking and Saved. Save persistence was verified after an app reload.
+- A device save attempt with the backend stopped rolled optimistic state back and exposed the real connection-error retry state.
 
-Still open in this group: recipe reviews, blog, comments, video, content creation/editing, renderable media URLs, and visual checks for non-empty result/detail/cooking/saved states.
+Still open outside this delivery scope: recipe reviews, blog, comments, video and content creation/editing. Seeded recipe media URLs now render on Android; timed-step UI is covered by automated logic tests because the current demo recipes do not declare `timerSeconds`.
 
 ## Coverage checkpoint
 
-- Implemented route/screens: 15/104.
-- Partial functional screens: 4/104.
+- Implemented route/screens: 17/104.
+- Partial functional screens: 3/104.
 - Shared states represented in real consumers: 4/104.
-- Not implemented: 81/104.
+- Not implemented: 80/104.
 
 ## Cross-cutting — Internationalization
 

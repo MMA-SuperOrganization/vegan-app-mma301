@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppInput, AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
+import {
+  AppInput,
+  AppText,
+  EmptyState,
+  LoadingSpinner,
+  ScreenWrapper,
+} from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -22,34 +28,79 @@ export function SearchScreen() {
 
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader title={t('discover.search')} subtitle={t('discover.searchSubtitle')} />
-      <AppInput type="search" label={t('discover.search')} placeholder={t('discover.searchPlaceholder')} value={query} onChangeText={setQuery} returnKeyType="search" onSubmitEditing={() => submit()} />
+      <RecipeHeader
+        title={t('discover.search')}
+        subtitle={t('discover.searchSubtitle')}
+      />
+      <AppInput
+        type="search"
+        label={t('discover.search')}
+        placeholder={t('discover.searchPlaceholder')}
+        value={query}
+        onChangeText={setQuery}
+        returnKeyType="search"
+        onSubmitEditing={() => submit()}
+      />
       {debouncedQuery ? (
         <View style={styles.section}>
           <AppText variant="heading4">{t('discover.suggestions')}</AppText>
-          {suggestions.isLoading ? <LoadingSpinner text={t('discover.loadingSuggestions')} /> : null}
+          {suggestions.isLoading ? (
+            <LoadingSpinner text={t('discover.loadingSuggestions')} />
+          ) : null}
           {suggestions.isError ? (
-            <AppText color={colors.status.danger}>{t('discover.suggestionError')}</AppText>
+            <EmptyState
+              title={t('discover.suggestionError')}
+              actionLabel={t('common.retry')}
+              onAction={() => void suggestions.refetch()}
+            />
           ) : null}
           {suggestions.data?.map((item) => (
-            <Pressable key={`${item.type}-${item.id}`} onPress={() => submit(item.text)} style={styles.recent}>
+            <Pressable
+              key={`${item.type}-${item.id}`}
+              onPress={() => submit(item.text)}
+              style={styles.recent}
+            >
               <AppText variant="bodyStrong">{item.text}</AppText>
-              <AppText variant="caption" color={colors.text.secondary}>{item.type}</AppText>
+              <AppText variant="caption" color={colors.text.secondary}>
+                {item.type}
+              </AppText>
             </Pressable>
           ))}
-          {!suggestions.isLoading && !suggestions.isError && !suggestions.data?.length ? (
-            <AppText color={colors.text.secondary}>{t('discover.noSuggestions')}</AppText>
+          {!suggestions.isLoading &&
+          !suggestions.isError &&
+          !suggestions.data?.length ? (
+            <AppText color={colors.text.secondary}>
+              {t('discover.noSuggestions')}
+            </AppText>
           ) : null}
         </View>
       ) : null}
       <View style={styles.section}>
         <AppText variant="heading4">{t('discover.recent')}</AppText>
-        {recent.isLoading ? <LoadingSpinner text={t('discover.loadingHistory')} /> : null}
-        {recent.isError ? <EmptyState title={t('discover.historyError')} description={t('discover.historyErrorDescription')} actionLabel={t('common.retry')} onAction={() => void recent.refetch()} /> : null}
+        {recent.isLoading ? (
+          <LoadingSpinner text={t('discover.loadingHistory')} />
+        ) : null}
+        {recent.isError ? (
+          <EmptyState
+            title={t('discover.historyError')}
+            description={t('discover.historyErrorDescription')}
+            actionLabel={t('common.retry')}
+            onAction={() => void recent.refetch()}
+          />
+        ) : null}
         {recent.data?.map((item) => (
-          <Pressable key={item._id} onPress={() => { setQuery(item.query); submit(item.query); }} style={styles.recent}>
+          <Pressable
+            key={item._id}
+            onPress={() => {
+              setQuery(item.query);
+              submit(item.query);
+            }}
+            style={styles.recent}
+          >
             <AppText variant="bodyStrong">{item.query}</AppText>
-            <AppText variant="caption" color={colors.text.secondary}>{t('discover.historyLabel')}</AppText>
+            <AppText variant="caption" color={colors.text.secondary}>
+              {t('discover.historyLabel')}
+            </AppText>
           </Pressable>
         ))}
         {!recent.isLoading && !recent.isError && !recent.data?.length ? (
@@ -63,5 +114,10 @@ export function SearchScreen() {
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, gap: spacing.xl },
   section: { gap: spacing.md },
-  recent: { padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.background.surface, gap: spacing.xs },
+  recent: {
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+    gap: spacing.xs,
+  },
 });

@@ -16,7 +16,7 @@ export function SavedLibraryScreen() {
       <RecipeHeader
         title={t('discover.savedContent')}
         subtitle={t('saved.subtitle')}
-        backFallbackHref="/(tabs)/explore"
+        backFallbackHref="/(discover)/explore"
       />
       {saved.isLoading ? <LoadingSpinner text={t('saved.loading')} /> : null}
       {saved.isError ? (
@@ -27,16 +27,16 @@ export function SavedLibraryScreen() {
           onAction={() => void saved.refetch()}
         />
       ) : null}
-      {!saved.isLoading && !saved.isError && !saved.data?.length ? (
+      {!saved.isLoading && !saved.isError && !saved.data?.data.length ? (
         <EmptyState
           title={t('saved.empty')}
           description={t('saved.emptyDescription')}
           actionLabel={t('saved.backToExplore')}
-          onAction={() => router.replace('/(tabs)/explore')}
+          onAction={() => router.replace('/(discover)/explore')}
         />
       ) : null}
       <View style={styles.list}>
-        {saved.data?.map((item) =>
+        {saved.data?.data.map((item) =>
           item.target ? (
             <ContentResultCard
               key={item._id}

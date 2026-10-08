@@ -9,9 +9,11 @@ import {
 } from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { useProfileStore } from '@/features/profile/profileStore';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { RecipeImage } from '../components/RecipeImage';
-import { useRecipeDetail, useSavedMutation } from '../hooks';
+import { RecipeSaveButton } from '../components/RecipeSaveButton';
+import { useRecipeDetail } from '../hooks';
 
 export function RecipeDetailScreen() {
   const router = useRouter();
@@ -19,14 +21,14 @@ export function RecipeDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
-  const saved = useSavedMutation();
+  const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
 
   if (recipe.isLoading)
     return (
       <ScreenWrapper contentContainerStyle={styles.screen}>
         <RecipeHeader
           title={t('recipe.detailTitle')}
-          backFallbackHref="/(tabs)/explore"
+          backFallbackHref="/(discover)/explore"
         />
         <LoadingSpinner text={t('discover.loadingRecipes')} />
       </ScreenWrapper>
@@ -36,7 +38,7 @@ export function RecipeDetailScreen() {
       <ScreenWrapper contentContainerStyle={styles.screen}>
         <RecipeHeader
           title={t('recipe.detailTitle')}
-          backFallbackHref="/(tabs)/explore"
+          backFallbackHref="/(discover)/explore"
         />
         <EmptyState
           title={t('recipe.openError')}
@@ -48,14 +50,39 @@ export function RecipeDetailScreen() {
     );
   }
   const data = recipe.data;
-  const calories = data.nutritionPerServing?.caloriesKcal;
+  const nutrition = data.nutritionPerServing;
+  const nutritionText = [
+    nutrition?.caloriesKcal != null
+      ? `${Math.round(nutrition.caloriesKcal)} kcal`
+      : null,
+    nutrition?.proteinG != null
+      ? `${t('recipe.protein')} ${nutrition.proteinG}g`
+      : null,
+    nutrition?.carbsG != null ? `${t('recipe.carbs')} ${nutrition.carbsG}g` : null,
+    nutrition?.fatG != null ? `${t('recipe.fat')} ${nutrition.fatG}g` : null,
+    nutrition?.fiberG != null ? `${t('recipe.fiber')} ${nutrition.fiberG}g` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const allergenText =
+    data.allergenIds === undefined
+      ? t('recipe.allergensUnknown')
+      : data.allergenIds.length === 0
+        ? t('recipe.noDeclaredAllergens')
+        : data.allergenIds
+            .map(
+              (allergenId) =>
+                allergenCatalog.find((allergen) => allergen._id === allergenId)
+                  ?.name ?? t('recipe.unknownAllergen')
+            )
+            .join(', ');
 
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <RecipeHeader
         title={t('recipe.detailTitle')}
         subtitle={data.title}
-        backFallbackHref="/(tabs)/explore"
+        backFallbackHref="/(discover)/explore"
       />
       <RecipeImage
         uri={data.coverImageUrl}
@@ -69,8 +96,11 @@ export function RecipeDetailScreen() {
         <AppText>
           {[
             data.servings ? t('recipe.servings', { count: data.servings }) : null,
-            data.totalMinutes
-              ? t('common.minutes', { count: data.totalMinutes })
+            data.prepMinutes != null
+              ? t('recipe.prepMinutes', { count: data.prepMinutes })
+              : null,
+            data.cookMinutes != null
+              ? t('recipe.cookMinutes', { count: data.cookMinutes })
               : null,
             data.difficulty,
           ]
@@ -80,7 +110,7 @@ export function RecipeDetailScreen() {
       </InfoBlock>
       <InfoBlock title={t('recipe.nutritionPerServing')}>
         <AppText color={colors.primary[700]}>
-          {calories != null ? `${calories} kcal` : t('recipe.noNutrition')}
+          {nutritionText || t('recipe.noNutrition')}
         </AppText>
       </InfoBlock>
       <InfoBlock
@@ -94,6 +124,7 @@ export function RecipeDetailScreen() {
           data.ingredients.map((item) => (
             <AppText key={`${item.foodItemId}-${item.quantity}`}>
               • {item.foodNameSnapshot}: {item.quantity} {item.unit}
+              {item.note ? ` · ${item.note}` : ''}
             </AppText>
           ))
         ) : (
@@ -102,9 +133,9 @@ export function RecipeDetailScreen() {
           </AppText>
         )}
       </InfoBlock>
-      {saved.error ? (
-        <AppText color={colors.status.danger}>{saved.error.message}</AppText>
-      ) : null}
+      <InfoBlock title={t('recipe.allergens')}>
+        <AppText color={colors.text.secondary}>{allergenText}</AppText>
+      </InfoBlock>
       <AppButton
         title={t('recipe.startCooking')}
         disabled={!data.steps?.length}
@@ -112,18 +143,7 @@ export function RecipeDetailScreen() {
           router.push({ pathname: '/(discover)/recipe/[id]/cook', params: { id } })
         }
       />
-      <AppButton
-        title={data.isSaved ? t('recipe.unsave') : t('recipe.save')}
-        variant="outline"
-        loading={saved.isPending}
-        onPress={() =>
-          saved.mutate({
-            type: 'recipe',
-            id: data._id,
-            saved: data.isSaved === true,
-          })
-        }
-      />
+      <RecipeSaveButton recipe={data} initialSaved={data.isSaved} />
     </ScreenWrapper>
   );
 }

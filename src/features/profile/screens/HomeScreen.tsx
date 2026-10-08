@@ -105,7 +105,7 @@ export function HomeScreen() {
             title={t('home.noSuggestions')}
             description={t('home.noSuggestionsDescription')}
             actionLabel={t('home.explore')}
-            onAction={() => router.push('/(tabs)/explore')}
+            onAction={() => router.push('/(discover)/explore')}
           />
         ) : null}
         {!home.isLoading &&
@@ -130,7 +130,7 @@ export function HomeScreen() {
             <AppText variant="heading3">
               {t('home.forUser', { name: firstName })}
             </AppText>
-            <Pressable onPress={() => router.push('/(tabs)/explore')}>
+            <Pressable onPress={() => router.push('/(discover)/explore')}>
               <AppText variant="bodyStrong" color={colors.primary[700]}>
                 {t('home.viewAll')}
               </AppText>

@@ -125,6 +125,22 @@ test('saved optimistic state supports food items and rolls them into the same li
   assert.equal(removed.data.length, 0);
 });
 
+test('saved optimistic state supports posts without waiting for the API response', () => {
+  const post = { _id: 'post-1', title: 'Plant protein guide', type: 'post' };
+  const optimistic = updateSavedPage(
+    { data: [] },
+    { type: 'post', id: post._id, saved: false, target: post },
+    'user-1'
+  );
+
+  assert.deepEqual(optimistic.data[0], {
+    _id: 'optimistic-user-1-post-post-1',
+    targetType: 'post',
+    targetId: 'post-1',
+    target: post,
+  });
+});
+
 test('timer derives remaining time from an absolute deadline after background gaps', () => {
   assert.equal(remainingSeconds(16_000, 10_100), 6);
   assert.equal(remainingSeconds(9_000, 10_000), 0);

@@ -60,9 +60,7 @@ export function ContentResultCard({
           </AppText>
         ) : null}
       </View>
-      {item.type === 'recipe' || item.type === 'food-item' || !item.type ? (
-        <ContentSaveButton content={item} compact />
-      ) : null}
+      <ContentSaveButton content={item} compact />
     </Pressable>
   );
 }

@@ -69,7 +69,6 @@ export function ContentSaveButton({
           styles.compact,
           saved && styles.compactSaved,
           loadingInitialState && styles.disabled,
-          mutation.isPending && styles.syncing,
           pressed && styles.pressed,
         ]}
       >
@@ -113,6 +112,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[100],
   },
   disabled: { opacity: 0.45 },
-  syncing: { opacity: 0.72 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.94 }] },
 });

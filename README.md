@@ -588,18 +588,13 @@ Once the Expo interactive terminal is running:
 
 ## Authentication & Navigation Flow
 
-1. **Bootstrap (`src/app/_layout.tsx`)**:
-   - The application mounts `RootLayout`, sets up the `QueryClientProvider` and `SafeAreaProvider`.
-   - Calls `restoreSession()` from `useAuthStore` to inspect local `AsyncStorage` for existing session credentials.
-2. **Session Guard (`src/features/profile/screens/HomeScreen.tsx`)**:
-   - If session restoration is in progress, the full-screen `Loading` indicator is presented.
-   - If unauthenticated, the app performs a declarative redirect (`<Redirect href="/(auth)/login" />`).
-3. **Login Experience (`src/features/auth/screens/LoginScreen.tsx`)**:
-   - Accepts user credentials with live validation (valid email format, 6+ character password).
-   - In development/mock mode, users can sign in with any valid email and 6+ character password (e.g. `test@example.com` / `123456`).
-   - Upon authentication, tokens and profile details are persisted to `AsyncStorage`, and the store updates `isAuthenticated: true`.
-4. **Dashboard (`HomeScreen`)**:
-   - Shows active user information, daily nutrition insights, and a one-touch **Sign Out** button that clears persisted tokens and redirects back to Login.
+> Hướng dẫn chi tiết: [API & Authentication Integration Guideline](docs/API_AUTH_INTEGRATION_GUIDELINE.md) — environment, Firebase ID/refresh token, Axios interceptor, thêm endpoint, test API và troubleshooting.
+
+1. **Bootstrap (`src/app/_layout.tsx`)** sets up TanStack Query and calls `restoreSession()` before rendering protected routes.
+2. **Firebase Authentication** handles email/password and Google identity, then returns a Firebase ID token and refresh token.
+3. **Backend synchronization** calls `POST /auth/sync`; the shared Axios interceptor attaches the valid Firebase ID token as a Bearer token.
+4. **Session persistence** stores the Firebase session in `AsyncStorage`, refreshes the ID token before expiry, and clears auth plus account-scoped query state when the user signs out or changes account.
+5. **Route groups** guard onboarding, tabs, discover, and profile routes using the restored Zustand authentication state.
 
 ---
 

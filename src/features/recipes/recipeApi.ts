@@ -8,6 +8,7 @@ import type {
   RecipeQuery,
   RecipeDetail,
   SavedItem,
+  SavedTargetType,
   HomeFeed,
   SearchSuggestion,
 } from './types';
@@ -74,8 +75,8 @@ export const recipeApi = {
   categories: () =>
     pageRequest<Category>('/categories', { type: 'recipe', page: 1, limit: 100 }),
   saved: (page = 1) => pageRequest<SavedItem>('/saved-items', { page, limit: 50 }),
-  save: (type: 'recipe' | 'post' | 'video', id: string) =>
+  save: (type: SavedTargetType, id: string) =>
     unwrapApiRequest(() => apiClient.put(`/saved-items/${type}/${id}`, {})),
-  unsave: (type: 'recipe' | 'post' | 'video', id: string) =>
+  unsave: (type: SavedTargetType, id: string) =>
     unwrapApiRequest(() => apiClient.delete(`/saved-items/${type}/${id}`)),
 };

@@ -1,4 +1,5 @@
 export type ContentType = 'recipe' | 'food-item' | 'post' | 'video';
+export type SavedTargetType = ContentType;
 
 export interface ContentCardData {
   _id: string;
@@ -105,7 +106,7 @@ export interface SearchSuggestion {
 
 export interface SavedItem {
   _id: string;
-  targetType: 'recipe' | 'post' | 'video';
+  targetType: SavedTargetType;
   targetId: string;
   target: ContentCardData | null;
   unavailable?: boolean;

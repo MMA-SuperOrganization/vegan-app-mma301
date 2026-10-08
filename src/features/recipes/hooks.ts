@@ -14,6 +14,7 @@ import type {
   RecipeDetail,
   RecipeQuery,
   SavedItem,
+  SavedTargetType,
 } from './types';
 
 const anonymousAccount = 'anonymous';
@@ -122,13 +123,13 @@ export function useSavedItems() {
   });
 }
 
-export function useRecipeSavedState(recipeId: string) {
+export function useSavedState(targetType: SavedTargetType, targetId: string) {
   const savedItems = useSavedItems();
   return {
     ...savedItems,
     isSaved: Boolean(
       savedItems.data?.data.some(
-        (saved) => saved.targetType === 'recipe' && saved.targetId === recipeId
+        (saved) => saved.targetType === targetType && saved.targetId === targetId
       )
     ),
   };

@@ -1,5 +1,4 @@
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   View,
@@ -9,11 +8,11 @@ import Svg, { Path } from 'react-native-svg';
 import { AppButton, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, shadows, spacing } from '@/theme';
-import { useRecipeSavedState, useSavedMutation } from '../hooks';
-import type { ContentCardData } from '../types';
+import { useSavedMutation, useSavedState } from '../hooks';
+import type { ContentCardData, SavedTargetType } from '../types';
 
-type RecipeSaveButtonProps = {
-  recipe: ContentCardData;
+type ContentSaveButtonProps = {
+  content: ContentCardData;
   initialSaved?: boolean;
   compact?: boolean;
 };
@@ -33,21 +32,28 @@ function HeartIcon({ saved }: { saved: boolean }) {
   );
 }
 
-export function RecipeSaveButton({
-  recipe,
+export function ContentSaveButton({
+  content,
   initialSaved,
   compact = false,
-}: RecipeSaveButtonProps) {
+}: ContentSaveButtonProps) {
   const { t } = useTranslation();
-  const savedState = useRecipeSavedState(recipe._id);
+  const targetType: SavedTargetType = content.type ?? 'recipe';
+  const savedState = useSavedState(targetType, content._id);
   const mutation = useSavedMutation();
   const saved = savedState.isSuccess ? savedState.isSaved : Boolean(initialSaved);
-  const unavailable = !savedState.isSuccess && initialSaved === undefined;
+  const loadingInitialState = savedState.isLoading && initialSaved === undefined;
+  const disabled = mutation.isPending || loadingInitialState;
 
   const toggle = (event?: GestureResponderEvent) => {
     event?.stopPropagation();
-    if (mutation.isPending || unavailable) return;
-    mutation.mutate({ type: 'recipe', id: recipe._id, saved, target: recipe });
+    if (disabled) return;
+    mutation.mutate({
+      type: targetType,
+      id: content._id,
+      saved,
+      target: { ...content, type: targetType },
+    });
   };
 
   if (compact) {
@@ -55,25 +61,19 @@ export function RecipeSaveButton({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={saved ? t('recipe.unsave') : t('recipe.save')}
-        accessibilityState={{
-          disabled: mutation.isPending || unavailable,
-          selected: saved,
-        }}
-        disabled={mutation.isPending || unavailable}
+        accessibilityState={{ disabled, selected: saved, busy: mutation.isPending }}
+        disabled={disabled}
         onPress={toggle}
         hitSlop={8}
         style={({ pressed }) => [
           styles.compact,
           saved && styles.compactSaved,
-          unavailable && styles.compactDisabled,
+          loadingInitialState && styles.disabled,
+          mutation.isPending && styles.syncing,
           pressed && styles.pressed,
         ]}
       >
-        {mutation.isPending ? (
-          <ActivityIndicator size="small" color={colors.primary[700]} />
-        ) : (
-          <HeartIcon saved={saved} />
-        )}
+        <HeartIcon saved={saved} />
       </Pressable>
     );
   }
@@ -83,8 +83,7 @@ export function RecipeSaveButton({
       <AppButton
         title={saved ? t('recipe.unsave') : t('recipe.save')}
         variant="outline"
-        loading={mutation.isPending}
-        disabled={unavailable}
+        disabled={disabled}
         onPress={() => toggle()}
       />
       {mutation.error ? (
@@ -113,6 +112,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[500],
     backgroundColor: colors.primary[100],
   },
-  compactDisabled: { opacity: 0.45 },
+  disabled: { opacity: 0.45 },
+  syncing: { opacity: 0.72 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.94 }] },
 });

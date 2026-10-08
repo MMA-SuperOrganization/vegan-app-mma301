@@ -1,7 +1,12 @@
-import type { ContentCardData, PageResult, SavedItem } from './types';
+import type {
+  ContentCardData,
+  PageResult,
+  SavedItem,
+  SavedTargetType,
+} from './types';
 
 export type SavedStateChange = {
-  type: 'recipe' | 'post' | 'video';
+  type: SavedTargetType;
   id: string;
   saved: boolean;
   target?: ContentCardData;

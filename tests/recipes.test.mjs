@@ -101,6 +101,30 @@ test('saved optimistic state deduplicates saves and removes only the selected ac
   );
 });
 
+test('saved optimistic state supports food items and rolls them into the same library', () => {
+  const foodItem = {
+    _id: 'food-1',
+    name: 'Chickpeas',
+    type: 'food-item',
+  };
+  const saved = updateSavedPage(
+    { data: [] },
+    { type: 'food-item', id: foodItem._id, saved: false, target: foodItem },
+    'user-1'
+  );
+
+  assert.equal(saved.data.length, 1);
+  assert.equal(saved.data[0].targetType, 'food-item');
+  assert.equal(saved.data[0].target?.name, 'Chickpeas');
+
+  const removed = updateSavedPage(
+    saved,
+    { type: 'food-item', id: foodItem._id, saved: true },
+    'user-1'
+  );
+  assert.equal(removed.data.length, 0);
+});
+
 test('timer derives remaining time from an absolute deadline after background gaps', () => {
   assert.equal(remainingSeconds(16_000, 10_100), 6);
   assert.equal(remainingSeconds(9_000, 10_000), 0);

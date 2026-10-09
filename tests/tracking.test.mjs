@@ -19,6 +19,7 @@ import {
   sumNutrition,
   toLocalIsoDate,
   unitsForFood,
+  waterGlasses,
   weightTrend,
 } from '../src/features/tracking/trackingState.ts';
 
@@ -185,4 +186,14 @@ test('DD/MM/YYYY dates round-trip and reject impossible days', () => {
   assert.equal(parseDayMonthYear('31/02/2026'), null);
   assert.equal(parseDayMonthYear('2026-10-05'), null);
   assert.equal(formatDayMonthYear('2026-10-05'), '05/10/2026');
+});
+
+test('water glasses follow the goal and cap when it is passed', () => {
+  assert.deepEqual(waterGlasses(1250, 2000), { total: 8, filled: 5 });
+  assert.deepEqual(waterGlasses(1400, 2000), { total: 8, filled: 5 });
+  assert.deepEqual(waterGlasses(3000, 2000), { total: 8, filled: 8 });
+  assert.deepEqual(waterGlasses(0, 2500), { total: 10, filled: 0 });
+  assert.deepEqual(waterGlasses(500, null), { total: 8, filled: 2 });
+  assert.deepEqual(waterGlasses(0, 9000), { total: 16, filled: 0 });
+  assert.deepEqual(waterGlasses(0, 100), { total: 1, filled: 0 });
 });

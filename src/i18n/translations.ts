@@ -506,6 +506,29 @@ export const vi = {
   'tracking.weightEntry.errorDate':
     'Nhập ngày theo dạng DD/MM/YYYY, ví dụ 05/10/2026.',
   'tracking.weightEntry.errorFuture': 'Ngày đo không được ở tương lai.',
+  'tracking.water.todayLine': 'Hôm nay · {{consumed}} / {{target}} ml',
+  'tracking.water.todayLineNoTarget': 'Hôm nay · {{consumed}} ml',
+  'tracking.water.reminderTitle': 'Nhắc mình uống nước',
+  'tracking.water.ofTarget': '/ {{target}} ml',
+  'tracking.water.glassesA11y': 'Đã uống {{filled}} trên {{total}} ly',
+  'tracking.water.addGlassA11y': 'Thêm 1 ly ({{ml}} ml)',
+  'tracking.water.glassHint': 'Chạm vào ly trống để thêm nhanh {{ml}} ml.',
+  'tracking.water.add': 'Ghi nước uống',
+  'tracking.water.historyTitle': 'Lần uống hôm nay',
+  'tracking.water.historyEmpty': 'Hôm nay bạn chưa ghi lần uống nào.',
+  'tracking.water.amount': '{{ml}} ml',
+  'tracking.waterEntry.title': 'Ghi nước uống',
+  'tracking.waterEntry.subtitle': 'Nhập lượng và thời gian',
+  'tracking.waterEntry.amountLabel': 'Lượng nước (ml)',
+  'tracking.waterEntry.save': 'Lưu lần uống',
+  'tracking.waterEntry.delete': 'Xóa lần uống',
+  'tracking.waterEntry.deleteConfirmTitle': 'Xóa lần uống?',
+  'tracking.waterEntry.deleteConfirmBody':
+    'Lần uống này sẽ bị xóa khỏi lịch sử hôm nay.',
+  'tracking.waterEntry.editTitle': 'Sửa lần uống',
+  'tracking.waterEntry.errorAmount':
+    'Lượng nước phải lớn hơn 0 và không quá {{max}} ml.',
+  'tracking.waterEntry.errorFuture': 'Thời gian không được ở tương lai.',
 } as const;
 
 export type TranslationKey = keyof typeof vi;
@@ -1013,6 +1036,29 @@ export const en: Record<TranslationKey, string> = {
     'Weight must be greater than 0 and at most {{max}} kg.',
   'tracking.weightEntry.errorDate': 'Enter the date as DD/MM/YYYY, e.g. 05/10/2026.',
   'tracking.weightEntry.errorFuture': "The date can't be in the future.",
+  'tracking.water.todayLine': 'Today · {{consumed}} / {{target}} ml',
+  'tracking.water.todayLineNoTarget': 'Today · {{consumed}} ml',
+  'tracking.water.reminderTitle': 'Remember to drink water',
+  'tracking.water.ofTarget': '/ {{target}} ml',
+  'tracking.water.glassesA11y': '{{filled}} of {{total}} glasses drunk',
+  'tracking.water.addGlassA11y': 'Add 1 glass ({{ml}} ml)',
+  'tracking.water.glassHint': 'Tap an empty glass to quickly add {{ml}} ml.',
+  'tracking.water.add': 'Log water',
+  'tracking.water.historyTitle': "Today's drinks",
+  'tracking.water.historyEmpty': "You haven't logged any water today.",
+  'tracking.water.amount': '{{ml}} ml',
+  'tracking.waterEntry.title': 'Log water',
+  'tracking.waterEntry.subtitle': 'Enter the amount and time',
+  'tracking.waterEntry.amountLabel': 'Amount (ml)',
+  'tracking.waterEntry.save': 'Save drink',
+  'tracking.waterEntry.delete': 'Delete drink',
+  'tracking.waterEntry.deleteConfirmTitle': 'Delete drink?',
+  'tracking.waterEntry.deleteConfirmBody':
+    "This drink will be removed from today's history.",
+  'tracking.waterEntry.editTitle': 'Edit drink',
+  'tracking.waterEntry.errorAmount':
+    'Amount must be greater than 0 and at most {{max}} ml.',
+  'tracking.waterEntry.errorFuture': "The time can't be in the future.",
 };
 
 export const translations = { vi, en } as const;

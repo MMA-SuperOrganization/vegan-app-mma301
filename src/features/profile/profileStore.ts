@@ -3,7 +3,12 @@ import { translate } from '@/i18n';
 import { useAuthStore } from '@/features/auth';
 import { AppError } from '@/services/errors';
 import { profileApi } from './profileApi';
-import type { ProfileUpdate, UserProfile } from './types';
+import type {
+  DietaryPreferencesUpdate,
+  NutritionTargetsUpdate,
+  ProfileUpdate,
+  UserProfile,
+} from './types';
 
 type LoadState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -15,6 +20,10 @@ interface ProfileState {
   error: string | null;
   load: (userId: string, force?: boolean) => Promise<boolean>;
   update: (values: ProfileUpdate) => Promise<boolean>;
+  updateDietaryPreferences: (values: DietaryPreferencesUpdate) => Promise<boolean>;
+  updateAllergens: (allergenIds: string[]) => Promise<boolean>;
+  updateNutritionTargets: (values: NutritionTargetsUpdate) => Promise<boolean>;
+  recalculateNutrition: () => Promise<boolean>;
   reset: () => void;
 }
 
@@ -27,7 +36,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   load: async (userId, force = false) => {
     const current = get();
-    if (!force && current.userId === userId && current.status === 'success') return true;
+    if (!force && current.userId === userId && current.status === 'success')
+      return true;
     if (current.status === 'loading') return false;
     set({
       data: current.userId === userId ? current.data : null,
@@ -50,7 +60,8 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       if (get().userId === userId) {
         set({
           status: 'error',
-          error: error instanceof Error ? error.message : translate('profile.error.load'),
+          error:
+            error instanceof Error ? error.message : translate('profile.error.load'),
         });
       }
       return false;
@@ -69,12 +80,48 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (error) {
       set({
         isSaving: false,
-        error: error instanceof Error ? error.message : translate('profile.error.save'),
+        error:
+          error instanceof Error ? error.message : translate('profile.error.save'),
       });
       return false;
     }
   },
 
+  updateDietaryPreferences: async (values) =>
+    saveAndReload(set, get, () => profileApi.updateDietaryPreferences(values)),
+
+  updateAllergens: async (allergenIds) =>
+    saveAndReload(set, get, () => profileApi.updateAllergens(allergenIds)),
+
+  updateNutritionTargets: async (values) =>
+    saveAndReload(set, get, () => profileApi.updateNutritionTargets(values)),
+
+  recalculateNutrition: async () =>
+    saveAndReload(set, get, () => profileApi.recalculateNutrition()),
+
   reset: () =>
     set({ data: null, userId: null, status: 'idle', isSaving: false, error: null }),
 }));
+
+async function saveAndReload(
+  set: (state: Partial<ProfileState>) => void,
+  get: () => ProfileState,
+  request: () => Promise<unknown>
+) {
+  const userId = get().userId;
+  if (!userId || get().isSaving) return false;
+  set({ isSaving: true, error: null });
+  try {
+    await request();
+    const loaded = await get().load(userId, true);
+    set({ isSaving: false });
+    return loaded;
+  } catch (error) {
+    set({
+      isSaving: false,
+      error:
+        error instanceof Error ? error.message : translate('profile.error.save'),
+    });
+    return false;
+  }
+}

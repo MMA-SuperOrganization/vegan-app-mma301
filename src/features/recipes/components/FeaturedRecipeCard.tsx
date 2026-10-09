@@ -6,7 +6,7 @@ import { colors, radius, spacing } from '@/theme';
 
 import type { ContentCardData } from '../types';
 import { RecipeImage } from './RecipeImage';
-import { RecipeSaveButton } from './RecipeSaveButton';
+import { ContentSaveButton } from './ContentSaveButton';
 
 export function FeaturedRecipeCard({
   item,
@@ -40,7 +40,7 @@ export function FeaturedRecipeCard({
         fallbackSize="large"
       />
       <View style={styles.save}>
-        <RecipeSaveButton recipe={item} compact />
+        <ContentSaveButton content={{ ...item, type: 'recipe' }} compact />
       </View>
       <View style={styles.content}>
         <AppText variant="overline" color={colors.text.inverse}>

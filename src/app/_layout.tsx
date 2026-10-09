@@ -100,6 +100,15 @@ export default function RootLayout() {
         <Stack.Screen name="(tracking)" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="language" options={{ headerShown: false }} />
+        <Stack.Screen name="nutrition-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="dietary-preferences" options={{ headerShown: false }} />
+        <Stack.Screen name="allergies-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="notification-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="account-security" options={{ headerShown: false }} />
       </Stack>
     );
   }

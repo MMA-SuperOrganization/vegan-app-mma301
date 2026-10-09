@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { RecipeImage } from '../components/RecipeImage';
-import { RecipeSaveButton } from '../components/RecipeSaveButton';
+import { ContentSaveButton } from '../components/ContentSaveButton';
 import { useRecipeDetail } from '../hooks';
 
 export function RecipeDetailScreen() {
@@ -143,7 +143,10 @@ export function RecipeDetailScreen() {
           router.push({ pathname: '/(discover)/recipe/[id]/cook', params: { id } })
         }
       />
-      <RecipeSaveButton recipe={data} initialSaved={data.isSaved} />
+      <ContentSaveButton
+        content={{ ...data, type: 'recipe' }}
+        initialSaved={data.isSaved}
+      />
     </ScreenWrapper>
   );
 }

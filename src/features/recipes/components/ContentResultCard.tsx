@@ -4,7 +4,7 @@ import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '../types';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { RecipeImage } from './RecipeImage';
-import { RecipeSaveButton } from './RecipeSaveButton';
+import { ContentSaveButton } from './ContentSaveButton';
 
 const typeLabels = {
   recipe: 'discover.typeRecipe',
@@ -60,9 +60,7 @@ export function ContentResultCard({
           </AppText>
         ) : null}
       </View>
-      {item.type === 'recipe' || !item.type ? (
-        <RecipeSaveButton recipe={item} compact />
-      ) : null}
+      <ContentSaveButton content={item} compact />
     </Pressable>
   );
 }

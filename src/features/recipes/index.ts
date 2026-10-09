@@ -8,5 +8,5 @@ export { FilterPanelScreen } from './screens/FilterPanelScreen';
 export { ContentResultCard } from './components/ContentResultCard';
 export { FeaturedRecipeCard } from './components/FeaturedRecipeCard';
 export { RecipeImage } from './components/RecipeImage';
-export { RecipeSaveButton } from './components/RecipeSaveButton';
+export { ContentSaveButton } from './components/ContentSaveButton';
 export { useHomeFeed } from './hooks';

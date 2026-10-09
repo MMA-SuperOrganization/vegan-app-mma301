@@ -1,7 +1,5 @@
-import { TrackingComingSoonScreen } from '@/features/tracking';
-import { useTranslation } from '@/i18n';
+import { WaterTrackingScreen } from '@/features/tracking';
 
 export default function WaterRoute() {
-  const { t } = useTranslation();
-  return <TrackingComingSoonScreen title={t('tracking.water.title')} />;
+  return <WaterTrackingScreen />;
 }

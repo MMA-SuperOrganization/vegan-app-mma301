@@ -285,6 +285,28 @@ export function sumWater(logs: WaterLog[]) {
   return logs.reduce((total, log) => total + log.amountMl, 0);
 }
 
+/** One glass in the water tracker. */
+export const WATER_GLASS_ML = 250;
+const DEFAULT_GLASS_COUNT = 8;
+/** Keeps the glass row on at most two lines. */
+const MAX_GLASS_COUNT = 16;
+
+/**
+ * Glass count follows the goal (2,000 ml → 8 glasses); filled glasses are whole
+ * glasses drunk, capped at the total once the goal is passed.
+ */
+export function waterGlasses(
+  consumedMl: number,
+  targetMl: number | null,
+  glassMl = WATER_GLASS_ML
+) {
+  const total = targetMl
+    ? Math.min(MAX_GLASS_COUNT, Math.max(1, Math.round(targetMl / glassMl)))
+    : DEFAULT_GLASS_COUNT;
+  const filled = Math.min(total, Math.max(0, Math.floor(consumedMl / glassMl)));
+  return { total, filled };
+}
+
 /**
  * Latest weight plus the change since the first chart point of the trend
  * window (calendar days, so any log from the first day counts). `changeKg` is

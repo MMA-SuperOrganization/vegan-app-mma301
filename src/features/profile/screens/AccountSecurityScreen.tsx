@@ -18,6 +18,7 @@ export function AccountSecurityScreen() {
   const sendPasswordReset = useAuthStore((state) => state.sendPasswordReset);
   const logout = useAuthStore((state) => state.logout);
   const isLoading = useAuthStore((state) => state.isLoading);
+  const authError = useAuthStore((state) => state.error);
   const [isDeleting, setIsDeleting] = useState(false);
   const resetProfile = useProfileStore((state) => state.reset);
   const signOut = async () => {
@@ -69,6 +70,9 @@ export function AccountSecurityScreen() {
         disabled={!user?.email}
         onPress={() => void resetPassword()}
       />
+      {authError ? (
+        <AppText color={colors.status.danger}>{authError.message}</AppText>
+      ) : null}
       <AppButton
         title={t('profile.privacyData')}
         variant="outline"

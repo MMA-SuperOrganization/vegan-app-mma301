@@ -31,12 +31,14 @@ export const profileApi = {
       apiClient.get('/users/me')
     );
     let allergens: Allergen[] = [];
+    let allergensLoadFailed = false;
     try {
       allergens = await unwrapApiRequest<Allergen[]>(() =>
         apiClient.get('/allergens', { params: { page: 1, limit: 50 } })
       );
     } catch {
       // Optional labels must not make the persisted profile unusable.
+      allergensLoadFailed = true;
     }
     return {
       user: {
@@ -61,6 +63,7 @@ export const profileApi = {
           }
         : null,
       allergens,
+      allergensLoadFailed,
     };
   },
 

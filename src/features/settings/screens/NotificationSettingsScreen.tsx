@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Linking, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppInput,
@@ -19,6 +19,7 @@ import {
   useSaveNotificationPreferences,
 } from '../hooks';
 import type { NotificationPreferences } from '../types';
+import { validateNotificationPreferences } from '../validation';
 
 export function NotificationSettingsScreen() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ export function NotificationSettingsScreen() {
   const save = useSaveNotificationPreferences();
   const permission = useDevicePermissions();
   const [draft, setDraft] = useState<NotificationPreferences | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
   useEffect(() => {
     if (query.data) setDraft(query.data);
   }, [query.data]);
@@ -42,6 +44,23 @@ export function NotificationSettingsScreen() {
     ) =>
     (value: boolean) =>
       setDraft((current) => (current ? { ...current, [key]: value } : current));
+  const submit = async () => {
+    if (!draft) return;
+    const validation = validateNotificationPreferences(draft);
+    const error = !validation.quietHours
+      ? t('notifications.timeInvalid')
+      : !validation.timezone
+        ? t('notifications.timezoneInvalid')
+        : null;
+    setValidationError(error);
+    if (error) return;
+    try {
+      await save.mutateAsync(draft);
+      goBack();
+    } catch {
+      // The mutation keeps the normalized API error for the inline error state.
+    }
+  };
   if (query.isLoading)
     return (
       <ScreenWrapper contentContainerStyle={styles.screen}>
@@ -137,14 +156,16 @@ export function NotificationSettingsScreen() {
         title={
           permission.notifications === 'granted'
             ? t('notifications.deviceGranted')
-            : t('notifications.openDeviceSettings')
+            : permission.notifications === 'unsupported'
+              ? t('notifications.deviceUnsupported')
+              : t('notifications.openDeviceSettings')
         }
         variant="outline"
-        onPress={() =>
-          permission.notifications === 'settings'
-            ? void Linking.openSettings()
-            : void permission.requestNotifications()
+        disabled={
+          permission.notifications === 'granted' ||
+          permission.notifications === 'unsupported'
         }
+        onPress={() => void permission.requestNotifications()}
       />
       <View style={styles.note}>
         <AppText variant="bodyStrong">{t('notifications.devicePermission')}</AppText>
@@ -155,10 +176,13 @@ export function NotificationSettingsScreen() {
       {save.error ? (
         <AppText color={colors.status.danger}>{save.error.message}</AppText>
       ) : null}
+      {validationError ? (
+        <AppText color={colors.status.danger}>{validationError}</AppText>
+      ) : null}
       <AppButton
         title={t('notifications.save')}
         loading={save.isPending}
-        onPress={() => save.mutate(draft)}
+        onPress={() => void submit()}
       />
     </ScreenWrapper>
   );

@@ -40,6 +40,7 @@ export interface UserProfile {
   profile: PersonalProfile | null;
   nutritionProfile: NutritionProfile | null;
   allergens: Allergen[];
+  allergensLoadFailed: boolean;
 }
 
 export interface ProfileUpdate {

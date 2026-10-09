@@ -16,6 +16,7 @@ import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
+import { isValidIanaTimezone, validateProfileText } from '../validation';
 
 export function EditProfileScreen() {
   const goBack = useSafeBack('/(tabs)/profile');
@@ -41,13 +42,15 @@ export function EditProfileScreen() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   const save = async () => {
+    const textValidation = validateProfileText(name, bio);
     const next = {
-      name: name.trim() ? null : t('auth.validation.nameRequired'),
+      name: textValidation.name ? null : t('profile.nameInvalid'),
+      bio: textValidation.bio ? null : t('profile.bioInvalid'),
       dateOfBirth:
         dateOfBirth.trim() && !dateInputToIso(dateOfBirth)
           ? t('profile.birthDateInvalid')
           : null,
-      timezone: timezone.trim() ? null : t('profile.timezoneRequired'),
+      timezone: isValidIanaTimezone(timezone) ? null : t('profile.timezoneInvalid'),
       height: validateMeasurement(height, t('onboarding.height'), 50, 250),
       weight: validateMeasurement(weight, t('onboarding.weight'), 10, 500),
     };
@@ -91,7 +94,12 @@ export function EditProfileScreen() {
           onChangeText={setName}
           error={errors.name}
         />
-        <AppInput label={t('profile.bio')} value={bio} onChangeText={setBio} />
+        <AppInput
+          label={t('profile.bio')}
+          value={bio}
+          onChangeText={setBio}
+          error={errors.bio}
+        />
         <AppInput
           label={t('profile.birthDate')}
           value={dateOfBirth}

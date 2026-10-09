@@ -251,11 +251,15 @@ export const vi = {
   'profile.language': 'Ngôn ngữ',
   'profile.languageSubtitle': 'Tiếng Việt / English',
   'profile.bio': 'Giới thiệu',
+  'profile.nameInvalid': 'Tên hiển thị phải có từ 1 đến 100 ký tự.',
+  'profile.bioInvalid': 'Phần giới thiệu không được vượt quá 500 ký tự.',
   'profile.birthDate': 'Ngày sinh',
   'profile.birthDateInvalid':
     'Ngày sinh phải có định dạng DD/MM/YYYY và không ở tương lai.',
   'profile.timezone': 'Múi giờ',
   'profile.timezoneRequired': 'Vui lòng nhập múi giờ.',
+  'profile.timezoneInvalid':
+    'Vui lòng nhập múi giờ IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.',
   'profile.healthSection': 'Sức khỏe & dinh dưỡng',
   'profile.contentSection': 'Nội dung của tôi',
   'profile.settingsSection': 'Cài đặt',
@@ -278,6 +282,9 @@ export const vi = {
   'profile.savePreferences': 'Lưu sở thích',
   'profile.allergyTitle': 'Dị nguyên của tôi',
   'profile.allergySubtitle': 'Chọn các dị nguyên bạn cần tránh',
+  'profile.allergyLoadError': 'Không thể tải danh sách dị nguyên',
+  'profile.allergyLoadErrorDescription':
+    'Dữ liệu hiện tại chưa được thay đổi. Hãy thử tải lại trước khi lưu.',
   'profile.allergyWarningTitle': 'Luôn kiểm tra nguyên liệu',
   'profile.allergyWarningDescription':
     'Thông tin dị nguyên có thể chưa đầy đủ. Không xem món ăn là an toàn chỉ vì không có cảnh báo.',
@@ -325,11 +332,15 @@ export const vi = {
   'notifications.quietEnd': 'Kết thúc',
   'notifications.timezone': 'Múi giờ',
   'notifications.deviceGranted': 'Thiết bị đã cho phép thông báo',
+  'notifications.deviceUnsupported': 'Cần development build để bật thông báo',
   'notifications.openDeviceSettings': 'Cho phép thông báo trên thiết bị',
   'notifications.devicePermission': 'Quyền trên thiết bị',
   'notifications.devicePermissionDescription':
     'Cài đặt phía máy chủ không thể thay thế quyền thông báo của hệ điều hành.',
   'notifications.save': 'Lưu cài đặt thông báo',
+  'notifications.timeInvalid': 'Giờ yên lặng phải có định dạng HH:mm, ví dụ 22:00.',
+  'notifications.timezoneInvalid':
+    'Vui lòng nhập múi giờ IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.',
 
   'language.title': 'Ngôn ngữ',
   'language.subtitle': 'Chọn ngôn ngữ hiển thị cho ứng dụng',
@@ -707,11 +718,15 @@ export const en: Record<TranslationKey, string> = {
   'profile.language': 'Language',
   'profile.languageSubtitle': 'Tiếng Việt / English',
   'profile.bio': 'Bio',
+  'profile.nameInvalid': 'Display name must contain 1–100 characters.',
+  'profile.bioInvalid': 'Bio cannot exceed 500 characters.',
   'profile.birthDate': 'Date of birth',
   'profile.birthDateInvalid':
     'Use DD/MM/YYYY and enter a date that is not in the future.',
   'profile.timezone': 'Time zone',
   'profile.timezoneRequired': 'Enter a time zone.',
+  'profile.timezoneInvalid':
+    'Enter a valid IANA time zone, for example Asia/Ho_Chi_Minh.',
   'profile.healthSection': 'Health & nutrition',
   'profile.contentSection': 'My content',
   'profile.settingsSection': 'Settings',
@@ -734,6 +749,9 @@ export const en: Record<TranslationKey, string> = {
   'profile.savePreferences': 'Save preferences',
   'profile.allergyTitle': 'My allergens',
   'profile.allergySubtitle': 'Select allergens you need to avoid',
+  'profile.allergyLoadError': 'Unable to load allergens',
+  'profile.allergyLoadErrorDescription':
+    'Your current selection has not changed. Retry before saving.',
   'profile.allergyWarningTitle': 'Always check ingredients',
   'profile.allergyWarningDescription':
     'Allergen information may be incomplete. Do not assume a dish is safe because no warning is shown.',
@@ -780,11 +798,16 @@ export const en: Record<TranslationKey, string> = {
   'notifications.quietEnd': 'Ends',
   'notifications.timezone': 'Time zone',
   'notifications.deviceGranted': 'Notifications are allowed on this device',
+  'notifications.deviceUnsupported':
+    'A development build is required for notifications',
   'notifications.openDeviceSettings': 'Allow device notifications',
   'notifications.devicePermission': 'Device permission',
   'notifications.devicePermissionDescription':
     'Server preferences cannot override the operating system notification permission.',
   'notifications.save': 'Save notification settings',
+  'notifications.timeInvalid': 'Quiet hours must use HH:mm, for example 22:00.',
+  'notifications.timezoneInvalid':
+    'Enter a valid IANA time zone, for example Asia/Ho_Chi_Minh.',
   'language.title': 'Language',
   'language.subtitle': 'Choose the app display language',
   'language.vietnamese': 'Tiếng Việt',

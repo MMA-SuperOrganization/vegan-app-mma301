@@ -3,6 +3,7 @@ import { useAuthStore } from '@/features/auth';
 import { settingsApi } from './settingsApi';
 import type { NotificationItem, NotificationPreferences } from './types';
 import type { ApiPage } from '@/services/api';
+import { markAllNotificationsRead, markNotificationRead } from './notificationState';
 
 const keys = {
   notifications: (userId?: string) => ['account', userId, 'notifications'] as const,
@@ -44,14 +45,9 @@ export function useNotificationActions() {
     onMutate: async (id: string) => {
       await client.cancelQueries({ queryKey: listKey });
       const before = client.getQueryData<ApiPage<NotificationItem>>(listKey);
-      client.setQueryData<ApiPage<NotificationItem>>(listKey, (page) => ({
-        ...(page ?? { data: [] }),
-        data: (page?.data ?? []).map((item) =>
-          item._id === id
-            ? { ...item, status: 'read' as const, readAt: new Date().toISOString() }
-            : item
-        ),
-      }));
+      client.setQueryData<ApiPage<NotificationItem>>(listKey, (page) =>
+        markNotificationRead(page, id, new Date().toISOString())
+      );
       return { before };
     },
     onError: (_error, _id, context) => client.setQueryData(listKey, context?.before),
@@ -63,14 +59,9 @@ export function useNotificationActions() {
       await client.cancelQueries({ queryKey: listKey });
       const before = client.getQueryData<ApiPage<NotificationItem>>(listKey);
       const readAt = new Date().toISOString();
-      client.setQueryData<ApiPage<NotificationItem>>(listKey, (page) => ({
-        ...(page ?? { data: [] }),
-        data: (page?.data ?? []).map((item) => ({
-          ...item,
-          status: 'read' as const,
-          readAt,
-        })),
-      }));
+      client.setQueryData<ApiPage<NotificationItem>>(listKey, (page) =>
+        markAllNotificationsRead(page, readAt)
+      );
       return { before };
     },
     onError: (_error, _variables, context) =>

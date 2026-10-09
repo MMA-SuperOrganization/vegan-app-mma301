@@ -19,6 +19,8 @@ export function AllergiesSettingsScreen() {
   const goBack = useSafeBack('/(tabs)/profile');
   const data = useProfileStore((state) => state.data);
   const update = useProfileStore((state) => state.updateAllergens);
+  const reload = useProfileStore((state) => state.load);
+  const userId = useProfileStore((state) => state.userId);
   const isSaving = useProfileStore((state) => state.isSaving);
   const error = useProfileStore((state) => state.error);
   const [selected, setSelected] = useState(
@@ -31,26 +33,34 @@ export function AllergiesSettingsScreen() {
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <CustomHeader title={t('profile.allergyTitle')} showBack onBack={goBack} />
       <AppText color={colors.text.secondary}>{t('profile.allergySubtitle')}</AppText>
-      {!data?.allergens.length ? (
+      {data?.allergensLoadFailed ? (
+        <EmptyState
+          title={t('profile.allergyLoadError')}
+          description={t('profile.allergyLoadErrorDescription')}
+          actionLabel={t('common.retry')}
+          onAction={() => userId && void reload(userId, true)}
+        />
+      ) : !data?.allergens.length ? (
         <EmptyState
           title={t('onboarding.noAllergensTitle')}
           description={t('onboarding.noAllergensDescription')}
         />
       ) : null}
       <View style={styles.list}>
-        {data?.allergens.map((allergen) => (
-          <Toggle
-            key={allergen._id}
-            label={allergen.name}
-            value={selected.includes(allergen._id)}
-            disabled={isSaving}
-            onValueChange={() =>
-              setSelected((current) =>
-                toggleAllergenSelection(current, allergen._id)
-              )
-            }
-          />
-        ))}
+        {!data?.allergensLoadFailed &&
+          data?.allergens.map((allergen) => (
+            <Toggle
+              key={allergen._id}
+              label={allergen.name}
+              value={selected.includes(allergen._id)}
+              disabled={isSaving}
+              onValueChange={() =>
+                setSelected((current) =>
+                  toggleAllergenSelection(current, allergen._id)
+                )
+              }
+            />
+          ))}
       </View>
       <AppButton
         title={t('onboarding.allergenInfo')}
@@ -72,6 +82,7 @@ export function AllergiesSettingsScreen() {
       <AppButton
         title={t('profile.saveAllergies')}
         loading={isSaving}
+        disabled={data?.allergensLoadFailed}
         onPress={() => void save()}
       />
     </ScreenWrapper>

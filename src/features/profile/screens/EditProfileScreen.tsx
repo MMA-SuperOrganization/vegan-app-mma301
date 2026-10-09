@@ -7,7 +7,11 @@ import {
   CustomHeader,
   ScreenWrapper,
 } from '@/components';
-import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
+import {
+  dateInputToIso,
+  parseDecimal,
+  validateMeasurement,
+} from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
@@ -21,6 +25,13 @@ export function EditProfileScreen() {
   const isSaving = useProfileStore((state) => state.isSaving);
   const storeError = useProfileStore((state) => state.error);
   const [name, setName] = useState(data?.user.name ?? '');
+  const [bio, setBio] = useState(data?.profile?.bio ?? '');
+  const [dateOfBirth, setDateOfBirth] = useState(
+    toDateInput(data?.profile?.dateOfBirth)
+  );
+  const [timezone, setTimezone] = useState(
+    data?.profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
   const [height, setHeight] = useState(
     data?.nutritionProfile?.heightCm?.toString() ?? ''
   );
@@ -32,6 +43,11 @@ export function EditProfileScreen() {
   const save = async () => {
     const next = {
       name: name.trim() ? null : t('auth.validation.nameRequired'),
+      dateOfBirth:
+        dateOfBirth.trim() && !dateInputToIso(dateOfBirth)
+          ? t('profile.birthDateInvalid')
+          : null,
+      timezone: timezone.trim() ? null : t('profile.timezoneRequired'),
       height: validateMeasurement(height, t('onboarding.height'), 50, 250),
       weight: validateMeasurement(weight, t('onboarding.weight'), 10, 500),
     };
@@ -40,7 +56,19 @@ export function EditProfileScreen() {
     const heightCm = parseDecimal(height);
     const currentWeightKg = parseDecimal(weight);
     if (heightCm === null || currentWeightKg === null) return;
-    if (await update({ displayName: name, heightCm, currentWeightKg })) goBack();
+    if (
+      await update({
+        displayName: name.trim(),
+        bio: bio.trim(),
+        dateOfBirth: dateOfBirth.trim()
+          ? (dateInputToIso(dateOfBirth) ?? undefined)
+          : null,
+        timezone: timezone.trim(),
+        heightCm,
+        currentWeightKg,
+      })
+    )
+      goBack();
   };
 
   return (
@@ -62,6 +90,21 @@ export function EditProfileScreen() {
           value={name}
           onChangeText={setName}
           error={errors.name}
+        />
+        <AppInput label={t('profile.bio')} value={bio} onChangeText={setBio} />
+        <AppInput
+          label={t('profile.birthDate')}
+          value={dateOfBirth}
+          onChangeText={setDateOfBirth}
+          keyboardType="number-pad"
+          placeholder="DD/MM/YYYY"
+          error={errors.dateOfBirth}
+        />
+        <AppInput
+          label={t('profile.timezone')}
+          value={timezone}
+          onChangeText={setTimezone}
+          error={errors.timezone}
         />
         <AppInput
           label={t('onboarding.heightCm')}
@@ -100,3 +143,9 @@ const styles = StyleSheet.create({
   header: { gap: spacing.lg },
   fields: { gap: spacing.xl },
 });
+
+function toDateInput(value?: string | null) {
+  if (!value) return '';
+  const match = value.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}

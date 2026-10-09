@@ -97,6 +97,7 @@ export default function RootLayout() {
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(discover)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tracking)" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="language" options={{ headerShown: false }} />
       </Stack>

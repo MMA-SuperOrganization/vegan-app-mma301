@@ -212,7 +212,7 @@ export const vi = {
   'onboarding.activity.active': 'Năng động',
   'onboarding.activity.veryActive': 'Rất năng động',
 
-  'home.greeting': 'Xin chào, {{name}} 👋',
+  'home.greeting': 'Xin chào, {{name}}',
   'home.question': 'Hôm nay bạn muốn ăn gì?',
   'home.explore': 'Khám phá',
   'home.searchPlaceholder': 'Tìm công thức, bài viết, video…',
@@ -591,7 +591,7 @@ export const en: Record<TranslationKey, string> = {
   'onboarding.activity.moderate': 'Moderate',
   'onboarding.activity.active': 'Active',
   'onboarding.activity.veryActive': 'Very active',
-  'home.greeting': 'Hello, {{name}} 👋',
+  'home.greeting': 'Hello, {{name}}',
   'home.question': 'What would you like to eat today?',
   'home.explore': 'Explore',
   'home.searchPlaceholder': 'Search recipes, articles, videos…',

@@ -64,8 +64,10 @@ export function WeightEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={
+          <CustomHeader title={t('tracking.weightEntry.title')} showBack />
+        }
       >
-        <CustomHeader title={t('tracking.weightEntry.title')} showBack />
         <TrackingQueryState
           loading={logs.isLoading}
           error={logs.isError}
@@ -80,8 +82,10 @@ export function WeightEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={
+          <CustomHeader title={t('tracking.weightEntry.title')} showBack />
+        }
       >
-        <CustomHeader title={t('tracking.weightEntry.title')} showBack />
         <View style={styles.missing}>
           <AppText color={colors.text.secondary}>
             {t('tracking.weightEntry.notFound')}
@@ -145,12 +149,14 @@ export function WeightEntryScreen() {
       edges={['top', 'left', 'right', 'bottom']}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.screen}
+      header={
+        <CustomHeader
+          title={t('tracking.weightEntry.title')}
+          showBack
+          backFallbackHref="/(tracking)/weight"
+        />
+      }
     >
-      <CustomHeader
-        title={t('tracking.weightEntry.title')}
-        showBack
-        backFallbackHref="/(tracking)/weight"
-      />
       <View style={styles.content}>
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('tracking.weightEntry.subtitle')}

@@ -105,12 +105,14 @@ export function WeightTrackingScreen() {
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
       contentContainerStyle={styles.screen}
+      header={
+        <CustomHeader
+          title={t('tracking.weight.title')}
+          showBack
+          backFallbackHref="/(tabs)/diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t('tracking.weight.title')}
-        showBack
-        backFallbackHref="/(tabs)/diary"
-      />
       <View style={styles.content}>
         <TrackingQueryState
           loading={logs.isLoading || trendQuery.isLoading}

@@ -59,12 +59,14 @@ export function FoodDiaryScreen() {
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
       contentContainerStyle={styles.screen}
+      header={
+        <CustomHeader
+          title={t('tracking.foodDiary.title')}
+          showBack
+          backFallbackHref="/(tabs)/diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t('tracking.foodDiary.title')}
-        showBack
-        backFallbackHref="/(tabs)/diary"
-      />
       <View style={styles.content}>
         <TrackingQueryState
           loading={diary.isLoading || summary.isLoading}

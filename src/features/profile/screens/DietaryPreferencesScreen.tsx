@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import { AppButton, AppText, SettingsScreenLayout } from '@/components';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import {
   getActivityOptions,
@@ -44,9 +44,11 @@ export function DietaryPreferencesScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('profile.dietaryTitle')} showBack onBack={goBack} />
-      <AppText color={colors.text.secondary}>{t('profile.dietarySubtitle')}</AppText>
+    <SettingsScreenLayout
+      title={t('profile.dietaryTitle')}
+      subtitle={t('profile.dietarySubtitle')}
+      onBack={goBack}
+    >
       <View style={styles.fields}>
         <SelectionField
           label={t('onboarding.dietType')}
@@ -87,12 +89,11 @@ export function DietaryPreferencesScreen() {
         loading={isSaving}
         onPress={() => void submit()}
       />
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: spacing.xl, gap: spacing.lg },
   fields: { gap: spacing.lg },
   note: {
     padding: spacing.xl,

@@ -8,6 +8,7 @@ import {
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
+  TimezonePickerField,
   Toggle,
 } from '@/components';
 import { useDevicePermissions } from '@/features/onboarding/hooks/useDevicePermissions';
@@ -147,10 +148,10 @@ export function NotificationSettingsScreen() {
           />
         </View>
       ) : null}
-      <AppInput
+      <TimezonePickerField
         label={t('notifications.timezone')}
         value={draft.timezone}
-        onChangeText={(timezone) => setDraft({ ...draft, timezone })}
+        onChange={(timezone) => setDraft({ ...draft, timezone })}
       />
       <AppButton
         title={

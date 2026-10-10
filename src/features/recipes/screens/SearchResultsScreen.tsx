@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -11,17 +11,20 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation, type TranslationKey } from '@/i18n';
+import { useDebouncedValue } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
 import {
   buildRecipeQuery,
+  filtersForContentType,
   hasActiveRecipeFilters,
   parseRecipeFilters,
   serializeRecipeFilters,
   type RecipeFilterRouteParams,
 } from '../filterState';
 import { useSearchResults } from '../hooks';
+import { normalizeSearchQuery } from '../searchState';
 import type { ContentType } from '../types';
 
 const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
@@ -48,19 +51,24 @@ export function SearchResultsScreen() {
   );
   const [query, setQuery] = useState(initialQuery);
   const [submitted, setSubmitted] = useState(initialQuery);
+  const debouncedQuery = useDebouncedValue(normalizeSearchQuery(query), 350);
   const [type, setType] = useState<ContentType | 'all'>(initialType);
   const filters = useMemo(() => parseRecipeFilters(params), [params]);
   const allergenIds =
     useProfileStore((state) => state.data?.nutritionProfile?.allergenIds) ?? [];
   const apiFilters = useMemo(
-    () => buildRecipeQuery(filters, allergenIds),
-    [allergenIds, filters]
+    () => buildRecipeQuery(filtersForContentType(filters, type), allergenIds),
+    [allergenIds, filters, type]
   );
   const results = useSearchResults(submitted, type, apiFilters);
   const content = results.data?.pages.flatMap((page) => page.data) ?? [];
 
+  useEffect(() => {
+    setSubmitted(debouncedQuery);
+  }, [debouncedQuery]);
+
   const submit = () => {
-    const next = query.trim();
+    const next = normalizeSearchQuery(query);
     if (!next) return;
     setSubmitted(next);
     router.setParams({ q: next });
@@ -69,7 +77,7 @@ export function SearchResultsScreen() {
   const openFilters = () =>
     router.push({
       pathname: '/(discover)/filters',
-      params: { q: submitted, ...serializeRecipeFilters(filters) },
+      params: { q: submitted, type, ...serializeRecipeFilters(filters) },
     });
 
   return (
@@ -92,7 +100,13 @@ export function SearchResultsScreen() {
             key={filter.value}
             accessibilityRole="radio"
             accessibilityState={{ checked: type === filter.value }}
-            onPress={() => setType(filter.value)}
+            onPress={() => {
+              setType(filter.value);
+              router.replace({
+                pathname: '/(discover)/search-results',
+                params: { q: submitted, type: filter.value },
+              });
+            }}
             style={[styles.filter, type === filter.value && styles.activeFilter]}
           >
             <AppText
@@ -155,7 +169,13 @@ export function SearchResultsScreen() {
                       pathname: '/(discover)/recipe/[id]',
                       params: { id: item.slug ?? item._id },
                     })
-                : undefined
+                : item.type === 'food-item'
+                  ? () =>
+                      router.push({
+                        pathname: '/(discover)/food/[id]',
+                        params: { id: item._id },
+                      })
+                  : undefined
             }
           />
         ))}

@@ -25,6 +25,9 @@ export function ContentResultCard({
   const metadata = [
     t((item.type ? typeLabels[item.type] : 'discover.typeRecipe') as TranslationKey),
     item.totalMinutes ? t('common.minutes', { count: item.totalMinutes }) : null,
+    item.type === 'food-item' && item.nutritionPer100g?.caloriesKcal != null
+      ? `${Math.round(item.nutritionPer100g.caloriesKcal)} kcal / 100g`
+      : null,
     (item.ratingCount ?? 0) > 0 && item.ratingAverage != null
       ? `${item.ratingAverage.toFixed(1)} ★`
       : null,

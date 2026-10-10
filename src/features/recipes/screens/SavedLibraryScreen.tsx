@@ -48,7 +48,13 @@ export function SavedLibraryScreen() {
                         pathname: '/(discover)/recipe/[id]',
                         params: { id: item.target?.slug ?? item.targetId },
                       })
-                  : undefined
+                  : item.targetType === 'food-item'
+                    ? () =>
+                        router.push({
+                          pathname: '/(discover)/food/[id]',
+                          params: { id: item.targetId },
+                        })
+                    : undefined
               }
             />
           ) : (

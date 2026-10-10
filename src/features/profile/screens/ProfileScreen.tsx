@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppText, ScreenWrapper } from '@/components';
+import { AppIcon, AppText, ScreenWrapper } from '@/components';
 import { getDietOptions, optionLabel } from '@/features/onboarding/constants';
 import { useUnreadNotificationCount } from '@/features/settings';
 import { useTranslation } from '@/i18n';
@@ -17,6 +17,9 @@ export function ProfileScreen() {
 
   const nutrition = data.nutritionProfile;
   const unreadCount = unread.data?.count ?? 0;
+  const dietLabel = data.profile?.dietType
+    ? optionLabel(dietOptions, data.profile.dietType)
+    : t('profile.noDiet');
 
   return (
     <ScreenWrapper
@@ -28,29 +31,57 @@ export function ProfileScreen() {
       <AppText variant="heading1">{t('profile.title')}</AppText>
 
       <View style={styles.identity}>
-        {data.user.avatarUrl ? (
-          <Image source={{ uri: data.user.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.fallback]}>
-            <AppText variant="heading1" color={colors.primary[700]}>
-              {data.user.name.charAt(0).toUpperCase()}
+        <View style={styles.identityMain}>
+          {data.user.avatarUrl ? (
+            <Image source={{ uri: data.user.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.fallback]}>
+              <AppText variant="heading1" color={colors.primary[700]}>
+                {data.user.name.charAt(0).toUpperCase()}
+              </AppText>
+            </View>
+          )}
+          <View style={styles.identityText}>
+            <AppText variant="heading3" numberOfLines={2}>
+              {data.user.name}
+            </AppText>
+            <AppText
+              variant="bodySmall"
+              color={colors.text.secondary}
+              numberOfLines={1}
+              ellipsizeMode="middle"
+            >
+              {data.user.email || t('profile.noEmail')}
             </AppText>
           </View>
-        )}
-        <View style={styles.identityText}>
-          <AppText variant="heading2">{data.user.name}</AppText>
-          <AppText color={colors.primary[700]}>
-            {data.user.email || t('profile.noEmail')}
-          </AppText>
-          <AppText variant="bodySmall" color={colors.primary[700]}>
-            {data.profile?.dietType
-              ? optionLabel(dietOptions, data.profile.dietType)
-              : t('profile.noDiet')}
-          </AppText>
         </View>
-        <Pressable onPress={() => router.push('/edit-profile')} hitSlop={12}>
-          <AppText color={colors.primary[700]}>{t('profile.edit')}</AppText>
-        </Pressable>
+        <View style={styles.identityActions}>
+          <View style={styles.dietBadge}>
+            <AppText variant="bodySmall" color={colors.primary[700]}>
+              {dietLabel}
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.edit')}
+            onPress={() => router.push('/edit-profile')}
+            style={({ pressed }) => [
+              styles.editButton,
+              pressed && styles.editButtonPressed,
+            ]}
+          >
+            <AppText variant="bodySmall" color={colors.primary[700]}>
+              {t('profile.edit')}
+            </AppText>
+            <AppIcon
+              name="back"
+              size={16}
+              color={colors.primary[700]}
+              style={styles.editChevron}
+              decorative
+            />
+          </Pressable>
+        </View>
       </View>
 
       <MenuSection title={t('profile.healthSection')}>
@@ -161,20 +192,52 @@ function MenuItem({
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.xl },
   identity: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.lg,
     padding: spacing.xl,
     borderRadius: radius.xl,
     backgroundColor: colors.background.selected,
   },
-  identityText: { flex: 1, gap: spacing.xs },
-  avatar: { width: 76, height: 76, borderRadius: 38 },
+  identityMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  identityText: { flex: 1, minWidth: 0, gap: spacing.xs },
+  avatar: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 3,
+    borderColor: colors.background.surface,
+  },
   fallback: {
     backgroundColor: colors.background.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  identityActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  dietBadge: {
+    flexShrink: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.surface,
+  },
+  editButton: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.primary[500],
+    borderRadius: radius.full,
+    backgroundColor: colors.background.surface,
+  },
+  editButtonPressed: { opacity: 0.72 },
+  editChevron: { transform: [{ rotate: '180deg' }] },
   group: { gap: spacing.sm },
   section: {
     backgroundColor: colors.background.surface,

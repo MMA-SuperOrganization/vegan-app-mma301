@@ -18,6 +18,7 @@ export interface ContentCardData {
   ratingCount?: number;
   allergenIds?: string[];
   nutritionPerServing?: NutritionFacts;
+  nutritionPer100g?: NutritionFacts;
 }
 
 export interface NutritionFacts {
@@ -26,6 +27,35 @@ export interface NutritionFacts {
   carbsG?: number;
   fatG?: number;
   fiberG?: number;
+  sugarG?: number;
+  sodiumMg?: number;
+  calciumMg?: number;
+  ironMg?: number;
+  vitaminB12Mcg?: number;
+  vitaminDMcg?: number;
+}
+
+export interface FoodItem extends ContentCardData {
+  name: string;
+  type?: 'food-item';
+  aliases?: string[];
+  categoryId: string;
+  defaultServing?: { amount: number; unit: string; gramEquivalent: number };
+  nutritionPer100g?: NutritionFacts;
+  isVegan: boolean;
+  isVegetarian: boolean;
+  containsEggs?: boolean;
+  containsDairy?: boolean;
+}
+
+export interface FoodQuery {
+  page?: number;
+  limit?: number;
+  q?: string;
+  category?: string;
+  excludeAllergenIds?: string[];
+  isVegan?: boolean;
+  sort?: 'name' | '-name' | 'createdAt' | '-createdAt' | 'calories' | '-calories';
 }
 
 export interface RecipeDetail extends ContentCardData {
@@ -88,6 +118,12 @@ export interface Category {
   name: string;
   slug: string;
   type: 'food' | 'recipe' | 'post';
+}
+
+export interface AllergenSummary {
+  _id: string;
+  name: string;
+  slug: string;
 }
 
 export interface RecentSearch {

@@ -12,9 +12,14 @@ import {
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { LogHistoryItem } from '../components/LogHistoryItem';
+import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WeightLineChart } from '../components/WeightLineChart';
+import {
+  useTrackingTargets,
+  useWeightLogs,
+  useWeightTrend,
+} from '../hooks/useTrackingApi';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { useTrackingStore } from '../store/trackingStore';
 import {
   daysAgo,
   formatTimeOfDay,
@@ -37,8 +42,10 @@ export function WeightTrackingScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, relativeDay } = useTrackingFormat();
-  const weightLogs = useTrackingStore((state) => state.weightLogs);
-  const goalKg = useTrackingStore((state) => state.targets.weightKg);
+  const logs = useWeightLogs();
+  const trendQuery = useWeightTrend();
+  const weightLogs = logs.data?.data ?? [];
+  const goalKg = useTrackingTargets().weightKg;
 
   const now = new Date();
   const { history, points, trend } = useMemo(() => {
@@ -105,97 +112,119 @@ export function WeightTrackingScreen() {
         backFallbackHref="/(tabs)/diary"
       />
       <View style={styles.content}>
-        {latest && goalKg != null ? (
-          <AppText variant="bodySmall" color={colors.text.secondary}>
-            {t(GOAL_KEYS[weightGoalDirection(latest.weightKg, goalKg)], {
-              goal: formatNumber(goalKg, 1),
-            })}
-          </AppText>
-        ) : null}
-
-        {!latest ? (
-          <EmptyState
-            title={t('tracking.hub.weightEmpty')}
-            description={t('tracking.hub.weightEmptyDetail')}
-            actionLabel={t('tracking.weight.add')}
-            onAction={() => openEntry()}
-          />
-        ) : (
+        <TrackingQueryState
+          loading={logs.isLoading || trendQuery.isLoading}
+          error={logs.isError || trendQuery.isError}
+          onRetry={() => void Promise.all([logs.refetch(), trendQuery.refetch()])}
+        />
+        {!logs.isLoading &&
+        !trendQuery.isLoading &&
+        !logs.isError &&
+        !trendQuery.isError ? (
           <>
-            <View style={styles.hero}>
-              <AppText variant="overline" color={colors.text.inverse}>
-                {t('tracking.weight.progressTitle')}
+            {latest && goalKg != null ? (
+              <AppText variant="bodySmall" color={colors.text.secondary}>
+                {t(GOAL_KEYS[weightGoalDirection(latest.weightKg, goalKg)], {
+                  goal: formatNumber(goalKg, 1),
+                })}
               </AppText>
-              <View style={styles.heroValue}>
-                <AppText variant="display" color={colors.text.inverse}>
-                  {kg(latest.weightKg)}
-                </AppText>
-                <AppText color={colors.text.inverse}>
-                  {latestAge === 0
-                    ? t('tracking.weight.kgToday')
-                    : t('tracking.weight.kgOn', {
-                        date: formatShortDate(toLocalIsoDate(latest.recordedAt)),
-                      })}
-                </AppText>
-              </View>
-              {changeText ? (
-                <AppText variant="bodySmall" color={colors.text.inverse}>
-                  {changeText}
-                </AppText>
-              ) : null}
-              {goalProgress != null ? (
-                <ProgressBar
-                  value={goalProgress}
-                  max={1}
-                  accessibilityLabel={t('tracking.weight.goalProgressA11y', {
-                    percent: Math.round(goalProgress * 100),
-                  })}
-                />
-              ) : null}
-            </View>
+            ) : null}
 
-            <View style={styles.card}>
-              <AppText variant="heading4">{t('tracking.weight.chartTitle')}</AppText>
-              {points.length > 0 ? (
-                <WeightLineChart
-                  points={points}
-                  accessibilityLabel={t('tracking.weight.chartA11y', {
-                    days: trend?.periodDays ?? points.length,
-                    weights: points.map((point) => kg(point.weightKg)).join(', '),
-                  })}
-                  labelFor={(point) =>
-                    point.daysAgo === 0
-                      ? t('tracking.weight.chartToday', { kg: kg(point.weightKg) })
-                      : t('tracking.weight.chartDaysAgo', {
-                          days: point.daysAgo,
-                          kg: kg(point.weightKg),
-                        })
-                  }
-                />
-              ) : (
-                <AppText variant="bodySmall" color={colors.text.secondary}>
-                  {t('tracking.weight.chartEmpty')}
-                </AppText>
-              )}
-            </View>
-
-            <AppButton
-              title={t('tracking.weight.add')}
-              onPress={() => openEntry()}
-            />
-
-            <AppText variant="heading4">{t('tracking.weight.historyTitle')}</AppText>
-            {history.map((log) => (
-              <LogHistoryItem
-                key={log._id}
-                unit="kg"
-                title={historyTitle(log.recordedAt)}
-                value={t('tracking.hub.weightValue', { weight: kg(log.weightKg) })}
-                onPress={() => openEntry(log._id)}
+            {!latest ? (
+              <EmptyState
+                title={t('tracking.hub.weightEmpty')}
+                description={t('tracking.hub.weightEmptyDetail')}
+                actionLabel={t('tracking.weight.add')}
+                onAction={() => openEntry()}
               />
-            ))}
+            ) : (
+              <>
+                <View style={styles.hero}>
+                  <AppText variant="overline" color={colors.text.inverse}>
+                    {t('tracking.weight.progressTitle')}
+                  </AppText>
+                  <View style={styles.heroValue}>
+                    <AppText variant="display" color={colors.text.inverse}>
+                      {kg(latest.weightKg)}
+                    </AppText>
+                    <AppText color={colors.text.inverse}>
+                      {latestAge === 0
+                        ? t('tracking.weight.kgToday')
+                        : t('tracking.weight.kgOn', {
+                            date: formatShortDate(toLocalIsoDate(latest.recordedAt)),
+                          })}
+                    </AppText>
+                  </View>
+                  {changeText ? (
+                    <AppText variant="bodySmall" color={colors.text.inverse}>
+                      {changeText}
+                    </AppText>
+                  ) : null}
+                  {goalProgress != null ? (
+                    <ProgressBar
+                      value={goalProgress}
+                      max={1}
+                      accessibilityLabel={t('tracking.weight.goalProgressA11y', {
+                        percent: Math.round(goalProgress * 100),
+                      })}
+                    />
+                  ) : null}
+                </View>
+
+                <View style={styles.card}>
+                  <AppText variant="heading4">
+                    {t('tracking.weight.chartTitle')}
+                  </AppText>
+                  {points.length > 0 ? (
+                    <WeightLineChart
+                      points={points}
+                      accessibilityLabel={t('tracking.weight.chartA11y', {
+                        days: trend?.periodDays ?? points.length,
+                        weights: points
+                          .map((point) => kg(point.weightKg))
+                          .join(', '),
+                      })}
+                      labelFor={(point) =>
+                        point.daysAgo === 0
+                          ? t('tracking.weight.chartToday', {
+                              kg: kg(point.weightKg),
+                            })
+                          : t('tracking.weight.chartDaysAgo', {
+                              days: point.daysAgo,
+                              kg: kg(point.weightKg),
+                            })
+                      }
+                    />
+                  ) : (
+                    <AppText variant="bodySmall" color={colors.text.secondary}>
+                      {t('tracking.weight.chartEmpty')}
+                    </AppText>
+                  )}
+                </View>
+
+                <AppButton
+                  title={t('tracking.weight.add')}
+                  onPress={() => openEntry()}
+                />
+
+                <AppText variant="heading4">
+                  {t('tracking.weight.historyTitle')}
+                </AppText>
+                {history.map((log) => (
+                  <LogHistoryItem
+                    key={log._id}
+                    unit="kg"
+                    title={historyTitle(log.recordedAt)}
+                    value={t('tracking.hub.weightValue', {
+                      weight: kg(log.weightKg),
+                    })}
+                    onPress={() => openEntry(log._id)}
+                  />
+                ))}
+              </>
+            )}
           </>
-        )}
+        ) : null}
       </View>
     </ScreenWrapper>
   );

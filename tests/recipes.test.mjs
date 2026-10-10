@@ -2,12 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildRecipeQuery,
+  filtersForContentType,
   hasActiveRecipeFilters,
   parseRecipeFilters,
   serializeRecipeFilters,
 } from '../src/features/recipes/filterState.ts';
 import { updateSavedPage } from '../src/features/recipes/savedState.ts';
 import { formatTimer, remainingSeconds } from '../src/features/recipes/timer.ts';
+import { buildFoodQuery } from '../src/features/recipes/foodState.ts';
+import { normalizeSearchQuery } from '../src/features/recipes/searchState.ts';
+
+test('search terms are trimmed and compacted before fuzzy lookup', () => {
+  assert.equal(normalizeSearchQuery('  dau   hu  '), 'dau hu');
+  assert.equal(normalizeSearchQuery('   '), '');
+});
 
 test('recipe filters parse, serialize and map profile allergens to the API query', () => {
   const filters = parseRecipeFilters({
@@ -46,6 +54,27 @@ test('recipe filters parse, serialize and map profile allergens to the API query
   });
 });
 
+test('food search drops recipe-only filters', () => {
+  assert.deepEqual(
+    filtersForContentType(
+      {
+        category: 'food-category',
+        difficulty: 'hard',
+        maxTotalMinutes: 30,
+        dietType: 'vegan',
+        sort: 'rating',
+        avoidProfileAllergens: true,
+      },
+      'food-item'
+    ),
+    {
+      category: 'food-category',
+      dietType: 'vegan',
+      avoidProfileAllergens: true,
+    }
+  );
+});
+
 test('invalid filter route values are ignored and clearing filters is inactive', () => {
   assert.deepEqual(
     parseRecipeFilters({
@@ -64,6 +93,31 @@ test('invalid filter route values are ignored and clearing filters is inactive',
     }
   );
   assert.equal(hasActiveRecipeFilters({}), false);
+});
+
+test('food lookup always requests vegan foods and only excludes selected profile allergens', () => {
+  assert.deepEqual(
+    buildFoodQuery({
+      query: '  tofu  ',
+      category: 'food-category',
+      avoidAllergens: true,
+      profileAllergenIds: ['soy', 'soy'],
+    }),
+    {
+      q: 'tofu',
+      category: 'food-category',
+      isVegan: true,
+      excludeAllergenIds: ['soy'],
+    }
+  );
+  assert.equal(
+    buildFoodQuery({
+      query: '',
+      avoidAllergens: false,
+      profileAllergenIds: ['soy'],
+    }).excludeAllergenIds,
+    undefined
+  );
 });
 
 test('saved optimistic state deduplicates saves and removes only the selected account item', () => {

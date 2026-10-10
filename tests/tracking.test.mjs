@@ -11,6 +11,7 @@ import {
   weightGoalProgress,
   defaultMealTypeFor,
   groupDiaryByMeal,
+  normalizeDiaryEntry,
   parseDecimal,
   parseTimeOfDay,
   quantityToGrams,
@@ -67,6 +68,14 @@ test('diary nutrition totals add every macro', () => {
     fatG: 22,
     fiberG: 14,
   });
+});
+
+test('API diary timestamps normalize to the calendar date used by screens', () => {
+  const entry = createMockTrackingData(now).diaryEntries[0];
+  assert.equal(
+    normalizeDiaryEntry({ ...entry, date: '2026-10-08T00:00:00.000Z' }).date,
+    '2026-10-08'
+  );
 });
 
 test('weight trend handles empty, single and rising logs', () => {

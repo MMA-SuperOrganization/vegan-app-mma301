@@ -12,14 +12,19 @@ import { colors, radius, spacing } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
-import { useExploreRecipes, useHomeFeed } from '../hooks';
+import { useExploreRecipes, useFoodItems, useHomeFeed } from '../hooks';
 import type { ContentType } from '../types';
 
 const FILTERS: Array<{
-  type: Exclude<ContentType, 'food-item'>;
-  label: 'discover.typeRecipe' | 'discover.typePost' | 'discover.typeVideo';
+  type: ContentType;
+  label:
+    | 'discover.typeRecipe'
+    | 'discover.typeFood'
+    | 'discover.typePost'
+    | 'discover.typeVideo';
 }> = [
   { type: 'recipe', label: 'discover.typeRecipe' },
+  { type: 'food-item', label: 'discover.typeFood' },
   { type: 'post', label: 'discover.typePost' },
   { type: 'video', label: 'discover.typeVideo' },
 ];
@@ -27,19 +32,37 @@ const FILTERS: Array<{
 export function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [type, setType] = useState<'recipe' | 'post' | 'video'>('recipe');
+  const [type, setType] = useState<ContentType>('recipe');
   const recipes = useExploreRecipes();
+  const foods = useFoodItems({ isVegan: true });
   const home = useHomeFeed();
   const recipeContent = recipes.data?.pages.flatMap((page) => page.data) ?? [];
   const content =
     type === 'recipe'
       ? recipeContent
-      : type === 'post'
-        ? (home.data?.featured.posts ?? [])
-        : (home.data?.featured.videos ?? []);
-  const isLoading = type === 'recipe' ? recipes.isLoading : home.isLoading;
-  const error = type === 'recipe' ? recipes.error : home.error;
-  const retry = type === 'recipe' ? recipes.refetch : home.refetch;
+      : type === 'food-item'
+        ? (foods.data?.pages.flatMap((page) => page.data) ?? [])
+        : type === 'post'
+          ? (home.data?.featured.posts ?? [])
+          : (home.data?.featured.videos ?? []);
+  const isLoading =
+    type === 'recipe'
+      ? recipes.isLoading
+      : type === 'food-item'
+        ? foods.isLoading
+        : home.isLoading;
+  const error =
+    type === 'recipe'
+      ? recipes.error
+      : type === 'food-item'
+        ? foods.error
+        : home.error;
+  const retry =
+    type === 'recipe'
+      ? recipes.refetch
+      : type === 'food-item'
+        ? foods.refetch
+        : home.refetch;
   return (
     <ScreenWrapper
       scrollable
@@ -57,6 +80,12 @@ export function ExploreScreen() {
           variant="outline"
           fullWidth={false}
           onPress={() => router.push('/(discover)/search')}
+        />
+        <AppButton
+          title={t('food.catalogTitle')}
+          variant="outline"
+          fullWidth={false}
+          onPress={() => router.push('/(discover)/foods')}
         />
         <AppButton
           title={t('discover.savedContent')}
@@ -112,7 +141,13 @@ export function ExploreScreen() {
                       pathname: '/(discover)/recipe/[id]',
                       params: { id: item.slug ?? item._id },
                     })
-                : undefined
+                : type === 'food-item'
+                  ? () =>
+                      router.push({
+                        pathname: '/(discover)/food/[id]',
+                        params: { id: item._id },
+                      })
+                  : undefined
             }
           />
         ))}
@@ -123,6 +158,14 @@ export function ExploreScreen() {
           variant="outline"
           loading={recipes.isFetchingNextPage}
           onPress={() => void recipes.fetchNextPage()}
+        />
+      ) : null}
+      {type === 'food-item' && foods.hasNextPage ? (
+        <AppButton
+          title={t('discover.loadMore')}
+          variant="outline"
+          loading={foods.isFetchingNextPage}
+          onPress={() => void foods.fetchNextPage()}
         />
       ) : null}
     </ScreenWrapper>

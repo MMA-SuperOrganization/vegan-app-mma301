@@ -10,6 +10,8 @@ import { updateSavedPage, type SavedStateChange } from './savedState';
 import type {
   ContentCardData,
   ContentType,
+  FoodItem,
+  FoodQuery,
   PageResult,
   RecipeDetail,
   RecipeQuery,
@@ -39,7 +41,10 @@ export const recipeKeys = {
   suggestions: (query: string) => ['search', 'suggestions', query] as const,
   saved: (userId?: string | null) =>
     ['account', accountKey(userId), 'saved-items'] as const,
-  categories: ['recipe-categories'] as const,
+  categories: (type?: string) => ['content-categories', type ?? 'all'] as const,
+  allergens: ['allergen-catalog'] as const,
+  foods: (query: FoodQuery = {}) => ['foods', query] as const,
+  foodDetail: (id: string) => ['foods', 'detail', id] as const,
 };
 
 const nextPage = <T>(lastPage: PageResult<T>, pages: PageResult<T>[]) => {
@@ -108,9 +113,42 @@ export function useRecipeDetail(id: string) {
 
 export function useRecipeCategories() {
   return useQuery({
-    queryKey: recipeKeys.categories,
-    queryFn: recipeApi.categories,
+    queryKey: recipeKeys.categories('recipe'),
+    queryFn: () => recipeApi.categories('recipe'),
     staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useContentCategories(type?: 'food' | 'recipe' | 'post') {
+  return useQuery({
+    queryKey: recipeKeys.categories(type),
+    queryFn: () => recipeApi.categories(type),
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useAllergenCatalog() {
+  return useQuery({
+    queryKey: recipeKeys.allergens,
+    queryFn: recipeApi.allergens,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useFoodItems(query: FoodQuery = {}) {
+  return useInfiniteQuery({
+    queryKey: recipeKeys.foods(query),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => recipeApi.foods({ ...query, page: pageParam }),
+    getNextPageParam: nextPage,
+  });
+}
+
+export function useFoodDetail(id: string) {
+  return useQuery<FoodItem>({
+    queryKey: recipeKeys.foodDetail(id),
+    queryFn: () => recipeApi.foodDetail(id),
+    enabled: Boolean(id),
   });
 }
 

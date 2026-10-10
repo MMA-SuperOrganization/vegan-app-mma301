@@ -16,6 +16,7 @@ export * from './Thumbnail';
 export * from './IconButton';
 export * from './FormField';
 export * from './ProgressBar';
+export * from './TimezonePickerField';
 
 export { Button as AppButton } from './Button';
 export { Input as AppInput } from './Input';

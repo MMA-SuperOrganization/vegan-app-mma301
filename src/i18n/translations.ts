@@ -26,6 +26,27 @@ export const vi = {
   'nav.profile': 'Cá nhân',
   'nav.open': 'Mở {{screen}}',
 
+  'grocery.emptyTitle': 'Danh sách mua sắm chưa có món nào',
+  'grocery.emptyDescription':
+    'Đây sẽ là nơi tổng hợp những nguyên liệu bạn cần mua cho các món ăn đã chọn.',
+  'grocery.guideTitle': 'Cách sử dụng danh sách mua sắm',
+  'grocery.guide.choose': 'Chọn công thức hoặc lập thực đơn cho những ngày tới.',
+  'grocery.guide.collect': 'Thêm các nguyên liệu còn thiếu vào danh sách mua sắm.',
+  'grocery.guide.check': 'Đánh dấu từng nguyên liệu sau khi bạn đã mua xong.',
+  'grocery.availabilityNote':
+    'Tính năng tạo và đánh dấu danh sách đang được hoàn thiện.',
+  'grocery.exploreRecipes': 'Khám phá công thức',
+
+  'mealPlan.emptyTitle': 'Bạn chưa có thực đơn',
+  'mealPlan.emptyDescription':
+    'Sắp xếp món ăn theo ngày để việc ăn chay trở nên chủ động và dễ dàng hơn.',
+  'mealPlan.guideTitle': 'Bắt đầu lên thực đơn',
+  'mealPlan.guide.discover': 'Khám phá và chọn những công thức bạn muốn nấu.',
+  'mealPlan.guide.arrange': 'Sắp xếp món ăn vào từng ngày và từng bữa.',
+  'mealPlan.guide.prepare': 'Chuẩn bị nguyên liệu dựa trên kế hoạch đã tạo.',
+  'mealPlan.availabilityNote': 'Tính năng tạo thực đơn đang được hoàn thiện.',
+  'mealPlan.exploreRecipes': 'Chọn công thức',
+
   'bootstrap.restoringSession': 'Đang khôi phục phiên đăng nhập…',
   'bootstrap.loadingProfile': 'Đang tải hồ sơ…',
   'bootstrap.profileErrorTitle': 'Chưa thể tải hồ sơ',
@@ -497,6 +518,7 @@ export const vi = {
 
   'tracking.hub.title': 'Nhật ký',
   'tracking.hub.subtitle': 'Theo dõi ăn uống, cân nặng và nước uống mỗi ngày.',
+  'tracking.hub.todayOverview': 'Tổng quan hôm nay',
   'tracking.foodDiary.title': 'Nhật ký hôm nay',
   'tracking.weight.title': 'Theo dõi cân nặng',
   'tracking.water.title': 'Theo dõi nước uống',
@@ -728,6 +750,25 @@ export const en: Record<TranslationKey, string> = {
   'nav.diary': 'Diary',
   'nav.profile': 'Profile',
   'nav.open': 'Open {{screen}}',
+  'grocery.emptyTitle': 'Your grocery list is empty',
+  'grocery.emptyDescription':
+    'This is where the ingredients you need for selected meals will be collected.',
+  'grocery.guideTitle': 'How to use your grocery list',
+  'grocery.guide.choose': 'Choose recipes or plan your meals for the coming days.',
+  'grocery.guide.collect': 'Add any missing ingredients to your grocery list.',
+  'grocery.guide.check': 'Check off each ingredient after you buy it.',
+  'grocery.availabilityNote':
+    'Creating and checking off grocery items is still being completed.',
+  'grocery.exploreRecipes': 'Explore recipes',
+  'mealPlan.emptyTitle': 'You have no meal plan yet',
+  'mealPlan.emptyDescription':
+    'Organize meals by day to make plant-based eating easier and more intentional.',
+  'mealPlan.guideTitle': 'Start planning your meals',
+  'mealPlan.guide.discover': 'Explore and choose recipes you would like to cook.',
+  'mealPlan.guide.arrange': 'Arrange dishes by day and meal.',
+  'mealPlan.guide.prepare': 'Prepare ingredients from the plan you create.',
+  'mealPlan.availabilityNote': 'Meal plan creation is still being completed.',
+  'mealPlan.exploreRecipes': 'Choose recipes',
   'bootstrap.restoringSession': 'Restoring your session…',
   'bootstrap.loadingProfile': 'Loading profile…',
   'bootstrap.profileErrorTitle': 'Unable to load profile',
@@ -1142,6 +1183,7 @@ export const en: Record<TranslationKey, string> = {
 
   'tracking.hub.title': 'Diary',
   'tracking.hub.subtitle': 'Track your meals, weight and water every day.',
+  'tracking.hub.todayOverview': "Today's overview",
   'tracking.foodDiary.title': "Today's food diary",
   'tracking.weight.title': 'Weight tracking',
   'tracking.water.title': 'Water tracking',

@@ -1,7 +1,5 @@
-import { PlaceholderTabScreen } from '@/components/navigation';
-import { useTranslation } from '@/i18n';
+import { GroceryPlaceholderScreen } from '@/features/grocery';
 
 export default function GroceryRoute() {
-  const { t } = useTranslation();
-  return <PlaceholderTabScreen title={t('nav.grocery')} />;
+  return <GroceryPlaceholderScreen />;
 }

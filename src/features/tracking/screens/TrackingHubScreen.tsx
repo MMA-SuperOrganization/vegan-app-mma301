@@ -70,6 +70,10 @@ export function TrackingHubScreen() {
         <AppText color={colors.text.secondary}>{t('tracking.hub.subtitle')}</AppText>
       </View>
 
+      <View style={styles.sectionHeader}>
+        <AppText variant="heading4">{t('tracking.hub.todayOverview')}</AppText>
+      </View>
+
       <TrackingHubCard
         testID="tracking-hub-food-diary"
         tone="energy"
@@ -98,53 +102,57 @@ export function TrackingHubScreen() {
         onPress={() => router.push('/(tracking)/food-diary')}
       />
 
-      <TrackingHubCard
-        testID="tracking-hub-weight"
-        tone="weight"
-        unit="kg"
-        title={t('tracking.weight.title')}
-        value={
-          weight
-            ? t('tracking.hub.weightValue', {
-                weight: formatNumber(weight.latestWeightKg, 1, 1),
-              })
-            : t('tracking.hub.weightEmpty')
-        }
-        detail={weight ? weightDetail : t('tracking.hub.weightEmptyDetail')}
-        onPress={() => router.push('/(tracking)/weight')}
-      />
-
-      <TrackingHubCard
-        testID="tracking-hub-water"
-        tone="water"
-        unit="ml"
-        title={t('tracking.water.title')}
-        value={
-          water.targetMl
-            ? t('tracking.hub.waterValue', {
-                consumed: formatNumber(water.consumedMl),
-                target: formatNumber(water.targetMl),
-              })
-            : t('tracking.hub.waterValueNoTarget', {
-                consumed: formatNumber(water.consumedMl),
-              })
-        }
-        detail={
-          waterRemaining == null
-            ? undefined
-            : waterRemaining > 0
-              ? t('tracking.hub.waterRemaining', {
-                  remaining: formatNumber(waterRemaining),
+      <View style={styles.metricGrid}>
+        <TrackingHubCard
+          testID="tracking-hub-weight"
+          variant="compact"
+          tone="weight"
+          unit="kg"
+          title={t('tracking.weight.title')}
+          value={
+            weight
+              ? t('tracking.hub.weightValue', {
+                  weight: formatNumber(weight.latestWeightKg, 1, 1),
                 })
-              : t('tracking.hub.waterDone')
-        }
-        progress={
-          water.targetMl
-            ? { value: water.consumedMl, max: water.targetMl }
-            : undefined
-        }
-        onPress={() => router.push('/(tracking)/water')}
-      />
+              : t('tracking.hub.weightEmpty')
+          }
+          detail={weight ? weightDetail : t('tracking.hub.weightEmptyDetail')}
+          onPress={() => router.push('/(tracking)/weight')}
+        />
+
+        <TrackingHubCard
+          testID="tracking-hub-water"
+          variant="compact"
+          tone="water"
+          unit="ml"
+          title={t('tracking.water.title')}
+          value={
+            water.targetMl
+              ? t('tracking.hub.waterValue', {
+                  consumed: formatNumber(water.consumedMl),
+                  target: formatNumber(water.targetMl),
+                })
+              : t('tracking.hub.waterValueNoTarget', {
+                  consumed: formatNumber(water.consumedMl),
+                })
+          }
+          detail={
+            waterRemaining == null
+              ? undefined
+              : waterRemaining > 0
+                ? t('tracking.hub.waterRemaining', {
+                    remaining: formatNumber(waterRemaining),
+                  })
+                : t('tracking.hub.waterDone')
+          }
+          progress={
+            water.targetMl
+              ? { value: water.consumedMl, max: water.targetMl }
+              : undefined
+          }
+          onPress={() => router.push('/(tracking)/water')}
+        />
+      </View>
     </ScreenWrapper>
   );
 }
@@ -153,4 +161,8 @@ const styles = StyleSheet.create({
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.lg },
   header: { gap: spacing.xs, marginBottom: spacing.sm },
   date: { textTransform: 'capitalize' },
+  sectionHeader: {
+    marginTop: spacing.sm,
+  },
+  metricGrid: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
 });

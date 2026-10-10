@@ -14,12 +14,13 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { RecipeHeader } from '../components/RecipeHeader';
 import {
+  filtersForContentType,
   parseRecipeFilters,
   serializeRecipeFilters,
   type RecipeFilterRouteParams,
 } from '../filterState';
-import { useRecipeCategories } from '../hooks';
-import type { RecipeFilters } from '../types';
+import { useContentCategories } from '../hooks';
+import type { ContentType, RecipeFilters } from '../types';
 
 const durations = [15, 30, 60] as const;
 const difficulties = ['easy', 'medium', 'hard'] as const;
@@ -30,10 +31,26 @@ export function FilterPanelScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const params = useLocalSearchParams<RecipeFilterRouteParams>();
+  const rawType = Array.isArray(params.type) ? params.type[0] : params.type;
+  const contentType: ContentType | 'all' = [
+    'all',
+    'recipe',
+    'food-item',
+    'post',
+    'video',
+  ].includes(rawType ?? '')
+    ? (rawType as ContentType | 'all')
+    : 'all';
   const [filters, setFilters] = useState<RecipeFilters>(() =>
-    parseRecipeFilters(params)
+    filtersForContentType(parseRecipeFilters(params), contentType)
   );
-  const categories = useRecipeCategories();
+  const categories = useContentCategories(
+    contentType === 'food-item'
+      ? 'food'
+      : contentType === 'recipe'
+        ? 'recipe'
+        : undefined
+  );
   const profile = useProfileStore((state) => state.data);
   const allergenIds = profile?.nutritionProfile?.allergenIds ?? [];
   const allergySelectionReady =
@@ -42,9 +59,14 @@ export function FilterPanelScreen() {
   const query = Array.isArray(params.q) ? params.q[0] : (params.q ?? '');
 
   const apply = () => {
+    const applicableFilters = filtersForContentType(filters, contentType);
     router.replace({
       pathname: '/(discover)/search-results',
-      params: { q: query, type: 'recipe', ...serializeRecipeFilters(filters) },
+      params: {
+        q: query,
+        type: contentType,
+        ...serializeRecipeFilters(applicableFilters),
+      },
     });
   };
 
@@ -91,47 +113,51 @@ export function FilterPanelScreen() {
         </Options>
       </FilterSection>
 
-      <FilterSection title={t('filters.duration')}>
-        <Options>
-          <FilterOption
-            label={t('filters.any')}
-            selected={!filters.maxTotalMinutes}
-            onPress={() =>
-              setFilters((current) => ({ ...current, maxTotalMinutes: undefined }))
-            }
-          />
-          {durations.map((minutes) => (
+      {contentType !== 'food-item' ? (
+        <FilterSection title={t('filters.duration')}>
+          <Options>
             <FilterOption
-              key={minutes}
-              label={t('filters.underMinutes', { count: minutes })}
-              selected={filters.maxTotalMinutes === minutes}
+              label={t('filters.any')}
+              selected={!filters.maxTotalMinutes}
               onPress={() =>
-                setFilters((current) => ({ ...current, maxTotalMinutes: minutes }))
+                setFilters((current) => ({ ...current, maxTotalMinutes: undefined }))
               }
             />
-          ))}
-        </Options>
-      </FilterSection>
+            {durations.map((minutes) => (
+              <FilterOption
+                key={minutes}
+                label={t('filters.underMinutes', { count: minutes })}
+                selected={filters.maxTotalMinutes === minutes}
+                onPress={() =>
+                  setFilters((current) => ({ ...current, maxTotalMinutes: minutes }))
+                }
+              />
+            ))}
+          </Options>
+        </FilterSection>
+      ) : null}
 
-      <FilterSection title={t('filters.difficulty')}>
-        <Options>
-          <FilterOption
-            label={t('filters.any')}
-            selected={!filters.difficulty}
-            onPress={() =>
-              setFilters((current) => ({ ...current, difficulty: undefined }))
-            }
-          />
-          {difficulties.map((difficulty) => (
+      {contentType !== 'food-item' ? (
+        <FilterSection title={t('filters.difficulty')}>
+          <Options>
             <FilterOption
-              key={difficulty}
-              label={t(`filters.difficulty.${difficulty}` as TranslationKey)}
-              selected={filters.difficulty === difficulty}
-              onPress={() => setFilters((current) => ({ ...current, difficulty }))}
+              label={t('filters.any')}
+              selected={!filters.difficulty}
+              onPress={() =>
+                setFilters((current) => ({ ...current, difficulty: undefined }))
+              }
             />
-          ))}
-        </Options>
-      </FilterSection>
+            {difficulties.map((difficulty) => (
+              <FilterOption
+                key={difficulty}
+                label={t(`filters.difficulty.${difficulty}` as TranslationKey)}
+                selected={filters.difficulty === difficulty}
+                onPress={() => setFilters((current) => ({ ...current, difficulty }))}
+              />
+            ))}
+          </Options>
+        </FilterSection>
+      ) : null}
 
       <FilterSection title={t('filters.diet')}>
         <Options>
@@ -155,18 +181,20 @@ export function FilterPanelScreen() {
         </Options>
       </FilterSection>
 
-      <FilterSection title={t('filters.sort')}>
-        <Options>
-          {sorts.map((sort) => (
-            <FilterOption
-              key={sort}
-              label={t(`filters.sort.${sort}` as TranslationKey)}
-              selected={(filters.sort ?? 'popular') === sort}
-              onPress={() => setFilters((current) => ({ ...current, sort }))}
-            />
-          ))}
-        </Options>
-      </FilterSection>
+      {contentType !== 'food-item' ? (
+        <FilterSection title={t('filters.sort')}>
+          <Options>
+            {sorts.map((sort) => (
+              <FilterOption
+                key={sort}
+                label={t(`filters.sort.${sort}` as TranslationKey)}
+                selected={(filters.sort ?? 'popular') === sort}
+                onPress={() => setFilters((current) => ({ ...current, sort }))}
+              />
+            ))}
+          </Options>
+        </FilterSection>
+      ) : null}
 
       <View style={styles.allergenBlock}>
         <Toggle

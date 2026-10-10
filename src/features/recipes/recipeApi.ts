@@ -1,6 +1,7 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import type {
   Category,
+  AllergenSummary,
   ContentCardData,
   ContentType,
   PageResult,
@@ -10,6 +11,8 @@ import type {
   SavedItem,
   SavedTargetType,
   HomeFeed,
+  FoodItem,
+  FoodQuery,
   SearchSuggestion,
 } from './types';
 
@@ -72,8 +75,22 @@ export const recipeApi = {
     );
     return { ...recipe, isSaved: recipe.isSaved ?? recipe.saved ?? false };
   },
-  categories: () =>
-    pageRequest<Category>('/categories', { type: 'recipe', page: 1, limit: 100 }),
+  foods: (query: FoodQuery = {}): Promise<PageResult<FoodItem>> =>
+    pageRequest('/food-items', {
+      page: query.page ?? 1,
+      limit: query.limit ?? 10,
+      q: query.q,
+      category: query.category,
+      excludeAllergenIds: query.excludeAllergenIds,
+      isVegan: query.isVegan ?? true,
+      sort: query.sort ?? 'name',
+    }),
+  foodDetail: (id: string) =>
+    unwrapApiRequest<FoodItem>(() => apiClient.get(`/food-items/${id}`)),
+  categories: (type?: Category['type']) =>
+    pageRequest<Category>('/categories', { type, page: 1, limit: 100 }),
+  allergens: () =>
+    pageRequest<AllergenSummary>('/allergens', { page: 1, limit: 100 }),
   saved: (page = 1) => pageRequest<SavedItem>('/saved-items', { page, limit: 50 }),
   save: (type: SavedTargetType, id: string) =>
     unwrapApiRequest(() => apiClient.put(`/saved-items/${type}/${id}`, {})),

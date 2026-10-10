@@ -16,6 +16,7 @@ import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
 import {
   buildRecipeQuery,
+  filtersForContentType,
   hasActiveRecipeFilters,
   parseRecipeFilters,
   serializeRecipeFilters,
@@ -53,8 +54,8 @@ export function SearchResultsScreen() {
   const allergenIds =
     useProfileStore((state) => state.data?.nutritionProfile?.allergenIds) ?? [];
   const apiFilters = useMemo(
-    () => buildRecipeQuery(filters, allergenIds),
-    [allergenIds, filters]
+    () => buildRecipeQuery(filtersForContentType(filters, type), allergenIds),
+    [allergenIds, filters, type]
   );
   const results = useSearchResults(submitted, type, apiFilters);
   const content = results.data?.pages.flatMap((page) => page.data) ?? [];
@@ -69,7 +70,7 @@ export function SearchResultsScreen() {
   const openFilters = () =>
     router.push({
       pathname: '/(discover)/filters',
-      params: { q: submitted, ...serializeRecipeFilters(filters) },
+      params: { q: submitted, type, ...serializeRecipeFilters(filters) },
     });
 
   return (
@@ -92,7 +93,13 @@ export function SearchResultsScreen() {
             key={filter.value}
             accessibilityRole="radio"
             accessibilityState={{ checked: type === filter.value }}
-            onPress={() => setType(filter.value)}
+            onPress={() => {
+              setType(filter.value);
+              router.replace({
+                pathname: '/(discover)/search-results',
+                params: { q: submitted, type: filter.value },
+              });
+            }}
             style={[styles.filter, type === filter.value && styles.activeFilter]}
           >
             <AppText
@@ -155,7 +162,13 @@ export function SearchResultsScreen() {
                       pathname: '/(discover)/recipe/[id]',
                       params: { id: item.slug ?? item._id },
                     })
-                : undefined
+                : item.type === 'food-item'
+                  ? () =>
+                      router.push({
+                        pathname: '/(discover)/food/[id]',
+                        params: { id: item._id },
+                      })
+                  : undefined
             }
           />
         ))}

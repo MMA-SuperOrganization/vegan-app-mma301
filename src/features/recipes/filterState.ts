@@ -1,4 +1,4 @@
-import type { RecipeFilters, RecipeQuery } from './types';
+import type { ContentType, RecipeFilters, RecipeQuery } from './types';
 
 type RouteValue = string | string[] | undefined;
 export type RecipeFilterRouteParams = {
@@ -60,6 +60,18 @@ export function buildRecipeQuery(
     ...(avoidProfileAllergens && profileAllergenIds.length
       ? { excludeAllergenIds: profileAllergenIds }
       : {}),
+  };
+}
+
+export function filtersForContentType(
+  filters: RecipeFilters,
+  type: ContentType | 'all'
+): RecipeFilters {
+  if (type !== 'food-item') return filters;
+  return {
+    category: filters.category,
+    dietType: filters.dietType,
+    avoidProfileAllergens: filters.avoidProfileAllergens,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -12,17 +12,20 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
+import { useDebouncedValue } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { ContentResultCard } from '../components/ContentResultCard';
 import { buildFoodQuery } from '../foodState';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { useContentCategories, useFoodItems } from '../hooks';
+import { normalizeSearchQuery } from '../searchState';
 
 export function FoodCatalogScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
+  const debouncedQuery = useDebouncedValue(normalizeSearchQuery(input), 350);
   const [category, setCategory] = useState<string>();
   const [avoidAllergens, setAvoidAllergens] = useState(false);
   const allergenIds =
@@ -41,6 +44,10 @@ export function FoodCatalogScreen() {
   const foods = useFoodItems(filters);
   const content = foods.data?.pages.flatMap((page) => page.data) ?? [];
 
+  useEffect(() => {
+    setQuery(debouncedQuery);
+  }, [debouncedQuery]);
+
   return (
     <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
       <RecipeHeader
@@ -54,7 +61,7 @@ export function FoodCatalogScreen() {
         onChangeText={setInput}
         placeholder={t('food.searchPlaceholder')}
         returnKeyType="search"
-        onSubmitEditing={() => setQuery(input.trim())}
+        onSubmitEditing={() => setQuery(normalizeSearchQuery(input))}
       />
       <View style={styles.categories}>
         <CategoryChip

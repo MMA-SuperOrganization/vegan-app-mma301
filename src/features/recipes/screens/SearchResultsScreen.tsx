@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation, type TranslationKey } from '@/i18n';
+import { useDebouncedValue } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
@@ -23,6 +24,7 @@ import {
   type RecipeFilterRouteParams,
 } from '../filterState';
 import { useSearchResults } from '../hooks';
+import { normalizeSearchQuery } from '../searchState';
 import type { ContentType } from '../types';
 
 const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
@@ -49,6 +51,7 @@ export function SearchResultsScreen() {
   );
   const [query, setQuery] = useState(initialQuery);
   const [submitted, setSubmitted] = useState(initialQuery);
+  const debouncedQuery = useDebouncedValue(normalizeSearchQuery(query), 350);
   const [type, setType] = useState<ContentType | 'all'>(initialType);
   const filters = useMemo(() => parseRecipeFilters(params), [params]);
   const allergenIds =
@@ -60,8 +63,12 @@ export function SearchResultsScreen() {
   const results = useSearchResults(submitted, type, apiFilters);
   const content = results.data?.pages.flatMap((page) => page.data) ?? [];
 
+  useEffect(() => {
+    setSubmitted(debouncedQuery);
+  }, [debouncedQuery]);
+
   const submit = () => {
-    const next = query.trim();
+    const next = normalizeSearchQuery(query);
     if (!next) return;
     setSubmitted(next);
     router.setParams({ q: next });

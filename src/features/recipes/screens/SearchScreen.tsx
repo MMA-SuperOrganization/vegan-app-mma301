@@ -13,16 +13,17 @@ import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { useRecentSearches, useSearchSuggestions } from '../hooks';
 import { RecipeHeader } from '../components/RecipeHeader';
+import { normalizeSearchQuery } from '../searchState';
 
 export function SearchScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebouncedValue(query.trim(), 300);
+  const debouncedQuery = useDebouncedValue(normalizeSearchQuery(query), 300);
   const recent = useRecentSearches();
   const suggestions = useSearchSuggestions(debouncedQuery);
   const submit = (value = query) => {
-    const q = value.trim();
+    const q = normalizeSearchQuery(value);
     if (q) router.push({ pathname: '/(discover)/search-results', params: { q } });
   };
 

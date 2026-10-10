@@ -10,6 +10,12 @@ import {
 import { updateSavedPage } from '../src/features/recipes/savedState.ts';
 import { formatTimer, remainingSeconds } from '../src/features/recipes/timer.ts';
 import { buildFoodQuery } from '../src/features/recipes/foodState.ts';
+import { normalizeSearchQuery } from '../src/features/recipes/searchState.ts';
+
+test('search terms are trimmed and compacted before fuzzy lookup', () => {
+  assert.equal(normalizeSearchQuery('  dau   hu  '), 'dau hu');
+  assert.equal(normalizeSearchQuery('   '), '');
+});
 
 test('recipe filters parse, serialize and map profile allergens to the API query', () => {
   const filters = parseRecipeFilters({

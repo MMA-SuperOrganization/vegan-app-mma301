@@ -1,5 +1,10 @@
 export { HomeScreen } from './screens/HomeScreen';
 export { ProfileScreen } from './screens/ProfileScreen';
 export { EditProfileScreen } from './screens/EditProfileScreen';
+export { NutritionProfileScreen } from './screens/NutritionProfileScreen';
+export { DietaryPreferencesScreen } from './screens/DietaryPreferencesScreen';
+export { AllergiesSettingsScreen } from './screens/AllergiesSettingsScreen';
+export { AccountSecurityScreen } from './screens/AccountSecurityScreen';
 export { useProfileStore } from './profileStore';
+export { profileApi } from './profileApi';
 export type { UserProfile, ProfileUpdate } from './types';

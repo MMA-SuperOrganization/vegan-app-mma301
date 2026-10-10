@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ export default function RootLayout() {
   const profileError = useProfileStore((state) => state.error);
   const loadProfile = useProfileStore((state) => state.load);
   const resetProfile = useProfileStore((state) => state.reset);
+  const previousAccountId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     void hydrateI18n();
@@ -43,6 +44,19 @@ export default function RootLayout() {
     else resetProfile();
   }, [isAuthenticated, isRestoringSession, loadProfile, resetProfile, user?.id]);
 
+  useEffect(() => {
+    if (isRestoringSession) return;
+    const accountId = isAuthenticated ? (user?.id ?? null) : null;
+    if (previousAccountId.current === undefined) {
+      previousAccountId.current = accountId;
+      return;
+    }
+    if (previousAccountId.current !== accountId) {
+      queryClient.clear();
+      previousAccountId.current = accountId;
+    }
+  }, [isAuthenticated, isRestoringSession, user?.id]);
+
   if (fontError) throw fontError;
   if (!fontsLoaded || !i18nHydrated) return null;
 
@@ -52,7 +66,9 @@ export default function RootLayout() {
   } else if (
     isAuthenticated &&
     user?.id &&
-    (profileUserId !== user.id || profileStatus === 'idle' || profileStatus === 'loading')
+    (profileUserId !== user.id ||
+      profileStatus === 'idle' ||
+      profileStatus === 'loading')
   ) {
     content = <LoadingScreen message={t('bootstrap.loadingProfile')} />;
   } else if (isAuthenticated && user?.id && profileStatus === 'error') {
@@ -81,8 +97,18 @@ export default function RootLayout() {
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(discover)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tracking)" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="language" options={{ headerShown: false }} />
+        <Stack.Screen name="nutrition-profile" options={{ headerShown: false }} />
+        <Stack.Screen name="dietary-preferences" options={{ headerShown: false }} />
+        <Stack.Screen name="allergies-settings" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="notification-settings"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="account-security" options={{ headerShown: false }} />
       </Stack>
     );
   }

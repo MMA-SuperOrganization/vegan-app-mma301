@@ -1,6 +1,11 @@
 import { apiClient, unwrapApiRequest } from '@/services/api';
 import type { Allergen } from '@/features/onboarding/types';
-import type { ProfileUpdate, UserProfile } from './types';
+import type {
+  DietaryPreferencesUpdate,
+  NutritionTargetsUpdate,
+  ProfileUpdate,
+  UserProfile,
+} from './types';
 import { translate } from '@/i18n';
 
 interface AccountDto {
@@ -26,12 +31,14 @@ export const profileApi = {
       apiClient.get('/users/me')
     );
     let allergens: Allergen[] = [];
+    let allergensLoadFailed = false;
     try {
       allergens = await unwrapApiRequest<Allergen[]>(() =>
         apiClient.get('/allergens', { params: { page: 1, limit: 50 } })
       );
     } catch {
       // Optional labels must not make the persisted profile unusable.
+      allergensLoadFailed = true;
     }
     return {
       user: {
@@ -56,12 +63,20 @@ export const profileApi = {
           }
         : null,
       allergens,
+      allergensLoadFailed,
     };
   },
 
   async update(values: ProfileUpdate) {
     await unwrapApiRequest(() =>
       apiClient.patch('/users/me', { displayName: values.displayName.trim() })
+    );
+    await unwrapApiRequest(() =>
+      apiClient.put('/profiles/me', {
+        bio: values.bio?.trim() ?? '',
+        dateOfBirth: values.dateOfBirth || null,
+        timezone: values.timezone?.trim() || 'Asia/Ho_Chi_Minh',
+      })
     );
     const nutrition = Object.fromEntries(
       Object.entries({
@@ -70,7 +85,36 @@ export const profileApi = {
       }).filter(([, value]) => value !== undefined)
     );
     if (Object.keys(nutrition).length) {
-      await unwrapApiRequest(() => apiClient.put('/nutrition-profiles/me', nutrition));
+      await unwrapApiRequest(() =>
+        apiClient.put('/nutrition-profiles/me', nutrition)
+      );
     }
   },
+
+  updateDietaryPreferences: (values: DietaryPreferencesUpdate) =>
+    Promise.all([
+      unwrapApiRequest(() =>
+        apiClient.put('/profiles/me', { dietType: values.dietType })
+      ),
+      unwrapApiRequest(() =>
+        apiClient.put('/nutrition-profiles/me', {
+          goal: values.goal,
+          activityLevel: values.activityLevel,
+        })
+      ),
+    ]),
+
+  updateAllergens: (allergenIds: string[]) =>
+    unwrapApiRequest(() => apiClient.put('/nutrition-profiles/me', { allergenIds })),
+
+  updateNutritionTargets: (values: NutritionTargetsUpdate) =>
+    unwrapApiRequest(() => apiClient.put('/nutrition-profiles/me', values)),
+
+  recalculateNutrition: () =>
+    unwrapApiRequest(() => apiClient.post('/nutrition-profiles/me/recalculate', {})),
+
+  deleteAccount: () =>
+    unwrapApiRequest<{ userId: string; status: 'deleted'; deletedAt: string }>(() =>
+      apiClient.delete('/users/me', { data: {} })
+    ),
 };

@@ -4,7 +4,7 @@ import { AppButton, AppInput, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { useTrackingStore } from '../store/trackingStore';
+import { useWaterMutations } from '../hooks/useTrackingApi';
 import {
   WATER_GLASS_ML,
   combineDateAndTime,
@@ -45,9 +45,7 @@ export function WaterLogModal({
 }: WaterLogModalProps) {
   const { t } = useTranslation();
   const { formatNumber, formatShortDate } = useTrackingFormat();
-  const addWaterLog = useTrackingStore((state) => state.addWaterLog);
-  const updateWaterLog = useTrackingStore((state) => state.updateWaterLog);
-  const removeWaterLog = useTrackingStore((state) => state.removeWaterLog);
+  const { createWater, updateWater, removeWater } = useWaterMutations();
 
   const [logDate, setLogDate] = useState(() =>
     toLocalIsoDate(log?.recordedAt ?? new Date())
@@ -71,7 +69,7 @@ export function WaterLogModal({
     setConfirmingDelete(false);
   }, [openKey]);
 
-  const save = () => {
+  const save = async () => {
     const amountMl = parseDecimal(amountText);
     const time = parseTimeOfDay(timeText);
     const recordedAt = time ? combineDateAndTime(logDate, time) : null;
@@ -88,17 +86,25 @@ export function WaterLogModal({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !amountMl || !recordedAt) return;
 
-    if (log) {
-      updateWaterLog(log._id, { amountMl, recordedAt });
-      onSaved(log._id);
-    } else {
-      onSaved(addWaterLog({ amountMl, recordedAt })._id);
+    try {
+      const input = { amountMl, recordedAt, note: log?.note };
+      const saved = log
+        ? await updateWater.mutateAsync({ id: log._id, input })
+        : await createWater.mutateAsync(input);
+      onSaved(saved._id);
+    } catch {
+      // Keep the sheet open and show the request error below.
     }
   };
 
-  const remove = () => {
-    if (log) removeWaterLog(log._id);
-    onClose();
+  const remove = async () => {
+    if (!log) return;
+    try {
+      await removeWater.mutateAsync(log._id);
+      onClose();
+    } catch {
+      // Keep the sheet open so the user can retry.
+    }
   };
 
   if (confirmingDelete) {
@@ -114,8 +120,14 @@ export function WaterLogModal({
         <AppButton
           title={t('tracking.waterEntry.delete')}
           variant="danger"
-          onPress={remove}
+          loading={removeWater.isPending}
+          onPress={() => void remove()}
         />
+        {removeWater.error ? (
+          <AppText color={colors.status.danger}>
+            {t('tracking.data.saveError')}
+          </AppText>
+        ) : null}
         <AppButton
           title={t('common.back')}
           variant="outline"
@@ -154,7 +166,16 @@ export function WaterLogModal({
           error={errors.time}
         />
       </View>
-      <AppButton title={t('tracking.waterEntry.save')} onPress={save} />
+      {createWater.error || updateWater.error ? (
+        <AppText color={colors.status.danger}>
+          {t('tracking.data.saveError')}
+        </AppText>
+      ) : null}
+      <AppButton
+        title={t('tracking.waterEntry.save')}
+        onPress={() => void save()}
+        loading={createWater.isPending || updateWater.isPending}
+      />
       {log ? (
         <AppButton
           title={t('tracking.waterEntry.delete')}

@@ -11,8 +11,13 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { DiaryMealCard } from '../components/DiaryMealCard';
+import { TrackingQueryState } from '../components/TrackingQueryState';
+import {
+  useDiary,
+  useDiarySummary,
+  useTrackingTargets,
+} from '../hooks/useTrackingApi';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { useTrackingStore } from '../store/trackingStore';
 import {
   PRIMARY_MEAL_TYPES,
   diaryEntriesForDate,
@@ -26,11 +31,15 @@ export function FoodDiaryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel } = useTrackingFormat();
-  const diaryEntries = useTrackingStore((state) => state.diaryEntries);
-  const targetKcal = useTrackingStore((state) => state.targets.energyKcal);
   const [editing, setEditing] = useState(false);
 
   const today = toLocalIsoDate(new Date());
+  const diary = useDiary(today);
+  const summary = useDiarySummary(today);
+  const profileTargets = useTrackingTargets();
+  const diaryEntries = diary.data?.data ?? [];
+  const targetKcal =
+    summary.data?.dailyTargets.caloriesKcal ?? profileTargets.energyKcal;
   const todayEntries = useMemo(
     () => diaryEntriesForDate(diaryEntries, today),
     [diaryEntries, today]
@@ -57,76 +66,88 @@ export function FoodDiaryScreen() {
         backFallbackHref="/(tabs)/diary"
       />
       <View style={styles.content}>
-        <AppText variant="bodySmall" color={colors.text.secondary}>
-          {t('tracking.diary.dateLine', { date: formatShortDate(today) })}
-        </AppText>
+        <TrackingQueryState
+          loading={diary.isLoading || summary.isLoading}
+          error={diary.isError || summary.isError}
+          onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
+        />
+        {!diary.isLoading &&
+        !summary.isLoading &&
+        !diary.isError &&
+        !summary.isError ? (
+          <>
+            <AppText variant="bodySmall" color={colors.text.secondary}>
+              {t('tracking.diary.dateLine', { date: formatShortDate(today) })}
+            </AppText>
 
-        <View style={styles.card}>
-          <AppText variant="heading4">{t('tracking.diary.energyTitle')}</AppText>
-          <AppText color={colors.text.secondary}>
-            {targetKcal
-              ? t('tracking.hub.energyValue', {
-                  consumed: formatNumber(consumedKcal),
-                  target: formatNumber(targetKcal),
-                })
-              : t('tracking.hub.energyValueNoTarget', {
-                  consumed: formatNumber(consumedKcal),
-                })}
-          </AppText>
-          {targetKcal ? (
-            <ProgressBar
-              value={consumedKcal}
-              max={targetKcal}
-              accessibilityLabel={t('tracking.diary.energyTitle')}
+            <View style={styles.card}>
+              <AppText variant="heading4">{t('tracking.diary.energyTitle')}</AppText>
+              <AppText color={colors.text.secondary}>
+                {targetKcal
+                  ? t('tracking.hub.energyValue', {
+                      consumed: formatNumber(consumedKcal),
+                      target: formatNumber(targetKcal),
+                    })
+                  : t('tracking.hub.energyValueNoTarget', {
+                      consumed: formatNumber(consumedKcal),
+                    })}
+              </AppText>
+              {targetKcal ? (
+                <ProgressBar
+                  value={consumedKcal}
+                  max={targetKcal}
+                  accessibilityLabel={t('tracking.diary.energyTitle')}
+                />
+              ) : null}
+            </View>
+
+            {editing ? (
+              <AppText variant="bodySmall" color={colors.primary[700]}>
+                {t('tracking.diary.editHint')}
+              </AppText>
+            ) : null}
+
+            {mealTypes.map((mealType) => (
+              <DiaryMealCard
+                key={mealType}
+                title={mealLabel(mealType)}
+                entries={byMeal[mealType]}
+                editing={editing}
+                onPressEntry={openEntry}
+              />
+            ))}
+
+            <AppButton
+              title={
+                editing
+                  ? t('tracking.diary.doneEditing')
+                  : t('tracking.diary.editEntries')
+              }
+              variant="outline"
+              disabled={!editing && todayEntries.length === 0}
+              onPress={() => setEditing((value) => !value)}
             />
-          ) : null}
-        </View>
+            <AppButton
+              title={t('tracking.diary.viewSummary')}
+              variant="outline"
+              onPress={() => router.push('/(tracking)/nutrition-summary')}
+            />
 
-        {editing ? (
-          <AppText variant="bodySmall" color={colors.primary[700]}>
-            {t('tracking.diary.editHint')}
-          </AppText>
+            <View style={styles.card}>
+              <AppText variant="heading4">
+                {t('tracking.diary.planVsActualTitle')}
+              </AppText>
+              <AppText variant="bodySmall" color={colors.text.secondary}>
+                {t('tracking.diary.planVsActualBody')}
+              </AppText>
+            </View>
+
+            <AppButton
+              title={t('tracking.diary.addEntry')}
+              onPress={() => router.push('/(tracking)/diary-entry')}
+            />
+          </>
         ) : null}
-
-        {mealTypes.map((mealType) => (
-          <DiaryMealCard
-            key={mealType}
-            title={mealLabel(mealType)}
-            entries={byMeal[mealType]}
-            editing={editing}
-            onPressEntry={openEntry}
-          />
-        ))}
-
-        <AppButton
-          title={
-            editing
-              ? t('tracking.diary.doneEditing')
-              : t('tracking.diary.editEntries')
-          }
-          variant="outline"
-          disabled={!editing && todayEntries.length === 0}
-          onPress={() => setEditing((value) => !value)}
-        />
-        <AppButton
-          title={t('tracking.diary.viewSummary')}
-          variant="outline"
-          onPress={() => router.push('/(tracking)/nutrition-summary')}
-        />
-
-        <View style={styles.card}>
-          <AppText variant="heading4">
-            {t('tracking.diary.planVsActualTitle')}
-          </AppText>
-          <AppText variant="bodySmall" color={colors.text.secondary}>
-            {t('tracking.diary.planVsActualBody')}
-          </AppText>
-        </View>
-
-        <AppButton
-          title={t('tracking.diary.addEntry')}
-          onPress={() => router.push('/(tracking)/diary-entry')}
-        />
       </View>
     </ScreenWrapper>
   );

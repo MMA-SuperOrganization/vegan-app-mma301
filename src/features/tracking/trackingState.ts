@@ -167,6 +167,11 @@ export function diaryEntriesForDate(entries: DiaryEntry[], date: string) {
     .sort((a, b) => a.consumedAt.localeCompare(b.consumedAt));
 }
 
+/** Mongo serializes diary days at UTC midnight; screens use calendar-only dates. */
+export function normalizeDiaryEntry(entry: DiaryEntry): DiaryEntry {
+  return { ...entry, date: entry.date.slice(0, 10) };
+}
+
 export function waterLogsForDate(logs: WaterLog[], date: string) {
   return logs
     .filter((log) => toLocalIsoDate(log.recordedAt) === date)

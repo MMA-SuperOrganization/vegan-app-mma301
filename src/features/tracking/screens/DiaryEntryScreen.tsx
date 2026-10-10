@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -14,9 +14,11 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { SearchPickerSheet, type PickerItem } from '../components/SearchPickerSheet';
 import { TrackingSheet } from '../components/TrackingSheet';
+import { TrackingQueryState } from '../components/TrackingQueryState';
 import { useFoodOptions, useRecipeOptions } from '../hooks/usePickerOptions';
+import { useDiary, useDiaryMutations } from '../hooks/useTrackingApi';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { useTrackingStore } from '../store/trackingStore';
+import type { CreateDiaryInput } from '../services/trackingApi';
 import {
   MEAL_TYPES,
   combineDateAndTime,
@@ -36,7 +38,6 @@ import type {
   FoodItemOption,
   FoodUnit,
   MealType,
-  NewDiaryEntry,
   NutritionValues,
 } from '../types';
 
@@ -93,12 +94,10 @@ export function DiaryEntryScreen() {
   const { formatNumber, formatShortDate, mealLabel, unitLabel, nutritionLine } =
     useTrackingFormat();
   const goBack = useSafeBack('/(tracking)/food-diary');
-  const entry = useTrackingStore((state) =>
-    id ? state.diaryEntries.find((item) => item._id === id) : undefined
-  );
-  const addDiaryEntry = useTrackingStore((state) => state.addDiaryEntry);
-  const updateDiaryEntry = useTrackingStore((state) => state.updateDiaryEntry);
-  const removeDiaryEntry = useTrackingStore((state) => state.removeDiaryEntry);
+  const date = toLocalIsoDate(new Date());
+  const diary = useDiary(date);
+  const entry = id ? diary.data?.data.find((item) => item._id === id) : undefined;
+  const { createDiary, updateDiary, removeDiary } = useDiaryMutations();
   const isEditing = Boolean(entry);
 
   const [now] = useState(() => new Date());
@@ -146,6 +145,34 @@ export function DiaryEntryScreen() {
   const [sourceSheetOpen, setSourceSheetOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  useEffect(() => {
+    if (!entry) return;
+    const basis = basisFromEntry(entry);
+    setSourceType(entry.sourceType);
+    setMealType(entry.mealType);
+    setTimeText(formatTimeOfDay(entry.consumedAt));
+    setServingsText(textFromNumber(entry.servings ?? 1));
+    setQuantityText(textFromNumber(entry.quantity));
+    setUnit(entry.unit ?? 'g');
+    setRecipe(
+      entry.sourceType === 'recipe'
+        ? {
+            id: entry.recipeId ?? entry._id,
+            name: entry.nameSnapshot,
+            perServing: basis,
+          }
+        : null
+    );
+    setCustomName(entry.sourceType === 'custom' ? entry.nameSnapshot : '');
+    setCustomText({
+      caloriesKcal: textFromNumber(basis.caloriesKcal),
+      proteinG: textFromNumber(basis.proteinG),
+      carbsG: textFromNumber(basis.carbsG),
+      fatG: textFromNumber(basis.fatG),
+      fiberG: textFromNumber(basis.fiberG),
+    });
+  }, [entry]);
+
   const recipeOptions = useRecipeOptions(
     pickerQuery,
     pickerOpen && sourceType === 'recipe'
@@ -154,6 +181,22 @@ export function DiaryEntryScreen() {
     pickerQuery,
     pickerOpen && sourceType === 'food'
   );
+
+  if (id && (diary.isLoading || diary.isError)) {
+    return (
+      <ScreenWrapper
+        edges={['top', 'left', 'right', 'bottom']}
+        keyboardAvoiding={false}
+      >
+        <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
+        <TrackingQueryState
+          loading={diary.isLoading}
+          error={diary.isError}
+          onRetry={() => void diary.refetch()}
+        />
+      </ScreenWrapper>
+    );
+  }
 
   if (id && !entry) {
     return (
@@ -235,63 +278,72 @@ export function DiaryEntryScreen() {
     return next;
   };
 
-  const save = () => {
+  const save = async () => {
     const nextErrors = validate();
     setErrors(nextErrors);
     const time = parseTimeOfDay(timeText);
     if (Object.keys(nextErrors).length > 0 || !nutrition || !time) return;
     const consumedAt = combineDateAndTime(entryDate, time);
 
-    if (entry) {
-      updateDiaryEntry(entry._id, {
-        ...(entry.sourceType === 'food'
-          ? { quantity: quantity ?? undefined }
-          : { servings: servings ?? undefined }),
-        nutritionSnapshot: nutrition,
-        consumedAt,
-      });
-    } else {
-      const base = {
-        date: entryDate,
-        mealType,
-        nutritionSnapshot: nutrition,
-        consumedAt,
-      };
-      let created: NewDiaryEntry;
-      if (sourceType === 'recipe' && recipe) {
-        created = {
-          ...base,
-          sourceType,
-          recipeId: recipe.id,
-          nameSnapshot: recipe.name,
-          servings: servings ?? 1,
-        };
-      } else if (sourceType === 'food' && food) {
-        created = {
-          ...base,
-          sourceType,
-          foodItemId: food._id,
-          nameSnapshot: food.name,
-          quantity: quantity ?? 0,
-          unit,
-        };
+    try {
+      if (entry) {
+        await updateDiary.mutateAsync({
+          id: entry._id,
+          input: {
+            ...(entry.sourceType === 'food'
+              ? { quantity: quantity ?? undefined }
+              : { servings: servings ?? undefined }),
+            consumedAt,
+          },
+        });
       } else {
-        created = {
-          ...base,
-          sourceType: 'custom',
-          nameSnapshot: customName.trim(),
-          servings: servings ?? 1,
+        const base = {
+          date: entryDate,
+          mealType,
+          consumedAt,
         };
+        let created: CreateDiaryInput;
+        if (sourceType === 'recipe' && recipe) {
+          created = {
+            ...base,
+            sourceType,
+            recipeId: recipe.id,
+            servings: servings ?? 1,
+          };
+        } else if (sourceType === 'food' && food) {
+          created = {
+            ...base,
+            sourceType,
+            foodItemId: food._id,
+            quantity: quantity ?? 0,
+            unit,
+          };
+        } else {
+          created = {
+            ...base,
+            sourceType: 'custom',
+            nameSnapshot: customName.trim(),
+            servings: servings ?? 1,
+            nutritionSnapshot: nutrition,
+          };
+        }
+        await createDiary.mutateAsync(created);
       }
-      addDiaryEntry(created);
+      goBack();
+    } catch {
+      // React Query exposes the request error below the form.
     }
-    goBack();
   };
 
-  const confirmDelete = () => {
-    setConfirmDeleteOpen(false);
-    goBack();
-    if (entry) removeDiaryEntry(entry._id);
+  const confirmDelete = async () => {
+    if (!entry) return;
+    try {
+      await removeDiary.mutateAsync(entry._id);
+      setConfirmDeleteOpen(false);
+      goBack();
+    } catch {
+      // Keep the confirmation open so the user can retry.
+    }
   };
 
   const chooseSource = (next: DiarySourceType) => {
@@ -510,7 +562,16 @@ export function DiaryEntryScreen() {
           />
         )}
 
-        <AppButton title={t('tracking.entry.save')} onPress={save} />
+        {createDiary.error || updateDiary.error || removeDiary.error ? (
+          <AppText color={colors.status.danger}>
+            {t('tracking.data.saveError')}
+          </AppText>
+        ) : null}
+        <AppButton
+          title={t('tracking.entry.save')}
+          onPress={() => void save()}
+          loading={createDiary.isPending || updateDiary.isPending}
+        />
         {isEditing ? (
           <AppButton
             title={t('tracking.entry.delete')}
@@ -578,7 +639,8 @@ export function DiaryEntryScreen() {
         <AppButton
           title={t('tracking.entry.delete')}
           variant="danger"
-          onPress={confirmDelete}
+          loading={removeDiary.isPending}
+          onPress={() => void confirmDelete()}
         />
       </TrackingSheet>
     </ScreenWrapper>

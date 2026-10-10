@@ -281,6 +281,10 @@ export const vi = {
   'profile.timezoneRequired': 'Vui lòng nhập múi giờ.',
   'profile.timezoneInvalid':
     'Vui lòng nhập múi giờ IANA hợp lệ, ví dụ Asia/Ho_Chi_Minh.',
+  'timezone.select': 'Chọn múi giờ',
+  'timezone.search': 'Tìm theo thành phố hoặc UTC',
+  'timezone.empty': 'Không tìm thấy múi giờ phù hợp.',
+  'timezone.offsetHint': 'Độ lệch UTC được tính theo ngày hiện tại.',
   'profile.healthSection': 'Sức khỏe & dinh dưỡng',
   'profile.contentSection': 'Nội dung của tôi',
   'profile.settingsSection': 'Cài đặt',
@@ -519,6 +523,10 @@ export const vi = {
   'tracking.hub.title': 'Nhật ký',
   'tracking.hub.subtitle': 'Theo dõi ăn uống, cân nặng và nước uống mỗi ngày.',
   'tracking.hub.todayOverview': 'Tổng quan hôm nay',
+  'tracking.data.loading': 'Đang tải dữ liệu nhật ký…',
+  'tracking.data.loadError':
+    'Không thể tải dữ liệu nhật ký. Kiểm tra kết nối và thử lại.',
+  'tracking.data.saveError': 'Không thể lưu thay đổi. Vui lòng thử lại.',
   'tracking.foodDiary.title': 'Nhật ký hôm nay',
   'tracking.weight.title': 'Theo dõi cân nặng',
   'tracking.water.title': 'Theo dõi nước uống',
@@ -948,6 +956,10 @@ export const en: Record<TranslationKey, string> = {
   'profile.timezoneRequired': 'Enter a time zone.',
   'profile.timezoneInvalid':
     'Enter a valid IANA time zone, for example Asia/Ho_Chi_Minh.',
+  'timezone.select': 'Select a time zone',
+  'timezone.search': 'Search by city or UTC offset',
+  'timezone.empty': 'No matching time zone found.',
+  'timezone.offsetHint': 'UTC offsets are calculated for the current date.',
   'profile.healthSection': 'Health & nutrition',
   'profile.contentSection': 'My content',
   'profile.settingsSection': 'Settings',
@@ -1184,6 +1196,10 @@ export const en: Record<TranslationKey, string> = {
   'tracking.hub.title': 'Diary',
   'tracking.hub.subtitle': 'Track your meals, weight and water every day.',
   'tracking.hub.todayOverview': "Today's overview",
+  'tracking.data.loading': 'Loading diary data…',
+  'tracking.data.loadError':
+    'Unable to load diary data. Check your connection and try again.',
+  'tracking.data.saveError': 'Unable to save your changes. Please try again.',
   'tracking.foodDiary.title': "Today's food diary",
   'tracking.weight.title': 'Weight tracking',
   'tracking.water.title': 'Water tracking',

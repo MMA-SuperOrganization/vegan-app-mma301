@@ -6,6 +6,11 @@ import {
 } from '../src/features/profile/validation.ts';
 import { validateNotificationPreferences } from '../src/features/settings/validation.ts';
 import {
+  formatTimezoneLabel,
+  formatUtcOffset,
+  getTimezoneOptions,
+} from '../src/utils/timezones.ts';
+import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '../src/features/settings/notificationState.ts';
@@ -20,6 +25,23 @@ test('profile validation matches backend text and IANA timezone constraints', ()
   assert.equal(validateProfileText('Ngọc', 'x'.repeat(501)).bio, false);
   assert.equal(isValidIanaTimezone('Asia/Ho_Chi_Minh'), true);
   assert.equal(isValidIanaTimezone('not/a-zone'), false);
+});
+
+test('timezone picker labels IANA values with date-aware UTC offsets', () => {
+  const winter = new Date('2026-01-10T12:00:00.000Z');
+  assert.equal(formatUtcOffset('Asia/Ho_Chi_Minh', winter), 'UTC+07:00');
+  assert.equal(formatUtcOffset('America/New_York', winter), 'UTC-05:00');
+  assert.equal(
+    formatTimezoneLabel('Asia/Bangkok', winter),
+    'Asia/Bangkok · UTC+07:00'
+  );
+  assert.equal(
+    getTimezoneOptions('Asia/Ho_Chi_Minh', winter).some(
+      (option) =>
+        option.value === 'Asia/Ho_Chi_Minh' && option.label.endsWith('UTC+07:00')
+    ),
+    true
+  );
 });
 
 test('notification preference validation matches backend HH:mm and timezone schema', () => {

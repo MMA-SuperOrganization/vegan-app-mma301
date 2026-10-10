@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
@@ -12,7 +12,8 @@ import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { TrackingSheet } from '../components/TrackingSheet';
-import { useTrackingStore } from '../store/trackingStore';
+import { TrackingQueryState } from '../components/TrackingQueryState';
+import { useWeightLogs, useWeightMutations } from '../hooks/useTrackingApi';
 import {
   combineDateAndTime,
   formatDayMonthYear,
@@ -32,15 +33,11 @@ export function WeightEntryScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { t } = useTranslation();
   const goBack = useSafeBack('/(tracking)/weight');
-  const log = useTrackingStore((state) =>
-    id ? state.weightLogs.find((item) => item._id === id) : undefined
-  );
-  const lastWeightKg = useTrackingStore(
-    (state) => sortWeightLogs(state.weightLogs)[0]?.weightKg
-  );
-  const addWeightLog = useTrackingStore((state) => state.addWeightLog);
-  const updateWeightLog = useTrackingStore((state) => state.updateWeightLog);
-  const removeWeightLog = useTrackingStore((state) => state.removeWeightLog);
+  const logs = useWeightLogs();
+  const weightLogs = logs.data?.data ?? [];
+  const log = id ? weightLogs.find((item) => item._id === id) : undefined;
+  const lastWeightKg = sortWeightLogs(weightLogs)[0]?.weightKg;
+  const { createWeight, updateWeight, removeWeight } = useWeightMutations();
 
   const [weightText, setWeightText] = useState(
     log ? String(log.weightKg) : lastWeightKg != null ? String(lastWeightKg) : ''
@@ -51,6 +48,32 @@ export function WeightEntryScreen() {
   const [note, setNote] = useState(log?.note ?? '');
   const [errors, setErrors] = useState<FieldErrors>({});
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  useEffect(() => {
+    if (log) {
+      setWeightText(String(log.weightKg));
+      setDateText(formatDayMonthYear(toLocalIsoDate(log.recordedAt)));
+      setNote(log.note ?? '');
+    } else if (!id && lastWeightKg != null) {
+      setWeightText((current) => current || String(lastWeightKg));
+    }
+  }, [id, lastWeightKg, log]);
+
+  if (logs.isLoading || logs.isError) {
+    return (
+      <ScreenWrapper
+        edges={['top', 'left', 'right', 'bottom']}
+        keyboardAvoiding={false}
+      >
+        <CustomHeader title={t('tracking.weightEntry.title')} showBack />
+        <TrackingQueryState
+          loading={logs.isLoading}
+          error={logs.isError}
+          onRetry={() => void logs.refetch()}
+        />
+      </ScreenWrapper>
+    );
+  }
 
   if (id && !log) {
     return (
@@ -69,7 +92,7 @@ export function WeightEntryScreen() {
     );
   }
 
-  const save = () => {
+  const save = async () => {
     const weightKg = parseDecimal(weightText);
     const date = parseDayMonthYear(dateText);
     const today = toLocalIsoDate(new Date());
@@ -95,15 +118,25 @@ export function WeightEntryScreen() {
           });
     const trimmedNote = note.trim() || undefined;
 
-    if (log) updateWeightLog(log._id, { weightKg, recordedAt, note: trimmedNote });
-    else addWeightLog({ weightKg, recordedAt, note: trimmedNote });
-    goBack();
+    try {
+      const input = { weightKg, recordedAt, note: trimmedNote };
+      if (log) await updateWeight.mutateAsync({ id: log._id, input });
+      else await createWeight.mutateAsync(input);
+      goBack();
+    } catch {
+      // React Query exposes the request error below the form.
+    }
   };
 
-  const confirmDelete = () => {
-    setConfirmDeleteOpen(false);
-    goBack();
-    if (log) removeWeightLog(log._id);
+  const confirmDelete = async () => {
+    if (!log) return;
+    try {
+      await removeWeight.mutateAsync(log._id);
+      setConfirmDeleteOpen(false);
+      goBack();
+    } catch {
+      // Keep the confirmation open so the user can retry.
+    }
   };
 
   return (
@@ -148,7 +181,16 @@ export function WeightEntryScreen() {
         />
       </View>
       <View style={[styles.content, styles.actions]}>
-        <AppButton title={t('tracking.weightEntry.save')} onPress={save} />
+        {createWeight.error || updateWeight.error || removeWeight.error ? (
+          <AppText color={colors.status.danger}>
+            {t('tracking.data.saveError')}
+          </AppText>
+        ) : null}
+        <AppButton
+          title={t('tracking.weightEntry.save')}
+          onPress={() => void save()}
+          loading={createWeight.isPending || updateWeight.isPending}
+        />
         {log ? (
           <AppButton
             title={t('tracking.weightEntry.delete')}
@@ -169,7 +211,8 @@ export function WeightEntryScreen() {
         <AppButton
           title={t('tracking.weightEntry.delete')}
           variant="danger"
-          onPress={confirmDelete}
+          loading={removeWeight.isPending}
+          onPress={() => void confirmDelete()}
         />
       </TrackingSheet>
     </ScreenWrapper>

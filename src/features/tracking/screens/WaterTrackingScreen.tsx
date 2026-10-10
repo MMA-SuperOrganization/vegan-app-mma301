@@ -92,12 +92,14 @@ export function WaterTrackingScreen() {
     <ScreenWrapper
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
+      header={
+        <CustomHeader
+          title={t('tracking.water.title')}
+          showBack
+          backFallbackHref="/(tabs)/diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t('tracking.water.title')}
-        showBack
-        backFallbackHref="/(tabs)/diary"
-      />
       <View style={styles.content}>
         <TrackingQueryState
           loading={water.isLoading}

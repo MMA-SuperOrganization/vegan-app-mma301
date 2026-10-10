@@ -3,9 +3,8 @@ import { Alert, StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
-  CustomHeader,
   EmptyState,
-  ScreenWrapper,
+  SettingsScreenLayout,
   Toggle,
 } from '@/components';
 import { toggleAllergenSelection } from '@/features/onboarding/validation';
@@ -30,9 +29,12 @@ export function AllergiesSettingsScreen() {
     if (await update(selected)) goBack();
   };
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('profile.allergyTitle')} showBack onBack={goBack} />
-      <AppText color={colors.text.secondary}>{t('profile.allergySubtitle')}</AppText>
+    <SettingsScreenLayout
+      title={t('profile.allergyTitle')}
+      subtitle={t('profile.allergySubtitle')}
+      onBack={goBack}
+      contentContainerStyle={styles.content}
+    >
       {data?.allergensLoadFailed ? (
         <EmptyState
           title={t('profile.allergyLoadError')}
@@ -85,12 +87,12 @@ export function AllergiesSettingsScreen() {
         disabled={data?.allergensLoadFailed}
         onPress={() => void save()}
       />
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: spacing.xl, gap: spacing.xl },
+  content: { gap: spacing.xl },
   list: { gap: spacing.md },
   note: {
     padding: spacing.xl,

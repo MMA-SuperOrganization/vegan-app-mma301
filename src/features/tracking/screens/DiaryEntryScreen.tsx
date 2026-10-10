@@ -187,8 +187,10 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={
+          <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
+        }
       >
-        <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
         <TrackingQueryState
           loading={diary.isLoading}
           error={diary.isError}
@@ -203,8 +205,10 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={
+          <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
+        }
       >
-        <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
         <View style={styles.missing}>
           <AppText color={colors.text.secondary}>
             {t('tracking.entry.notFound')}
@@ -417,12 +421,14 @@ export function DiaryEntryScreen() {
       edges={['top', 'left', 'right', 'bottom']}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.screen}
+      header={
+        <CustomHeader
+          title={t(TITLE_KEYS[sourceType])}
+          showBack
+          backFallbackHref="/(tracking)/food-diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t(TITLE_KEYS[sourceType])}
-        showBack
-        backFallbackHref="/(tracking)/food-diary"
-      />
       <View style={styles.content}>
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('tracking.entry.snapshotHint')}

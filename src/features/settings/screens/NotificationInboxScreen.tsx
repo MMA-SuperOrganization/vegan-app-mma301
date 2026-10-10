@@ -2,10 +2,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
-  CustomHeader,
   EmptyState,
   LoadingSpinner,
-  ScreenWrapper,
+  SettingsScreenLayout,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -20,8 +19,7 @@ export function NotificationInboxScreen() {
   const actions = useNotificationActions();
   const unread = notifications.data?.data.filter((item) => !item.readAt).length ?? 0;
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('notifications.title')} showBack onBack={goBack} />
+    <SettingsScreenLayout title={t('notifications.title')} onBack={goBack}>
       <AppText color={colors.text.secondary}>
         {t('notifications.unreadCount', { count: unread })}
       </AppText>
@@ -64,7 +62,7 @@ export function NotificationInboxScreen() {
           onPress={() => actions.markAllRead.mutate()}
         />
       ) : null}
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
@@ -101,7 +99,6 @@ function NotificationCard({
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.lg },
   list: { gap: spacing.md },
   card: {
     padding: spacing.xl,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import { AppButton, AppText, SettingsScreenLayout } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { appConfig } from '@/config/appConfig';
 import { useSafeBack } from '@/hooks';
@@ -52,8 +52,7 @@ export function AccountSecurityScreen() {
       Alert.alert(t('profile.passwordResetTitle'), t('profile.passwordResetSent'));
   };
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('profile.securityTitle')} showBack onBack={goBack} />
+    <SettingsScreenLayout title={t('profile.securityTitle')} onBack={goBack}>
       <AppText color={colors.text.secondary}>
         {user?.email ?? t('profile.noEmail')}
       </AppText>
@@ -102,12 +101,11 @@ export function AccountSecurityScreen() {
         disabled={isDeleting}
         onPress={() => void signOut()}
       />
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: spacing.xl, gap: spacing.lg },
   card: {
     padding: spacing.xl,
     gap: spacing.sm,

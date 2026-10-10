@@ -4,10 +4,9 @@ import {
   AppButton,
   AppInput,
   AppText,
-  CustomHeader,
   EmptyState,
   LoadingSpinner,
-  ScreenWrapper,
+  SettingsScreenLayout,
   TimezonePickerField,
   Toggle,
 } from '@/components';
@@ -64,41 +63,35 @@ export function NotificationSettingsScreen() {
   };
   if (query.isLoading)
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <CustomHeader
-          title={t('notifications.settingsTitle')}
-          showBack
-          onBack={goBack}
-        />
+      <SettingsScreenLayout
+        title={t('notifications.settingsTitle')}
+        onBack={goBack}
+        scrollable={false}
+      >
         <LoadingSpinner />
-      </ScreenWrapper>
+      </SettingsScreenLayout>
     );
   if (query.isError || !draft)
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <CustomHeader
-          title={t('notifications.settingsTitle')}
-          showBack
-          onBack={goBack}
-        />
+      <SettingsScreenLayout
+        title={t('notifications.settingsTitle')}
+        onBack={goBack}
+        scrollable={false}
+      >
         <EmptyState
           title={t('notifications.settingsError')}
           description={query.error?.message}
           actionLabel={t('common.retry')}
           onAction={() => void query.refetch()}
         />
-      </ScreenWrapper>
+      </SettingsScreenLayout>
     );
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader
-        title={t('notifications.settingsTitle')}
-        showBack
-        onBack={goBack}
-      />
-      <AppText color={colors.text.secondary}>
-        {t('notifications.settingsSubtitle')}
-      </AppText>
+    <SettingsScreenLayout
+      title={t('notifications.settingsTitle')}
+      subtitle={t('notifications.settingsSubtitle')}
+      onBack={goBack}
+    >
       <View style={styles.toggles}>
         <Toggle
           label={t('notifications.push')}
@@ -185,12 +178,11 @@ export function NotificationSettingsScreen() {
         loading={save.isPending}
         onPress={() => void submit()}
       />
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flexGrow: 1, padding: spacing.xl, gap: spacing.lg },
   toggles: { gap: spacing.md },
   times: { gap: spacing.md },
   note: {

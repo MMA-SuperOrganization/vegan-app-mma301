@@ -10,12 +10,18 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+  type Edge,
+} from 'react-native-safe-area-context';
 
 import { colors } from '@/theme';
 
 export interface ScreenWrapperProps {
   children: React.ReactNode;
+  header?: React.ReactNode;
+  topInsetBackgroundColor?: string;
   scrollable?: boolean;
   keyboardAvoiding?: boolean;
   keyboardBehavior?: KeyboardAvoidingViewProps['behavior'];
@@ -33,6 +39,8 @@ export interface ScreenWrapperProps {
  */
 export function ScreenWrapper({
   children,
+  header,
+  topInsetBackgroundColor,
   scrollable = false,
   keyboardAvoiding = true,
   keyboardBehavior = Platform.OS === 'ios' ? 'padding' : 'height',
@@ -43,6 +51,9 @@ export function ScreenWrapper({
   keyboardShouldPersistTaps = 'handled',
   testID,
 }: ScreenWrapperProps) {
+  const insets = useSafeAreaInsets();
+  const resolvedTopInsetBackgroundColor =
+    topInsetBackgroundColor ?? (header ? colors.background.surface : undefined);
   const content = scrollable ? (
     <ScrollView
       style={styles.flex}
@@ -59,6 +70,19 @@ export function ScreenWrapper({
 
   return (
     <SafeAreaView testID={testID} edges={edges} style={[styles.safeArea, style]}>
+      {resolvedTopInsetBackgroundColor ? (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.topInsetBackground,
+            {
+              height: insets.top,
+              backgroundColor: resolvedTopInsetBackgroundColor,
+            },
+          ]}
+        />
+      ) : null}
+      {header}
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           style={styles.flex}
@@ -78,6 +102,12 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background.base,
+  },
+  topInsetBackground: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
   },
   flex: { flex: 1 },
   content: { flex: 1 },

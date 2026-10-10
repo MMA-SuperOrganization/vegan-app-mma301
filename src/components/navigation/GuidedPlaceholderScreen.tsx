@@ -33,8 +33,8 @@ export function GuidedPlaceholderScreen({
       scrollable
       keyboardAvoiding={false}
       contentContainerStyle={styles.screen}
+      header={<CustomHeader title={title} showBack={false} />}
     >
-      <CustomHeader title={title} showBack={false} />
       <View style={styles.content}>
         <View style={styles.icon}>
           <AppIcon name={icon} size={40} color={colors.primary[700]} decorative />

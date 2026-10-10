@@ -10,8 +10,14 @@ export function TrackingComingSoonScreen({ title }: { title: string }) {
     <ScreenWrapper
       edges={['top', 'left', 'right', 'bottom']}
       keyboardAvoiding={false}
+      header={
+        <CustomHeader
+          title={title}
+          showBack
+          backFallbackHref="/(tabs)/diary"
+        />
+      }
     >
-      <CustomHeader title={title} showBack backFallbackHref="/(tabs)/diary" />
       <View style={styles.content}>
         <AppText color={colors.text.secondary} style={styles.text}>
           {t('placeholder.comingSoon', { feature: title })}

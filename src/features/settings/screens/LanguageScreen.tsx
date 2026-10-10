@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppText, CustomHeader, ScreenWrapper } from '@/components';
+import { AppText, SettingsScreenLayout } from '@/components';
 import { useTranslation, type Locale } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 
@@ -11,9 +11,11 @@ const localeOptions: Array<{ value: Locale; labelKey: 'language.vietnamese' | 'l
 export function LanguageScreen() {
   const { locale, setLocale, error, t } = useTranslation();
   return (
-    <ScreenWrapper contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('language.title')} showBack backFallbackHref="/(tabs)/profile" />
-      <AppText color={colors.text.secondary}>{t('language.subtitle')}</AppText>
+    <SettingsScreenLayout
+      title={t('language.title')}
+      subtitle={t('language.subtitle')}
+      scrollable={false}
+    >
       <View style={styles.options}>
         {localeOptions.map((option) => {
           const selected = option.value === locale;
@@ -40,12 +42,11 @@ export function LanguageScreen() {
         })}
       </View>
       {error ? <AppText color={colors.status.danger}>{error}</AppText> : null}
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.xl },
   options: { gap: spacing.md },
   option: {
     minHeight: 76,

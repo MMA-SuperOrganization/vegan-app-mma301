@@ -4,8 +4,7 @@ import {
   AppButton,
   AppInput,
   AppText,
-  CustomHeader,
-  ScreenWrapper,
+  SettingsScreenLayout,
 } from '@/components';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
@@ -49,11 +48,11 @@ export function NutritionProfileScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <CustomHeader title={t('profile.nutritionTitle')} showBack onBack={goBack} />
-      <AppText color={colors.text.secondary}>
-        {t('profile.nutritionSubtitle')}
-      </AppText>
+    <SettingsScreenLayout
+      title={t('profile.nutritionTitle')}
+      subtitle={t('profile.nutritionSubtitle')}
+      onBack={goBack}
+    >
       <View style={styles.summary}>
         <AppText variant="heading3">
           {nutrition?.bmi != null
@@ -104,12 +103,11 @@ export function NutritionProfileScreen() {
           {t('profile.estimateDescription')}
         </AppText>
       </View>
-    </ScreenWrapper>
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.lg },
   summary: {
     padding: spacing.xl,
     gap: spacing.sm,

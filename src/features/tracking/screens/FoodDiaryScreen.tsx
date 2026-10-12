@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { DayNavigator } from '../components/DayNavigator';
 import { DiaryMealCard } from '../components/DiaryMealCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import {
@@ -30,27 +31,35 @@ import type { DiaryEntry } from '../types';
 export function FoodDiaryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { formatNumber, formatShortDate, mealLabel } = useTrackingFormat();
+  const { formatNumber, mealLabel } = useTrackingFormat();
 
   const today = toLocalIsoDate(new Date());
-  const diary = useDiary(today);
-  const summary = useDiarySummary(today);
+  const [date, setDate] = useState(today);
+  const diary = useDiary(date);
+  const summary = useDiarySummary(date);
   const profileTargets = useTrackingTargets();
   const diaryEntries = diary.data?.data ?? [];
   const targetKcal =
     summary.data?.dailyTargets.caloriesKcal ?? profileTargets.energyKcal;
-  const todayEntries = useMemo(
-    () => diaryEntriesForDate(diaryEntries, today),
-    [diaryEntries, today]
+  const dayEntries = useMemo(
+    () => diaryEntriesForDate(diaryEntries, date),
+    [diaryEntries, date]
   );
-  const byMeal = groupDiaryByMeal(todayEntries);
-  const consumedKcal = sumNutrition(todayEntries).caloriesKcal;
+  const byMeal = groupDiaryByMeal(dayEntries);
+  const consumedKcal = sumNutrition(dayEntries).caloriesKcal;
+  const ready =
+    !diary.isLoading && !summary.isLoading && !diary.isError && !summary.isError;
+  // An earlier day with nothing logged is read-only and shows only "no data".
+  const isPastWithoutData = date !== today && dayEntries.length === 0;
   const mealTypes = byMeal.snack.length
     ? [...PRIMARY_MEAL_TYPES, 'snack' as const]
     : PRIMARY_MEAL_TYPES;
 
   const openEntry = (entry: DiaryEntry) =>
-    router.push({ pathname: '/(tracking)/diary-entry', params: { id: entry._id } });
+    router.push({
+      pathname: '/(tracking)/diary-entry',
+      params: { id: entry._id, date },
+    });
 
   return (
     <ScreenWrapper
@@ -60,27 +69,30 @@ export function FoodDiaryScreen() {
       contentContainerStyle={styles.screen}
       header={
         <CustomHeader
-          title={t('tracking.foodDiary.title')}
+          title={
+            date === today
+              ? t('tracking.foodDiary.title')
+              : t('tracking.foodDiary.titleDay')
+          }
           showBack
           backFallbackHref="/(tabs)/diary"
         />
       }
     >
       <View style={styles.content}>
+        <DayNavigator date={date} onChange={setDate} />
         <TrackingQueryState
           loading={diary.isLoading || summary.isLoading}
           error={diary.isError || summary.isError}
           onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
         />
-        {!diary.isLoading &&
-        !summary.isLoading &&
-        !diary.isError &&
-        !summary.isError ? (
+        {ready && isPastWithoutData ? (
+          <AppText color={colors.text.secondary} style={styles.noData}>
+            {t('tracking.day.noData')}
+          </AppText>
+        ) : null}
+        {ready && !isPastWithoutData ? (
           <>
-            <AppText variant="bodySmall" color={colors.text.secondary}>
-              {t('tracking.diary.dateLine', { date: formatShortDate(today) })}
-            </AppText>
-
             <View style={styles.energy}>
               <AppText variant="heading3" color={colors.primary[700]}>
                 {t('tracking.diary.energyTitle')}
@@ -118,12 +130,22 @@ export function FoodDiaryScreen() {
             <AppButton
               title={t('tracking.diary.viewSummary')}
               variant="outline"
-              onPress={() => router.push('/(tracking)/nutrition-summary')}
+              onPress={() =>
+                router.push({
+                  pathname: '/(tracking)/nutrition-summary',
+                  params: { date },
+                })
+              }
             />
 
             <AppButton
               title={t('tracking.diary.addEntry')}
-              onPress={() => router.push('/(tracking)/diary-entry')}
+              onPress={() =>
+                router.push({
+                  pathname: '/(tracking)/diary-entry',
+                  params: { date },
+                })
+              }
             />
 
             <View style={styles.note}>
@@ -160,6 +182,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: spacing.sm,
   },
+  noData: { textAlign: 'center', paddingVertical: spacing['4xl'] },
   note: {
     gap: spacing.xs,
     paddingHorizontal: spacing.xs,

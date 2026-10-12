@@ -26,6 +26,8 @@ export interface WaterLogModalProps {
   openKey: number;
   /** The drink to edit; omit to log a new one. */
   log?: WaterLog;
+  /** Local day (`YYYY-MM-DD`) for a new drink; defaults to today. */
+  date?: string;
   onClose: () => void;
   /** Called with the saved drink's id so the list can scroll to it. */
   onSaved: (id: string) => void;
@@ -39,6 +41,7 @@ export function WaterLogModal({
   visible,
   openKey,
   log,
+  date,
   onClose,
   onSaved,
 }: WaterLogModalProps) {
@@ -47,7 +50,7 @@ export function WaterLogModal({
   const { createWater, updateWater, removeWater } = useWaterMutations();
 
   const [logDate, setLogDate] = useState(() =>
-    toLocalIsoDate(log?.recordedAt ?? new Date())
+    log ? toLocalIsoDate(log.recordedAt) : (date ?? toLocalIsoDate(new Date()))
   );
   const [amountText, setAmountText] = useState(
     String(log?.amountMl ?? WATER_GLASS_ML)
@@ -61,7 +64,7 @@ export function WaterLogModal({
   // Reset the form from `log` at the start of every opening only.
   useEffect(() => {
     const now = new Date();
-    setLogDate(toLocalIsoDate(log?.recordedAt ?? now));
+    setLogDate(log ? toLocalIsoDate(log.recordedAt) : (date ?? toLocalIsoDate(now)));
     setAmountText(String(log?.amountMl ?? WATER_GLASS_ML));
     setTimeText(formatTimeOfDay(log?.recordedAt ?? now));
     setErrors({});

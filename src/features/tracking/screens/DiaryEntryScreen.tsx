@@ -29,6 +29,7 @@ import {
   parseTimeOfDay,
   quantityToGrams,
   scaleNutrition,
+  isLocalIsoDate,
   toLocalIsoDate,
   toNutritionValues,
   unitsForFood,
@@ -90,19 +91,23 @@ function textFromNumber(value: number | undefined) {
 }
 
 export function DiaryEntryScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, date: dateParam } = useLocalSearchParams<{
+    id?: string;
+    date?: string;
+  }>();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel, unitLabel, nutritionLine } =
     useTrackingFormat();
   const goBack = useSafeBack('/(tracking)/food-diary');
-  const date = toLocalIsoDate(new Date());
+  // The diary day comes from the diary screen; default to today.
+  const date = isLocalIsoDate(dateParam) ? dateParam : toLocalIsoDate(new Date());
   const diary = useDiary(date);
   const entry = id ? diary.data?.data.find((item) => item._id === id) : undefined;
   const { createDiary, updateDiary, removeDiary } = useDiaryMutations();
   const isEditing = Boolean(entry);
 
   const [now] = useState(() => new Date());
-  const entryDate = entry?.date ?? toLocalIsoDate(now);
+  const entryDate = entry?.date ?? date;
   const [sourceType, setSourceType] = useState<DiarySourceType>(
     entry?.sourceType ?? 'recipe'
   );

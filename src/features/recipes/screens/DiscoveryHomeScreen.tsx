@@ -1,8 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  FlatList,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   View,
@@ -22,8 +19,9 @@ import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 
-import { ContentResultCard } from '../components/ContentResultCard';
-import { FeaturedRecipeCard } from '../components/FeaturedRecipeCard';
+import { FeaturedRecipesSection } from '../components/FeaturedRecipesSection';
+import { QuickRecipesSection } from '../components/QuickRecipesSection';
+import { UserRecommendationsSection } from '../components/UserRecommendationsSection';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
 
@@ -36,7 +34,6 @@ export function DiscoveryHomeScreen() {
   const profile = useProfileStore((state) => state.data);
   const home = useHomeFeed();
   const [filter, setFilter] = useState<HomeFilter>('all');
-  const [featuredIndex, setFeaturedIndex] = useState(0);
   const firstName =
     profile?.user.name.trim().split(/\s+/).at(-1) || t('common.youLower');
   const cardWidth = Math.min(width - spacing.xl * 2 - spacing.md - 32, 320);
@@ -55,13 +52,12 @@ export function DiscoveryHomeScreen() {
       }),
     [filter, recommendations]
   );
-
-  const onFeaturedScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const idx = Math.round(e.nativeEvent.contentOffset.x / snapInterval);
-      setFeaturedIndex(idx);
-    },
-    [snapInterval]
+  const quickRecipes = useMemo(
+    () =>
+      recommendations.filter(
+        (recipe) => recipe.totalMinutes != null && recipe.totalMinutes <= 30
+      ),
+    [recommendations]
   );
 
   const openRecipe = (recipe: ContentCardData) =>
@@ -91,7 +87,7 @@ export function DiscoveryHomeScreen() {
         onPress={() => router.push('/(discover)/search')}
         style={({ pressed }) => [styles.search, pressed && styles.pressed]}
       >
-        <AppText style={styles.searchPlaceholder} color={colors.text.secondary}>
+        <AppText color={colors.text.secondary}>
           {t('home.searchPlaceholder')}
         </AppText>
         <View style={styles.searchButton}>
@@ -136,81 +132,32 @@ export function DiscoveryHomeScreen() {
         />
       ) : null}
 
-      {featured.length ? (
-        <View style={styles.section}>
-          <AppText variant="heading3">{t('home.featuredToday')}</AppText>
-          <FlatList
-            horizontal
-            data={featured}
-            keyExtractor={(item) => item._id}
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={snapInterval}
-            decelerationRate="fast"
-            onScroll={onFeaturedScroll}
-            scrollEventThrottle={16}
-            ItemSeparatorComponent={ListSeparator}
-            renderItem={({ item }) => (
-              <FeaturedRecipeCard
-                item={item}
-                style={{ width: cardWidth }}
-                onPress={() => openRecipe(item)}
-              />
-            )}
-          />
-          {featured.length > 1 ? (
-            <View style={styles.dots}>
-              {featured.map((_, i) => (
-                <View
-                  key={i}
-                  style={[styles.dot, i === featuredIndex && styles.dotActive]}
-                />
-              ))}
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+      <FeaturedRecipesSection
+        recipes={featured}
+        cardWidth={cardWidth}
+        snapInterval={snapInterval}
+        onSelectRecipe={openRecipe}
+      />
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeading}>
-          <AppText variant="heading3">
-            {t('home.forUser', { name: firstName })}
-          </AppText>
-          <Pressable onPress={() => router.push('/(discover)/explore')}>
-            <AppText variant="bodyStrong" color={colors.primary[700]}>
-              {t('home.viewAll')}
-            </AppText>
-          </Pressable>
-        </View>
-        {filteredRecipes.length ? (
-          <FlatList
-            horizontal
-            data={filteredRecipes}
-            keyExtractor={(item) => item._id}
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={ListSeparator}
-            renderItem={({ item }) => (
-              <ContentResultCard
-                item={{ ...item, type: 'recipe' }}
-                style={{ width: cardWidth }}
-                onPress={() => openRecipe(item)}
-              />
-            )}
-          />
-        ) : !home.isLoading && !home.isError && recommendations.length ? (
-          <EmptyState
-            title={t('home.noFilteredRecipes')}
-            description={t('home.noFilteredRecipesDescription')}
-            actionLabel={t('home.filterAll')}
-            onAction={() => setFilter('all')}
-          />
-        ) : null}
-      </View>
+      <UserRecommendationsSection
+        userName={firstName}
+        recipes={filteredRecipes}
+        cardWidth={cardWidth}
+        onSelectRecipe={openRecipe}
+        onViewAll={() => router.push('/(discover)/explore')}
+        hasRecommendations={Boolean(recommendations.length)}
+        isLoading={home.isLoading}
+        isError={home.isError}
+        onResetFilter={() => setFilter('all')}
+      />
+
+      <QuickRecipesSection
+        recipes={quickRecipes}
+        cardWidth={cardWidth}
+        onSelectRecipe={openRecipe}
+      />
     </ScreenWrapper>
   );
-}
-
-function ListSeparator() {
-  return <View style={styles.separator} />;
 }
 
 const styles = StyleSheet.create({
@@ -223,13 +170,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
     borderRadius: radius.xl,
     paddingLeft: spacing.lg,
-    paddingRight: 7,
+    paddingRight: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  searchPlaceholder: {
-    fontSize: 15,
   },
   searchButton: {
     width: 38,
@@ -240,29 +184,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  section: { gap: spacing.md },
-  sectionHeading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.border.default,
-  },
-  dotActive: {
-    width: 20,
-    backgroundColor: colors.primary[700],
-  },
-  separator: { width: spacing.md },
   pressed: { opacity: 0.72 },
 });

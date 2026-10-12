@@ -158,3 +158,5 @@ export interface HomeFeed {
     recipes: ContentCardData[];
   } | null;
 }
+
+export * from './types/componentProps';

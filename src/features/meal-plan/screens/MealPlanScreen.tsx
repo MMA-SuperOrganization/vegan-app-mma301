@@ -17,14 +17,15 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { MealSection } from '../components/MealSection';
 import { WeekDaySelector } from '../components/WeekDaySelector';
+import { WeekNavigator } from '../components/WeekNavigator';
 import { useMealPlan, useMealPlanActions } from '../hooks';
 import {
   groupMealsByType,
-  addCalendarDays,
   mealsForDate,
   nextServingCount,
   plannedCalories,
   PLANNED_MEAL_TYPES,
+  shiftWeekSelection,
   startOfWeek,
   toIsoDate,
 } from '../mealPlanState';
@@ -34,7 +35,8 @@ export function MealPlanScreen() {
   const { locale, t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel } = useTrackingFormat();
   const today = toIsoDate(new Date());
-  const weekStartDate = startOfWeek(new Date());
+  const currentWeekStartDate = startOfWeek(new Date());
+  const [weekStartDate, setWeekStartDate] = useState(currentWeekStartDate);
   const [selectedDate, setSelectedDate] = useState(today);
   const [pickerMealType, setPickerMealType] = useState<MealType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,6 +127,17 @@ export function MealPlanScreen() {
     );
   };
 
+  const moveToWeek = (weekDelta: number) => {
+    const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
+    setWeekStartDate(next.weekStartDate);
+    setSelectedDate(next.selectedDate);
+  };
+
+  const returnToCurrentWeek = () => {
+    setWeekStartDate(currentWeekStartDate);
+    setSelectedDate(today);
+  };
+
   return (
     <>
       <ScreenWrapper
@@ -134,15 +147,14 @@ export function MealPlanScreen() {
         header={<CustomHeader title={t('mealPlan.title')} showBack={false} />}
       >
         <View style={styles.content}>
-          <View style={styles.intro}>
-            <AppText variant="heading3">{t('mealPlan.weekTitle')}</AppText>
-            <AppText variant="bodySmall" color={colors.text.secondary}>
-              {t('mealPlan.weekRange', {
-                start: formatShortDate(weekStartDate),
-                end: formatShortDate(addCalendarDays(weekStartDate, 6)),
-              })}
-            </AppText>
-          </View>
+          <WeekNavigator
+            weekStartDate={weekStartDate}
+            currentWeekStartDate={currentWeekStartDate}
+            disabled={pending}
+            onPrevious={() => moveToWeek(-1)}
+            onNext={() => moveToWeek(1)}
+            onToday={returnToCurrentWeek}
+          />
 
           <WeekDaySelector
             weekStartDate={weekStartDate}
@@ -252,7 +264,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     gap: spacing.md,
   },
-  intro: { gap: spacing.xs },
   dayHeading: {
     flexDirection: 'row',
     alignItems: 'baseline',

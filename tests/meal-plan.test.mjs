@@ -5,7 +5,9 @@ import {
   groupMealsByType,
   nextServingCount,
   plannedCalories,
+  relativeWeekOffset,
   selectEditablePlan,
+  shiftWeekSelection,
   startOfWeek,
   weekDates,
 } from '../src/features/meal-plan/mealPlanState.ts';
@@ -22,6 +24,20 @@ const meal = (overrides = {}) => ({
     nutritionPerServing: { caloriesKcal: 420 },
   },
   ...overrides,
+});
+
+test('week navigation preserves the selected weekday across any week', () => {
+  assert.deepEqual(shiftWeekSelection('2026-10-12', '2026-10-15', 1), {
+    weekStartDate: '2026-10-19',
+    selectedDate: '2026-10-22',
+  });
+  assert.deepEqual(shiftWeekSelection('2026-01-05', '2026-01-11', -2), {
+    weekStartDate: '2025-12-22',
+    selectedDate: '2025-12-28',
+  });
+  assert.equal(relativeWeekOffset('2026-10-12', '2026-10-12'), 0);
+  assert.equal(relativeWeekOffset('2026-10-12', '2026-10-05'), -1);
+  assert.equal(relativeWeekOffset('2026-10-12', '2027-01-04'), 12);
 });
 
 test('week helpers use Monday through Sunday calendar dates', () => {

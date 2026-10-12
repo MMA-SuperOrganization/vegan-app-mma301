@@ -31,6 +31,28 @@ export function weekDates(weekStartDate: string) {
   );
 }
 
+export function relativeWeekOffset(referenceWeek: string, targetWeek: string) {
+  const reference = new Date(`${referenceWeek}T12:00:00`).getTime();
+  const target = new Date(`${targetWeek}T12:00:00`).getTime();
+  return Math.round((target - reference) / (DAY_MS * 7));
+}
+
+export function shiftWeekSelection(
+  weekStartDate: string,
+  selectedDate: string,
+  weekDelta: number
+) {
+  const selectedDayIndex = Math.max(
+    weekDates(weekStartDate).indexOf(selectedDate),
+    0
+  );
+  const nextWeekStartDate = addCalendarDays(weekStartDate, weekDelta * 7);
+  return {
+    weekStartDate: nextWeekStartDate,
+    selectedDate: addCalendarDays(nextWeekStartDate, selectedDayIndex),
+  };
+}
+
 export function normalizeMealPlan(plan: MealPlan): MealPlan {
   return {
     ...plan,

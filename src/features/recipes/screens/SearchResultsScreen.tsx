@@ -17,6 +17,7 @@ import { spacing } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
 import { SearchBar } from '../components/SearchBar';
+import { SearchResultsFilterBar } from '../components/SearchResultsFilterBar';
 import {
   buildRecipeQuery,
   filtersForContentType,
@@ -123,30 +124,17 @@ export function SearchResultsScreen() {
               onSubmit={submit}
               placeholder={t('discover.searchPlaceholder')}
             />
-            <View style={styles.filters}>
-              {contentTypes.map((filter) => (
-                <FilterChip
-                  key={filter.value}
-                  label={t(filter.labelKey)}
-                  selected={type === filter.value}
-                  onPress={() => {
-                    setType(filter.value);
-                    router.replace({
-                      pathname: '/(discover)/search-results',
-                      params: { q: submitted, type: filter.value },
-                    });
-                  }}
-                />
-              ))}
-            </View>
-            <AppButton
-              title={
-                hasActiveRecipeFilters(filters)
-                  ? t('filters.editActive')
-                  : t('filters.edit')
-              }
-              variant="outline"
-              onPress={openFilters}
+            <SearchResultsFilterBar
+              selectedType={type}
+              onSelectType={(newType) => {
+                setType(newType);
+                router.replace({
+                  pathname: '/(discover)/search-results',
+                  params: { q: submitted, type: newType },
+                });
+              }}
+              hasActiveFilters={hasActiveRecipeFilters(filters)}
+              onOpenFilters={openFilters}
             />
           </View>
         }

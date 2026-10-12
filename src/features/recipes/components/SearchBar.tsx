@@ -12,17 +12,7 @@ import {
 import { AppIcon } from '@/components';
 import { colors, fontFamily, radius, spacing } from '@/theme';
 
-export interface SearchBarProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  onSubmit?: () => void;
-  onClear?: () => void;
-  placeholder?: string;
-  autoFocus?: boolean;
-  style?: StyleProp<ViewStyle>;
-  inputStyle?: StyleProp<TextStyle>;
-  accessibilityLabel?: string;
-}
+import type { SearchBarProps } from '../types';
 
 export function SearchBar({
   value,

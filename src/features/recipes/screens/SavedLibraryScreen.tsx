@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   CustomHeader,
@@ -10,7 +10,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 
-import { ContentResultCard } from '../components/ContentResultCard';
+import { SavedItemList } from '../components/SavedItemList';
 import { useSavedItems } from '../hooks';
 import type { SavedItem } from '../types';
 
@@ -59,49 +59,16 @@ export function SavedLibraryScreen() {
           />
         </View>
       ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={[
-            styles.list,
-            !items.length && styles.emptyList,
-          ]}
-          ItemSeparatorComponent={ListSeparator}
-          ListEmptyComponent={
-            <EmptyState
-              title={t('saved.empty')}
-              description={t('saved.emptyDescription')}
-              actionLabel={t('saved.backToExplore')}
-              onAction={() => router.replace('/(discover)/explore')}
-            />
-          }
-          renderItem={({ item }) =>
-            item.target ? (
-              <ContentResultCard
-                item={{ ...item.target, type: item.targetType }}
-                onPress={
-                  item.targetType === 'recipe' || item.targetType === 'food-item'
-                    ? () => openSavedItem(item)
-                    : undefined
-                }
-              />
-            ) : (
-              <EmptyState title={t('saved.unavailable')} />
-            )
-          }
+        <SavedItemList
+          items={items}
+          onOpenItem={openSavedItem}
+          onExplore={() => router.replace('/(discover)/explore')}
         />
       )}
     </ScreenWrapper>
   );
 }
 
-function ListSeparator() {
-  return <View style={styles.separator} />;
-}
-
 const styles = StyleSheet.create({
   state: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
-  list: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
-  emptyList: { flexGrow: 1, justifyContent: 'center' },
-  separator: { height: spacing.md },
 });

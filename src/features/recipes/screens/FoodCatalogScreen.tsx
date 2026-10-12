@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AppButton,
-  AppInput,
   AppText,
   EmptyState,
   LoadingSpinner,
@@ -15,6 +14,7 @@ import { useTranslation } from '@/i18n';
 import { useDebouncedValue } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { ContentResultCard } from '../components/ContentResultCard';
+import { SearchBar } from '../components/SearchBar';
 import { buildFoodQuery } from '../foodState';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { useContentCategories, useFoodItems } from '../hooks';
@@ -55,13 +55,11 @@ export function FoodCatalogScreen() {
         subtitle={t('food.catalogSubtitle')}
         backFallbackHref="/(discover)/explore"
       />
-      <AppInput
-        type="search"
+      <SearchBar
         value={input}
         onChangeText={setInput}
         placeholder={t('food.searchPlaceholder')}
-        returnKeyType="search"
-        onSubmitEditing={() => setQuery(normalizeSearchQuery(input))}
+        onSubmit={() => setQuery(normalizeSearchQuery(input))}
       />
       <View style={styles.categories}>
         <CategoryChip

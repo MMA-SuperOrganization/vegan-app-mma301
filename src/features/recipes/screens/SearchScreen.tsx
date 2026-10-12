@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
-  AppInput,
   AppText,
+  CustomHeader,
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
@@ -11,8 +11,8 @@ import {
 import { colors, radius, spacing } from '@/theme';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { SearchBar } from '../components/SearchBar';
 import { useRecentSearches, useSearchSuggestions } from '../hooks';
-import { RecipeHeader } from '../components/RecipeHeader';
 import { normalizeSearchQuery } from '../searchState';
 
 export function SearchScreen() {
@@ -28,19 +28,25 @@ export function SearchScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('discover.search')}
-        subtitle={t('discover.searchSubtitle')}
-      />
-      <AppInput
-        type="search"
-        label={t('discover.search')}
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={t('discover.search')}
+          showBack
+          backFallbackHref="/(tabs)"
+        />
+      }
+      scrollable
+      contentContainerStyle={styles.screen}
+    >
+      <AppText color={colors.text.secondary}>
+        {t('discover.searchSubtitle')}
+      </AppText>
+      <SearchBar
         placeholder={t('discover.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
-        returnKeyType="search"
-        onSubmitEditing={() => submit()}
+        onSubmit={() => submit()}
       />
       {debouncedQuery ? (
         <View style={styles.section}>

@@ -1,4 +1,5 @@
 export { SearchScreen } from './screens/SearchScreen';
+export { DiscoveryHomeScreen } from './screens/DiscoveryHomeScreen';
 export { SearchResultsScreen } from './screens/SearchResultsScreen';
 export { ExploreScreen } from './screens/ExploreScreen';
 export { RecipeDetailScreen } from './screens/RecipeDetailScreen';
@@ -11,4 +12,5 @@ export { ContentResultCard } from './components/ContentResultCard';
 export { FeaturedRecipeCard } from './components/FeaturedRecipeCard';
 export { RecipeImage } from './components/RecipeImage';
 export { ContentSaveButton } from './components/ContentSaveButton';
+export { SearchBar } from './components/SearchBar';
 export { useHomeFeed } from './hooks';

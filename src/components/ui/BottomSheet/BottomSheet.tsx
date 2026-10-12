@@ -100,7 +100,7 @@ export function BottomSheet({
               edges={['bottom']}
               style={[styles.sheet, tall && styles.fill]}
             >
-              <Pressable style={styles.body}>
+              <Pressable style={[styles.body, tall && styles.fill]}>
                 <View style={styles.dragArea} {...panResponder.panHandlers}>
                   <View style={styles.dragHandle} />
                 </View>
@@ -134,7 +134,9 @@ const styles = StyleSheet.create({
   },
   tall: { height: '85%' },
   fill: { flex: 1 },
-  body: { flex: 1, gap: spacing.lg },
+  // Only a tall sheet has a fixed height to fill; `flex: 1` in an auto-height
+  // sheet collapses the body to zero height on native (web is unaffected).
+  body: { gap: spacing.lg },
   dragArea: {
     minHeight: 28,
     alignItems: 'center',

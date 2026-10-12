@@ -20,6 +20,7 @@ import {
   logAppError,
   toAppErrorDetails,
 } from '../src/services/errors/appError.ts';
+import { normalizeFirebaseSession } from '../src/services/auth/firebaseSession.ts';
 
 test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
   const details = toAppErrorDetails(
@@ -86,6 +87,28 @@ test('registration requires Firebase minimum password and matching confirmation'
   assert.deepEqual(
     validateRegistration('Mầm', 'mam@example.com', '123456', '123456'),
     { name: null, email: null, password: null, confirmation: null }
+  );
+});
+
+test('profile updates preserve registration credentials when Firebase omits session fields', () => {
+  const registrationSession = {
+    idToken: 'registration-token',
+    refreshToken: 'refresh-token',
+    expiresIn: 3600,
+    localId: 'firebase-user',
+    email: 'mam@example.com',
+  };
+
+  assert.deepEqual(
+    normalizeFirebaseSession(
+      { localId: 'firebase-user', displayName: 'Mầm' },
+      registrationSession
+    ),
+    { ...registrationSession, displayName: 'Mầm' }
+  );
+  assert.throws(
+    () => normalizeFirebaseSession({ displayName: 'Mầm' }),
+    /missing required session credentials/
   );
 });
 

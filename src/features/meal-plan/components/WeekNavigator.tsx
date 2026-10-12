@@ -11,6 +11,7 @@ export function WeekNavigator({
   onPrevious,
   onNext,
   onToday,
+  onOpenPicker,
 }: {
   weekStartDate: string;
   currentWeekStartDate: string;
@@ -18,6 +19,7 @@ export function WeekNavigator({
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
+  onOpenPicker: () => void;
 }) {
   const { locale, t } = useTranslation();
   const localeTag = locale === 'vi' ? 'vi-VN' : 'en-US';
@@ -57,10 +59,25 @@ export function WeekNavigator({
           </AppText>
         </Pressable>
 
-        <View style={styles.weekCopy}>
-          <AppText variant="heading3" style={styles.centerText}>
-            {title}
-          </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('mealPlan.chooseWeekA11y')}
+          disabled={disabled}
+          onPress={onOpenPicker}
+          style={({ pressed }) => [
+            styles.weekCopy,
+            pressed && styles.weekCopyPressed,
+            disabled && styles.disabled,
+          ]}
+        >
+          <View style={styles.titleRow}>
+            <AppText variant="heading3" style={styles.centerText}>
+              {title}
+            </AppText>
+            <AppText variant="bodyStrong" color={colors.primary[700]}>
+              ⌄
+            </AppText>
+          </View>
           <AppText
             variant="bodySmall"
             color={colors.text.secondary}
@@ -71,7 +88,7 @@ export function WeekNavigator({
               end: formatDate(addCalendarDays(weekStartDate, 6)),
             })}
           </AppText>
-        </View>
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"
@@ -133,6 +150,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.selected,
   },
   weekCopy: { flex: 1, alignItems: 'center', gap: spacing.xs },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  weekCopyPressed: {
+    borderRadius: radius.md,
+    backgroundColor: colors.background.selected,
+  },
   centerText: { textAlign: 'center' },
   todayButton: {
     alignSelf: 'center',

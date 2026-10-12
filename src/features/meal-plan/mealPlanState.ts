@@ -31,6 +31,28 @@ export function weekDates(weekStartDate: string) {
   );
 }
 
+export function monthStart(isoDate: string) {
+  return `${isoDate.slice(0, 7)}-01`;
+}
+
+export function shiftMonth(monthStartDate: string, monthDelta: number) {
+  const value = new Date(`${monthStartDate}T12:00:00`);
+  value.setMonth(value.getMonth() + monthDelta, 1);
+  return toIsoDate(value);
+}
+
+export function weeksIntersectingMonth(monthStartDate: string) {
+  const firstDay = new Date(`${monthStart(monthStartDate)}T12:00:00`);
+  const lastDay = new Date(firstDay.getFullYear(), firstDay.getMonth() + 1, 0, 12);
+  const firstWeek = startOfWeek(firstDay);
+  const lastWeek = startOfWeek(lastDay);
+  const weeks: string[] = [];
+  for (let week = firstWeek; week <= lastWeek; week = addCalendarDays(week, 7)) {
+    weeks.push(week);
+  }
+  return weeks;
+}
+
 export function relativeWeekOffset(referenceWeek: string, targetWeek: string) {
   const reference = new Date(`${referenceWeek}T12:00:00`).getTime();
   const target = new Date(`${targetWeek}T12:00:00`).getTime();

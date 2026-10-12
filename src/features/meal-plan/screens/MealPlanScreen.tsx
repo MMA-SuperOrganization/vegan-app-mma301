@@ -18,6 +18,7 @@ import { colors, radius, spacing } from '@/theme';
 import { MealSection } from '../components/MealSection';
 import { WeekDaySelector } from '../components/WeekDaySelector';
 import { WeekNavigator } from '../components/WeekNavigator';
+import { WeekPickerSheet } from '../components/WeekPickerSheet';
 import { useMealPlan, useMealPlanActions } from '../hooks';
 import {
   groupMealsByType,
@@ -25,6 +26,7 @@ import {
   nextServingCount,
   plannedCalories,
   PLANNED_MEAL_TYPES,
+  relativeWeekOffset,
   shiftWeekSelection,
   startOfWeek,
   toIsoDate,
@@ -38,6 +40,7 @@ export function MealPlanScreen() {
   const currentWeekStartDate = startOfWeek(new Date());
   const [weekStartDate, setWeekStartDate] = useState(currentWeekStartDate);
   const [selectedDate, setSelectedDate] = useState(today);
+  const [weekPickerVisible, setWeekPickerVisible] = useState(false);
   const [pickerMealType, setPickerMealType] = useState<MealType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -138,6 +141,14 @@ export function MealPlanScreen() {
     setSelectedDate(today);
   };
 
+  const selectWeek = (nextWeekStartDate: string) => {
+    const weekDelta = relativeWeekOffset(weekStartDate, nextWeekStartDate);
+    const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
+    setWeekStartDate(next.weekStartDate);
+    setSelectedDate(next.selectedDate);
+    setWeekPickerVisible(false);
+  };
+
   return (
     <>
       <ScreenWrapper
@@ -154,6 +165,7 @@ export function MealPlanScreen() {
             onPrevious={() => moveToWeek(-1)}
             onNext={() => moveToWeek(1)}
             onToday={returnToCurrentWeek}
+            onOpenPicker={() => setWeekPickerVisible(true)}
           />
 
           <WeekDaySelector
@@ -252,6 +264,14 @@ export function MealPlanScreen() {
           setPickerMealType(null);
           setSearchQuery('');
         }}
+      />
+
+      <WeekPickerSheet
+        visible={weekPickerVisible}
+        selectedWeekStartDate={weekStartDate}
+        currentWeekStartDate={currentWeekStartDate}
+        onSelect={selectWeek}
+        onClose={() => setWeekPickerVisible(false)}
       />
     </>
   );

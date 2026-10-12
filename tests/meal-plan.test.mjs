@@ -5,11 +5,14 @@ import {
   groupMealsByType,
   nextServingCount,
   plannedCalories,
+  monthStart,
   relativeWeekOffset,
   selectEditablePlan,
   shiftWeekSelection,
+  shiftMonth,
   startOfWeek,
   weekDates,
+  weeksIntersectingMonth,
 } from '../src/features/meal-plan/mealPlanState.ts';
 
 const meal = (overrides = {}) => ({
@@ -24,6 +27,27 @@ const meal = (overrides = {}) => ({
     nutritionPerServing: { caloriesKcal: 420 },
   },
   ...overrides,
+});
+
+test('week picker lists every week intersecting a month and navigates months', () => {
+  assert.equal(monthStart('2026-10-19'), '2026-10-01');
+  assert.equal(shiftMonth('2026-12-01', 1), '2027-01-01');
+  assert.equal(shiftMonth('2026-01-01', -1), '2025-12-01');
+  assert.deepEqual(weeksIntersectingMonth('2026-10-01'), [
+    '2026-09-28',
+    '2026-10-05',
+    '2026-10-12',
+    '2026-10-19',
+    '2026-10-26',
+  ]);
+  assert.deepEqual(weeksIntersectingMonth('2026-08-01'), [
+    '2026-07-27',
+    '2026-08-03',
+    '2026-08-10',
+    '2026-08-17',
+    '2026-08-24',
+    '2026-08-31',
+  ]);
 });
 
 test('week navigation preserves the selected weekday across any week', () => {

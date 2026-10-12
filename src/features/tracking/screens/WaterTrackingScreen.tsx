@@ -171,16 +171,16 @@ export function WaterTrackingScreen() {
             <AppText variant="heading4">{t('tracking.water.historyTitle')}</AppText>
             <View style={styles.historyBox}>
               {todayLogs.length === 0 ? (
-                <AppText variant="bodySmall" color={colors.text.secondary}>
+                <AppText
+                  variant="bodySmall"
+                  color={colors.text.secondary}
+                  style={styles.historyEmpty}
+                >
                   {t('tracking.water.historyEmpty')}
                 </AppText>
               ) : (
-                <ScrollView
-                  ref={historyRef}
-                  contentContainerStyle={styles.historyList}
-                  showsVerticalScrollIndicator
-                >
-                  {todayLogs.map((log) => (
+                <ScrollView ref={historyRef} showsVerticalScrollIndicator>
+                  {todayLogs.map((log, index) => (
                     <View
                       key={log._id}
                       onLayout={(event) => {
@@ -188,7 +188,9 @@ export function WaterTrackingScreen() {
                         if (log._id === focusId) scrollToFocus();
                       }}
                     >
+                      {index > 0 ? <View style={styles.divider} /> : null}
                       <LogHistoryItem
+                        variant="row"
                         unit="ml"
                         title={formatTimeOfDay(log.recordedAt)}
                         value={t('tracking.water.amount', { ml: ml(log.amountMl) })}
@@ -249,9 +251,14 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 120,
     borderRadius: radius.xl,
-    padding: spacing.sm,
-    backgroundColor: colors.background.muted,
+    padding: spacing.xs,
+    backgroundColor: colors.background.surface,
   },
-  historyList: { gap: spacing.sm },
+  historyEmpty: { padding: spacing.md },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.border.default,
+  },
   footer: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
 });

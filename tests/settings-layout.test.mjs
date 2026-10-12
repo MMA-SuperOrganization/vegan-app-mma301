@@ -39,7 +39,6 @@ const customHeaderHosts = [
   'src/features/tracking/screens/WeightTrackingScreen.tsx',
   'src/features/tracking/screens/WaterTrackingScreen.tsx',
   'src/features/tracking/screens/TrackingComingSoonScreen.tsx',
-  'src/features/tracking/screens/WeightEntryScreen.tsx',
   'src/features/tracking/screens/DiaryEntryScreen.tsx',
 ];
 

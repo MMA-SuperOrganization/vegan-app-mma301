@@ -8,6 +8,8 @@ export interface LogHistoryItemProps {
   title: string;
   value: string;
   onPress: () => void;
+  /** `card` stands alone; `row` is a flat row inside an existing card. */
+  variant?: 'card' | 'row';
 }
 
 /** History row shared by weight and water tracking. */
@@ -16,6 +18,7 @@ export function LogHistoryItem({
   title,
   value,
   onPress,
+  variant = 'card',
 }: LogHistoryItemProps) {
   const { t } = useTranslation();
   return (
@@ -23,7 +26,11 @@ export function LogHistoryItem({
       accessibilityRole="button"
       accessibilityLabel={t('tracking.history.openA11y', { title, value })}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.row,
+        variant === 'card' && styles.card,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.unit}>
         <AppText variant="bodyStrong" color={colors.primary[700]}>
@@ -51,6 +58,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.lg,
     padding: spacing.md,
+    borderRadius: radius.lg,
+  },
+  card: {
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border.default,

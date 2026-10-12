@@ -738,6 +738,7 @@ export const vi = {
   'tracking.weight.chartEmpty': 'Chưa có số đo trong 30 ngày qua.',
   'tracking.weight.historyTitle': 'Lịch sử số đo',
   'tracking.weightEntry.title': 'Ghi cân nặng',
+  'tracking.weightEntry.editTitle': 'Sửa số đo',
   'tracking.weightEntry.subtitle': 'Cập nhật tiến trình cá nhân',
   'tracking.weightEntry.weightLabel': 'Cân nặng (kg)',
   'tracking.weightEntry.dateLabel': 'Ngày đo (DD/MM/YYYY)',
@@ -748,7 +749,6 @@ export const vi = {
   'tracking.weightEntry.deleteConfirmTitle': 'Xóa số đo?',
   'tracking.weightEntry.deleteConfirmBody':
     'Số đo này sẽ bị xóa khỏi lịch sử cân nặng.',
-  'tracking.weightEntry.notFound': 'Không tìm thấy số đo này.',
   'tracking.weightEntry.errorWeight':
     'Cân nặng phải lớn hơn 0 và không quá {{max}} kg.',
   'tracking.weightEntry.errorDate':
@@ -1515,6 +1515,7 @@ export const en: Record<TranslationKey, string> = {
   'tracking.weight.chartEmpty': 'No measurements in the last 30 days.',
   'tracking.weight.historyTitle': 'Measurement history',
   'tracking.weightEntry.title': 'Log weight',
+  'tracking.weightEntry.editTitle': 'Edit measurement',
   'tracking.weightEntry.subtitle': 'Update your personal progress',
   'tracking.weightEntry.weightLabel': 'Weight (kg)',
   'tracking.weightEntry.dateLabel': 'Date (DD/MM/YYYY)',
@@ -1525,7 +1526,6 @@ export const en: Record<TranslationKey, string> = {
   'tracking.weightEntry.deleteConfirmTitle': 'Delete measurement?',
   'tracking.weightEntry.deleteConfirmBody':
     'This measurement will be removed from your weight history.',
-  'tracking.weightEntry.notFound': 'This measurement could not be found.',
   'tracking.weightEntry.errorWeight':
     'Weight must be greater than 0 and at most {{max}} kg.',
   'tracking.weightEntry.errorDate': 'Enter the date as DD/MM/YYYY, e.g. 05/10/2026.',

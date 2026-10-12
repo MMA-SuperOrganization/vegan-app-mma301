@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Fragment, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
@@ -14,6 +13,7 @@ import { colors, radius, spacing } from '@/theme';
 import { LogHistoryItem } from '../components/LogHistoryItem';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WeightLineChart } from '../components/WeightLineChart';
+import { WeightLogModal } from '../components/WeightLogModal';
 import {
   useTrackingTargets,
   useWeightLogs,
@@ -31,6 +31,14 @@ import {
   weightTrend,
   type WeightGoalDirection,
 } from '../trackingState';
+import type { WeightLog } from '../types';
+
+interface ModalState {
+  open: boolean;
+  /** New for every opening, so the form resets. */
+  key: number;
+  log?: WeightLog;
+}
 
 const GOAL_KEYS: Record<WeightGoalDirection, TranslationKey> = {
   lose: 'tracking.weight.goalLose',
@@ -39,13 +47,13 @@ const GOAL_KEYS: Record<WeightGoalDirection, TranslationKey> = {
 };
 
 export function WeightTrackingScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, relativeDay } = useTrackingFormat();
   const logs = useWeightLogs();
   const trendQuery = useWeightTrend();
   const weightLogs = logs.data?.data ?? [];
   const goalKg = useTrackingTargets().weightKg;
+  const [modal, setModal] = useState<ModalState>({ open: false, key: 0 });
 
   const now = new Date();
   const { history, points, trend } = useMemo(() => {
@@ -71,12 +79,10 @@ export function WeightTrackingScreen() {
   };
   const kg = (value: number) => formatNumber(value, 1, 1);
 
-  const openEntry = (id?: string) =>
-    router.push(
-      id
-        ? { pathname: '/(tracking)/weight-entry', params: { id } }
-        : '/(tracking)/weight-entry'
-    );
+  const openModal = (log?: WeightLog) =>
+    setModal({ open: true, key: Date.now(), log });
+  // Keep `log` while the sheet slides out so its content does not flash.
+  const closeModal = () => setModal((current) => ({ ...current, open: false }));
 
   let changeText: string | undefined;
   if (trend?.changeKg != null) {
@@ -101,10 +107,8 @@ export function WeightTrackingScreen() {
 
   return (
     <ScreenWrapper
-      scrollable
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
-      contentContainerStyle={styles.screen}
       header={
         <CustomHeader
           title={t('tracking.weight.title')}
@@ -137,7 +141,7 @@ export function WeightTrackingScreen() {
                 title={t('tracking.hub.weightEmpty')}
                 description={t('tracking.hub.weightEmptyDetail')}
                 actionLabel={t('tracking.weight.add')}
-                onAction={() => openEntry()}
+                onAction={() => openModal()}
               />
             ) : (
               <>
@@ -204,37 +208,52 @@ export function WeightTrackingScreen() {
                   )}
                 </View>
 
-                <AppButton
-                  title={t('tracking.weight.add')}
-                  onPress={() => openEntry()}
-                />
-
                 <AppText variant="heading4">
                   {t('tracking.weight.historyTitle')}
                 </AppText>
-                {history.map((log) => (
-                  <LogHistoryItem
-                    key={log._id}
-                    unit="kg"
-                    title={historyTitle(log.recordedAt)}
-                    value={t('tracking.hub.weightValue', {
-                      weight: kg(log.weightKg),
-                    })}
-                    onPress={() => openEntry(log._id)}
-                  />
-                ))}
+                <View style={styles.historyBox}>
+                  <ScrollView showsVerticalScrollIndicator>
+                    {history.map((log, index) => (
+                      <Fragment key={log._id}>
+                        {index > 0 ? <View style={styles.divider} /> : null}
+                        <LogHistoryItem
+                          variant="row"
+                          unit="kg"
+                          title={historyTitle(log.recordedAt)}
+                          value={t('tracking.hub.weightValue', {
+                            weight: kg(log.weightKg),
+                          })}
+                          onPress={() => openModal(log)}
+                        />
+                      </Fragment>
+                    ))}
+                  </ScrollView>
+                </View>
               </>
             )}
           </>
         ) : null}
       </View>
+
+      {latest && !logs.isError && !trendQuery.isError ? (
+        <View style={styles.footer}>
+          <AppButton title={t('tracking.weight.add')} onPress={() => openModal()} />
+        </View>
+      ) : null}
+      <WeightLogModal
+        visible={modal.open}
+        openKey={modal.key}
+        log={modal.log}
+        defaultWeightKg={latest?.weightKg}
+        onClose={closeModal}
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingBottom: spacing['4xl'] },
   content: {
+    flex: 1,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     gap: spacing.md,
@@ -252,4 +271,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  historyBox: {
+    flex: 1,
+    minHeight: 120,
+    borderRadius: radius.xl,
+    padding: spacing.xs,
+    backgroundColor: colors.background.surface,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.border.default,
+  },
+  footer: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
 });

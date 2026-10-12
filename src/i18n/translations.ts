@@ -118,7 +118,7 @@ export const vi = {
   'mealPlan.chooseWeekA11y': 'Mở bảng chọn tuần',
   'mealPlan.weekPicker.title': 'Chọn tuần',
   'mealPlan.weekPicker.description':
-    'Chọn năm và tháng, sau đó chọn tuần bạn muốn xem.',
+    'Vuốt lên hoặc xuống để chọn năm và tháng, sau đó chọn tuần bạn muốn xem.',
   'mealPlan.weekPicker.year': 'Năm',
   'mealPlan.weekPicker.month': 'Tháng',
   'mealPlan.weekPicker.weeksInMonth': 'Các tuần trong {{month}}',
@@ -949,7 +949,7 @@ export const en: Record<TranslationKey, string> = {
   'mealPlan.chooseWeekA11y': 'Open week picker',
   'mealPlan.weekPicker.title': 'Choose a week',
   'mealPlan.weekPicker.description':
-    'Choose a year and month, then select the week you want to view.',
+    'Swipe up or down to choose a year and month, then select a week.',
   'mealPlan.weekPicker.year': 'Year',
   'mealPlan.weekPicker.month': 'Month',
   'mealPlan.weekPicker.weeksInMonth': 'Weeks in {{month}}',

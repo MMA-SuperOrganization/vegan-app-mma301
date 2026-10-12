@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
+  CustomHeader,
   EmptyState,
+  FilterChip,
   LoadingSpinner,
   ScreenWrapper,
   Toggle,
@@ -12,7 +14,6 @@ import {
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { RecipeHeader } from '../components/RecipeHeader';
 import {
   filtersForContentType,
   parseRecipeFilters,
@@ -71,15 +72,21 @@ export function FilterPanelScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('filters.title')}
-        subtitle={t('filters.subtitle')}
-        backFallbackHref={{
-          pathname: '/(discover)/search-results',
-          params: { q: query },
-        }}
-      />
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={t('filters.title')}
+          showBack
+          backFallbackHref={{
+            pathname: '/(discover)/search-results',
+            params: { q: query },
+          }}
+        />
+      }
+      scrollable
+      contentContainerStyle={styles.screen}
+    >
+      <AppText color={colors.text.secondary}>{t('filters.subtitle')}</AppText>
 
       <FilterSection title={t('filters.category')}>
         {categories.isLoading ? (
@@ -254,37 +261,13 @@ function FilterOption({
   selected: boolean;
   onPress: () => void;
 }) {
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={[styles.option, selected && styles.selectedOption]}
-    >
-      <AppText color={selected ? colors.text.inverse : colors.text.primary}>
-        {label}
-      </AppText>
-    </Pressable>
-  );
+  return <FilterChip label={label} selected={selected} onPress={onPress} />;
 }
 
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.xl },
   section: { gap: spacing.md },
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  option: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    borderRadius: radius.full,
-    backgroundColor: colors.background.surface,
-  },
-  selectedOption: {
-    borderColor: colors.primary[500],
-    backgroundColor: colors.primary[500],
-  },
   allergenBlock: {
     padding: spacing.lg,
     gap: spacing.sm,

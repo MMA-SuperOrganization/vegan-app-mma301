@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import {
   AppInput,
   AppText,
+  CustomHeader,
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
@@ -12,7 +13,6 @@ import { colors, radius, spacing } from '@/theme';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { useRecentSearches, useSearchSuggestions } from '../hooks';
-import { RecipeHeader } from '../components/RecipeHeader';
 import { normalizeSearchQuery } from '../searchState';
 
 export function SearchScreen() {
@@ -28,11 +28,20 @@ export function SearchScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('discover.search')}
-        subtitle={t('discover.searchSubtitle')}
-      />
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={t('discover.search')}
+          showBack
+          backFallbackHref="/(tabs)"
+        />
+      }
+      scrollable
+      contentContainerStyle={styles.screen}
+    >
+      <AppText color={colors.text.secondary}>
+        {t('discover.searchSubtitle')}
+      </AppText>
       <AppInput
         type="search"
         label={t('discover.search')}

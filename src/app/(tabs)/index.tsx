@@ -1,5 +1,5 @@
-import { HomeScreen } from '@/features/profile';
+import { DiscoveryHomeScreen } from '@/features/recipes';
 
 export default function HomeTabRoute() {
-  return <HomeScreen />;
+  return <DiscoveryHomeScreen />;
 }

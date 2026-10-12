@@ -1,72 +1,107 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
-import { spacing } from '@/theme';
+import { FlatList, StyleSheet, View } from 'react-native';
+
+import {
+  CustomHeader,
+  EmptyState,
+  LoadingSpinner,
+  ScreenWrapper,
+} from '@/components';
 import { useTranslation } from '@/i18n';
+import { spacing } from '@/theme';
+
 import { ContentResultCard } from '../components/ContentResultCard';
-import { RecipeHeader } from '../components/RecipeHeader';
 import { useSavedItems } from '../hooks';
+import type { SavedItem } from '../types';
 
 export function SavedLibraryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const saved = useSavedItems();
+  const items = saved.data?.data ?? [];
+
+  const openSavedItem = (item: SavedItem) => {
+    if (item.targetType === 'recipe') {
+      router.push({
+        pathname: '/(discover)/recipe/[id]',
+        params: { id: item.target?.slug ?? item.targetId },
+      });
+    } else if (item.targetType === 'food-item') {
+      router.push({
+        pathname: '/(discover)/food/[id]',
+        params: { id: item.targetId },
+      });
+    }
+  };
+
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('discover.savedContent')}
-        subtitle={t('saved.subtitle')}
-        backFallbackHref="/(discover)/explore"
-      />
-      {saved.isLoading ? <LoadingSpinner text={t('saved.loading')} /> : null}
-      {saved.isError ? (
-        <EmptyState
-          title={t('saved.loadError')}
-          description={saved.error.message}
-          actionLabel={t('common.retry')}
-          onAction={() => void saved.refetch()}
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={t('discover.savedContent')}
+          showBack
+          backFallbackHref="/(discover)/explore"
         />
-      ) : null}
-      {!saved.isLoading && !saved.isError && !saved.data?.data.length ? (
-        <EmptyState
-          title={t('saved.empty')}
-          description={t('saved.emptyDescription')}
-          actionLabel={t('saved.backToExplore')}
-          onAction={() => router.replace('/(discover)/explore')}
-        />
-      ) : null}
-      <View style={styles.list}>
-        {saved.data?.data.map((item) =>
-          item.target ? (
-            <ContentResultCard
-              key={item._id}
-              item={{ ...item.target, type: item.targetType }}
-              onPress={
-                item.targetType === 'recipe'
-                  ? () =>
-                      router.push({
-                        pathname: '/(discover)/recipe/[id]',
-                        params: { id: item.target?.slug ?? item.targetId },
-                      })
-                  : item.targetType === 'food-item'
-                    ? () =>
-                        router.push({
-                          pathname: '/(discover)/food/[id]',
-                          params: { id: item.targetId },
-                        })
-                    : undefined
-              }
+      }
+      keyboardAvoiding={false}
+    >
+      {saved.isLoading ? (
+        <View style={styles.state}>
+          <LoadingSpinner text={t('saved.loading')} />
+        </View>
+      ) : saved.isError ? (
+        <View style={styles.state}>
+          <EmptyState
+            title={t('saved.loadError')}
+            description={saved.error.message}
+            actionLabel={t('common.retry')}
+            onAction={() => void saved.refetch()}
+          />
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={[
+            styles.list,
+            !items.length && styles.emptyList,
+          ]}
+          ItemSeparatorComponent={ListSeparator}
+          ListEmptyComponent={
+            <EmptyState
+              title={t('saved.empty')}
+              description={t('saved.emptyDescription')}
+              actionLabel={t('saved.backToExplore')}
+              onAction={() => router.replace('/(discover)/explore')}
             />
-          ) : (
-            <EmptyState key={item._id} title={t('saved.unavailable')} />
-          )
-        )}
-      </View>
+          }
+          renderItem={({ item }) =>
+            item.target ? (
+              <ContentResultCard
+                item={{ ...item.target, type: item.targetType }}
+                onPress={
+                  item.targetType === 'recipe' || item.targetType === 'food-item'
+                    ? () => openSavedItem(item)
+                    : undefined
+                }
+              />
+            ) : (
+              <EmptyState title={t('saved.unavailable')} />
+            )
+          }
+        />
+      )}
     </ScreenWrapper>
   );
 }
 
+function ListSeparator() {
+  return <View style={styles.separator} />;
+}
+
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.xl },
-  list: { gap: spacing.md },
+  state: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
+  list: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
+  emptyList: { flexGrow: 1, justifyContent: 'center' },
+  separator: { height: spacing.md },
 });

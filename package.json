@@ -8,6 +8,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "android:dev": "expo start --dev-client",
+    "a:dev": "expo start --dev-client --android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint .",

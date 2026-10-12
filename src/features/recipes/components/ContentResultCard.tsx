@@ -1,4 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '../types';
@@ -16,9 +22,11 @@ const typeLabels = {
 export function ContentResultCard({
   item,
   onPress,
+  style,
 }: {
   item: ContentCardData;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTranslation();
   const title = item.title ?? item.name ?? t('discover.untitled');
@@ -40,7 +48,7 @@ export function ContentResultCard({
       accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
     >
       <RecipeImage
         uri={item.coverImageUrl ?? item.imageUrl}

@@ -1,4 +1,5 @@
 export { SearchScreen } from './screens/SearchScreen';
+export { DiscoveryHomeScreen } from './screens/DiscoveryHomeScreen';
 export { SearchResultsScreen } from './screens/SearchResultsScreen';
 export { ExploreScreen } from './screens/ExploreScreen';
 export { RecipeDetailScreen } from './screens/RecipeDetailScreen';

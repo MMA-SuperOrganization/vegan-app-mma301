@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -31,7 +31,6 @@ export function FoodDiaryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel } = useTrackingFormat();
-  const [editing, setEditing] = useState(false);
 
   const today = toLocalIsoDate(new Date());
   const diary = useDiary(today);
@@ -107,32 +106,15 @@ export function FoodDiaryScreen() {
               ) : null}
             </View>
 
-            {editing ? (
-              <AppText variant="bodySmall" color={colors.primary[700]}>
-                {t('tracking.diary.editHint')}
-              </AppText>
-            ) : null}
-
             {mealTypes.map((mealType) => (
               <DiaryMealCard
                 key={mealType}
                 title={mealLabel(mealType)}
                 entries={byMeal[mealType]}
-                editing={editing}
                 onPressEntry={openEntry}
               />
             ))}
 
-            <AppButton
-              title={
-                editing
-                  ? t('tracking.diary.doneEditing')
-                  : t('tracking.diary.editEntries')
-              }
-              variant="outline"
-              disabled={!editing && todayEntries.length === 0}
-              onPress={() => setEditing((value) => !value)}
-            />
             <AppButton
               title={t('tracking.diary.viewSummary')}
               variant="outline"

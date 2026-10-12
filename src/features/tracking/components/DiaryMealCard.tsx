@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppText, Badge } from '@/components';
+import { AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
@@ -9,16 +9,10 @@ import type { DiaryEntry } from '../types';
 export interface DiaryMealCardProps {
   title: string;
   entries: DiaryEntry[];
-  editing: boolean;
   onPressEntry: (entry: DiaryEntry) => void;
 }
 
-export function DiaryMealCard({
-  title,
-  entries,
-  editing,
-  onPressEntry,
-}: DiaryMealCardProps) {
+export function DiaryMealCard({ title, entries, onPressEntry }: DiaryMealCardProps) {
   const { t } = useTranslation();
   const { formatNumber, unitLabel } = useTrackingFormat();
   const totalKcal = sumNutrition(entries).caloriesKcal;
@@ -64,7 +58,6 @@ export function DiaryMealCard({
                 })}
               </AppText>
             </View>
-            {editing ? <Badge label={t('tracking.diary.edit')} /> : null}
           </Pressable>
         ))
       )}

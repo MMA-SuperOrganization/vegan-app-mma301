@@ -664,11 +664,7 @@ export const vi = {
   'tracking.diary.notLogged': 'Chưa ghi nhận',
   'tracking.diary.kcal': '{{kcal}} kcal',
   'tracking.diary.servings': '{{count}} khẩu phần',
-  'tracking.diary.edit': 'Sửa',
   'tracking.diary.editEntryA11y': 'Sửa hoặc xóa {{name}}',
-  'tracking.diary.editHint': 'Chọn một món bên dưới để sửa hoặc xóa.',
-  'tracking.diary.editEntries': 'Sửa / xóa mục đã ghi',
-  'tracking.diary.doneEditing': 'Xong',
   'tracking.diary.viewSummary': 'Xem tổng dinh dưỡng',
   'tracking.diary.planVsActualTitle': 'Kế hoạch và thực tế',
   'tracking.diary.planVsActualBody':
@@ -1441,11 +1437,7 @@ export const en: Record<TranslationKey, string> = {
   'tracking.diary.notLogged': 'Nothing logged yet',
   'tracking.diary.kcal': '{{kcal}} kcal',
   'tracking.diary.servings': '{{count}} serving(s)',
-  'tracking.diary.edit': 'Edit',
   'tracking.diary.editEntryA11y': 'Edit or delete {{name}}',
-  'tracking.diary.editHint': 'Choose an item below to edit or delete it.',
-  'tracking.diary.editEntries': 'Edit / delete logged items',
-  'tracking.diary.doneEditing': 'Done',
   'tracking.diary.viewSummary': 'View nutrition summary',
   'tracking.diary.planVsActualTitle': 'Plan vs. actual',
   'tracking.diary.planVsActualBody':

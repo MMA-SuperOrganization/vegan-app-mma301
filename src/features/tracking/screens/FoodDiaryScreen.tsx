@@ -82,18 +82,22 @@ export function FoodDiaryScreen() {
               {t('tracking.diary.dateLine', { date: formatShortDate(today) })}
             </AppText>
 
-            <View style={styles.card}>
-              <AppText variant="heading4">{t('tracking.diary.energyTitle')}</AppText>
-              <AppText color={colors.text.secondary}>
-                {targetKcal
-                  ? t('tracking.hub.energyValue', {
-                      consumed: formatNumber(consumedKcal),
-                      target: formatNumber(targetKcal),
-                    })
-                  : t('tracking.hub.energyValueNoTarget', {
-                      consumed: formatNumber(consumedKcal),
-                    })}
+            <View style={styles.energy}>
+              <AppText variant="heading3" color={colors.primary[700]}>
+                {t('tracking.diary.energyTitle')}
               </AppText>
+              <View style={styles.energyValue}>
+                <AppText variant="display" color={colors.primary[700]}>
+                  {formatNumber(consumedKcal)}
+                </AppText>
+                <AppText variant="bodyLarge" color={colors.text.secondary}>
+                  {targetKcal
+                    ? t('tracking.diary.ofTargetKcal', {
+                        target: formatNumber(targetKcal),
+                      })
+                    : t('tracking.diary.kcalUnit')}
+                </AppText>
+              </View>
               {targetKcal ? (
                 <ProgressBar
                   value={consumedKcal}
@@ -135,19 +139,19 @@ export function FoodDiaryScreen() {
               onPress={() => router.push('/(tracking)/nutrition-summary')}
             />
 
-            <View style={styles.card}>
-              <AppText variant="heading4">
+            <AppButton
+              title={t('tracking.diary.addEntry')}
+              onPress={() => router.push('/(tracking)/diary-entry')}
+            />
+
+            <View style={styles.note}>
+              <AppText variant="bodyStrong" color={colors.text.secondary}>
                 {t('tracking.diary.planVsActualTitle')}
               </AppText>
               <AppText variant="bodySmall" color={colors.text.secondary}>
                 {t('tracking.diary.planVsActualBody')}
               </AppText>
             </View>
-
-            <AppButton
-              title={t('tracking.diary.addEntry')}
-              onPress={() => router.push('/(tracking)/diary-entry')}
-            />
           </>
         ) : null}
       </View>
@@ -167,5 +171,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     padding: spacing.lg,
     gap: spacing.sm,
+  },
+  energy: { gap: spacing.sm, paddingVertical: spacing.sm },
+  energyValue: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.sm,
+  },
+  note: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.md,
   },
 });

@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { AppButton } from '@/components';
-import { appConfig } from '@/config';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
@@ -58,7 +57,10 @@ export function PermissionsScreen() {
           onPress={() => void safelyRequest(requestCamera)}
         />
         <AppButton
-          title={permissionLabel(t('onboarding.notificationPermission'), notifications)}
+          title={permissionLabel(
+            t('onboarding.notificationPermission'),
+            notifications
+          )}
           variant="secondary"
           disabled={notifications === 'unsupported'}
           onPress={() => void safelyRequest(requestNotifications)}
@@ -75,18 +77,6 @@ export function PermissionsScreen() {
         <InfoCard
           title={t('onboarding.canSkip')}
           description={t('onboarding.canSkipDescription')}
-        />
-        <AppButton
-          title={t('onboarding.dataPolicy')}
-          variant="secondary"
-          onPress={() =>
-            appConfig.privacyPolicyUrl
-              ? Linking.openURL(appConfig.privacyPolicyUrl)
-              : Alert.alert(
-                  t('onboarding.urlMissing'),
-                  t('onboarding.urlMissingDescription')
-                )
-          }
         />
       </View>
     </OnboardingScreen>

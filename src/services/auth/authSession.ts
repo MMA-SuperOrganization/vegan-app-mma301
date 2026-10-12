@@ -1,12 +1,17 @@
 import { storage, storageKeys } from '@/services/storage';
-import { firebaseAuth, type FirebaseSession } from './firebaseAuth';
+import { firebaseAuth } from './firebaseAuth';
+import {
+  normalizeFirebaseSession,
+  type FirebaseSession,
+} from './firebaseSession';
 import { translate } from '@/i18n';
 
 const REFRESH_EARLY_MS = 60_000;
 let sessionGeneration = 0;
 let refreshInFlight: Promise<FirebaseSession> | null = null;
 
-async function persistSession(session: FirebaseSession) {
+async function persistSession(candidate: FirebaseSession) {
+  const session = normalizeFirebaseSession(candidate);
   const expiresAt = Date.now() + session.expiresIn * 1000;
   await Promise.all([
     storage.setItem(storageKeys.authToken, session.idToken),
@@ -14,6 +19,15 @@ async function persistSession(session: FirebaseSession) {
     storage.setItem(storageKeys.authTokenExpiresAt, String(expiresAt)),
     storage.setItem(storageKeys.authFirebaseUserId, session.localId),
   ]);
+}
+
+function clearPersistedSession() {
+  return Promise.all([
+    storage.removeItem(storageKeys.authToken),
+    storage.removeItem(storageKeys.authRefreshToken),
+    storage.removeItem(storageKeys.authTokenExpiresAt),
+    storage.removeItem(storageKeys.authFirebaseUserId),
+  ]).then(() => undefined);
 }
 
 function refreshSession(refreshToken: string) {
@@ -56,7 +70,10 @@ export const authSession = {
     ) {
       return token;
     }
-    if (!refreshToken) return null;
+    if (!refreshToken) {
+      if (token || expiresAtValue) await clearPersistedSession();
+      return null;
+    }
 
     const refreshed = await refreshSession(refreshToken);
     return refreshed.idToken;
@@ -64,11 +81,6 @@ export const authSession = {
 
   async clear() {
     sessionGeneration += 1;
-    await Promise.all([
-      storage.removeItem(storageKeys.authToken),
-      storage.removeItem(storageKeys.authRefreshToken),
-      storage.removeItem(storageKeys.authTokenExpiresAt),
-      storage.removeItem(storageKeys.authFirebaseUserId),
-    ]);
+    await clearPersistedSession();
   },
 };

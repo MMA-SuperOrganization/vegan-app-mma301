@@ -7,11 +7,12 @@ import {
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppButton, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { AppText } from '../AppText';
+import { Button } from '../Button';
 
-export interface TrackingSheetProps {
+export interface BottomSheetProps {
   visible: boolean;
   title: string;
   onClose: () => void;
@@ -20,14 +21,14 @@ export interface TrackingSheetProps {
   tall?: boolean;
 }
 
-/** Bottom sheet shell shared by the tracking pickers, forms and confirmations. */
-export function TrackingSheet({
+/** Shared modal sheet shell for pickers, forms and confirmations. */
+export function BottomSheet({
   visible,
   title,
   onClose,
   children,
   tall = false,
-}: TrackingSheetProps) {
+}: BottomSheetProps) {
   const { t } = useTranslation();
   return (
     <Modal
@@ -48,11 +49,7 @@ export function TrackingSheet({
             <Pressable style={styles.body}>
               <AppText variant="heading3">{title}</AppText>
               {children}
-              <AppButton
-                title={t('common.close')}
-                variant="ghost"
-                onPress={onClose}
-              />
+              <Button title={t('common.close')} variant="ghost" onPress={onClose} />
             </Pressable>
           </SafeAreaView>
         </Pressable>

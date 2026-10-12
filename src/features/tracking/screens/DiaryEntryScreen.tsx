@@ -5,15 +5,16 @@ import {
   AppButton,
   AppInput,
   AppText,
+  BottomSheet,
   CustomHeader,
+  SearchPickerSheet,
   ScreenWrapper,
+  type PickerItem,
 } from '@/components';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { useSafeBack } from '@/hooks';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { SearchPickerSheet, type PickerItem } from '../components/SearchPickerSheet';
-import { TrackingSheet } from '../components/TrackingSheet';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { useFoodOptions, useRecipeOptions } from '../hooks/usePickerOptions';
 import { useDiary, useDiaryMutations } from '../hooks/useTrackingApi';
@@ -187,9 +188,7 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
-        header={
-          <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
-        }
+        header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
       >
         <TrackingQueryState
           loading={diary.isLoading}
@@ -205,9 +204,7 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
-        header={
-          <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
-        }
+        header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
       >
         <View style={styles.missing}>
           <AppText color={colors.text.secondary}>
@@ -609,7 +606,7 @@ export function DiaryEntryScreen() {
         onClose={() => setPickerOpen(false)}
       />
 
-      <TrackingSheet
+      <BottomSheet
         visible={sourceSheetOpen}
         title={t('tracking.entry.switchSource')}
         onClose={() => setSourceSheetOpen(false)}
@@ -630,9 +627,9 @@ export function DiaryEntryScreen() {
             </Pressable>
           ))}
         </View>
-      </TrackingSheet>
+      </BottomSheet>
 
-      <TrackingSheet
+      <BottomSheet
         visible={confirmDeleteOpen}
         title={t('tracking.entry.deleteConfirmTitle')}
         onClose={() => setConfirmDeleteOpen(false)}
@@ -648,7 +645,7 @@ export function DiaryEntryScreen() {
           loading={removeDiary.isPending}
           onPress={() => void confirmDelete()}
         />
-      </TrackingSheet>
+      </BottomSheet>
     </ScreenWrapper>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppInput, AppText } from '@/components';
+import { AppButton, AppInput, AppText, BottomSheet } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
@@ -14,7 +14,6 @@ import {
   toLocalIsoDate,
 } from '../trackingState';
 import type { WaterLog } from '../types';
-import { TrackingSheet } from './TrackingSheet';
 
 /** Backend `amountMl` upper bound. */
 const MAX_WATER_ML = 10000;
@@ -109,7 +108,7 @@ export function WaterLogModal({
 
   if (confirmingDelete) {
     return (
-      <TrackingSheet
+      <BottomSheet
         visible={visible}
         title={t('tracking.waterEntry.deleteConfirmTitle')}
         onClose={onClose}
@@ -133,12 +132,12 @@ export function WaterLogModal({
           variant="outline"
           onPress={() => setConfirmingDelete(false)}
         />
-      </TrackingSheet>
+      </BottomSheet>
     );
   }
 
   return (
-    <TrackingSheet
+    <BottomSheet
       visible={visible}
       title={
         log ? t('tracking.waterEntry.editTitle') : t('tracking.waterEntry.title')
@@ -183,7 +182,7 @@ export function WaterLogModal({
           onPress={() => setConfirmingDelete(true)}
         />
       ) : null}
-    </TrackingSheet>
+    </BottomSheet>
   );
 }
 

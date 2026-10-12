@@ -13,6 +13,8 @@ import { useProfileStore } from '@/features/profile/profileStore';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { RecipeImage } from '../components/RecipeImage';
 import { ContentSaveButton } from '../components/ContentSaveButton';
+import { IngredientList } from '../components/IngredientList';
+import { NutritionSummary } from '../components/NutritionSummary';
 import { useRecipeDetail } from '../hooks';
 
 export function RecipeDetailScreen() {
@@ -50,20 +52,6 @@ export function RecipeDetailScreen() {
     );
   }
   const data = recipe.data;
-  const nutrition = data.nutritionPerServing;
-  const nutritionText = [
-    nutrition?.caloriesKcal != null
-      ? `${Math.round(nutrition.caloriesKcal)} kcal`
-      : null,
-    nutrition?.proteinG != null
-      ? `${t('recipe.protein')} ${nutrition.proteinG}g`
-      : null,
-    nutrition?.carbsG != null ? `${t('recipe.carbs')} ${nutrition.carbsG}g` : null,
-    nutrition?.fatG != null ? `${t('recipe.fat')} ${nutrition.fatG}g` : null,
-    nutrition?.fiberG != null ? `${t('recipe.fiber')} ${nutrition.fiberG}g` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
   const allergenText =
     data.allergenIds === undefined
       ? t('recipe.allergensUnknown')
@@ -109,9 +97,7 @@ export function RecipeDetailScreen() {
         </AppText>
       </InfoBlock>
       <InfoBlock title={t('recipe.nutritionPerServing')}>
-        <AppText color={colors.primary[700]}>
-          {nutritionText || t('recipe.noNutrition')}
-        </AppText>
+        <NutritionSummary nutrition={data.nutritionPerServing} />
       </InfoBlock>
       <InfoBlock
         title={
@@ -120,18 +106,15 @@ export function RecipeDetailScreen() {
             : t('recipe.ingredients')
         }
       >
-        {data.ingredients?.length ? (
-          data.ingredients.map((item) => (
-            <AppText key={`${item.foodItemId}-${item.quantity}`}>
-              • {item.foodNameSnapshot}: {item.quantity} {item.unit}
-              {item.note ? ` · ${item.note}` : ''}
-            </AppText>
-          ))
-        ) : (
-          <AppText color={colors.text.secondary}>
-            {t('recipe.noIngredients')}
-          </AppText>
-        )}
+        <IngredientList
+          ingredients={data.ingredients}
+          onOpen={(foodItemId) =>
+            router.push({
+              pathname: '/(discover)/food/[id]',
+              params: { id: foodItemId },
+            })
+          }
+        />
       </InfoBlock>
       <InfoBlock title={t('recipe.allergens')}>
         <AppText color={colors.text.secondary}>{allergenText}</AppText>

@@ -5,7 +5,7 @@
 - API base URL: `EXPO_PUBLIC_API_URL` (defaults to `https://vegan-api.ngocthang.io.vn/api/v1`).
 - Firebase Auth: `EXPO_PUBLIC_FIREBASE_API_KEY` is required for sign-in, sign-up, token refresh, and password reset.
 - Google OAuth: the platform-specific `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` is required for Google sign-in. See `GOOGLE_AUTH_SETUP.md`.
-- Privacy policy: `EXPO_PUBLIC_PRIVACY_POLICY_URL` is optional and only controls the link on the permissions screen.
+- Privacy policy: `EXPO_PUBLIC_PRIVACY_POLICY_URL` is optional and only controls the link in account security; the onboarding link is temporarily hidden.
 
 Copy `.env.example` to `.env` and replace the Firebase placeholder before testing authenticated flows.
 

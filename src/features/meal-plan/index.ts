@@ -1,1 +1,1 @@
-export { MealPlanPlaceholderScreen } from './screens/MealPlanPlaceholderScreen';
+export { MealPlanScreen } from './screens/MealPlanScreen';

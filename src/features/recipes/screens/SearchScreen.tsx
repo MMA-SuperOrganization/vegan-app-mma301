@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
-  AppInput,
   AppText,
   CustomHeader,
   EmptyState,
@@ -12,6 +11,7 @@ import {
 import { colors, radius, spacing } from '@/theme';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { SearchBar } from '../components/SearchBar';
 import { useRecentSearches, useSearchSuggestions } from '../hooks';
 import { normalizeSearchQuery } from '../searchState';
 
@@ -42,14 +42,11 @@ export function SearchScreen() {
       <AppText color={colors.text.secondary}>
         {t('discover.searchSubtitle')}
       </AppText>
-      <AppInput
-        type="search"
-        label={t('discover.search')}
+      <SearchBar
         placeholder={t('discover.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
-        returnKeyType="search"
-        onSubmitEditing={() => submit()}
+        onSubmit={() => submit()}
       />
       {debouncedQuery ? (
         <View style={styles.section}>

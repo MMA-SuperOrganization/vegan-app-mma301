@@ -4,7 +4,6 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import {
   AppButton,
-  AppInput,
   CustomHeader,
   EmptyState,
   FilterChip,
@@ -17,6 +16,7 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 import { spacing } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
+import { SearchBar } from '../components/SearchBar';
 import {
   buildRecipeQuery,
   filtersForContentType,
@@ -117,12 +117,11 @@ export function SearchResultsScreen() {
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
           <View style={styles.header}>
-            <AppInput
-              type="search"
+            <SearchBar
               value={query}
               onChangeText={setQuery}
-              returnKeyType="search"
-              onSubmitEditing={submit}
+              onSubmit={submit}
+              placeholder={t('discover.searchPlaceholder')}
             />
             <View style={styles.filters}>
               {contentTypes.map((filter) => (

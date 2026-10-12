@@ -12,4 +12,5 @@ export { ContentResultCard } from './components/ContentResultCard';
 export { FeaturedRecipeCard } from './components/FeaturedRecipeCard';
 export { RecipeImage } from './components/RecipeImage';
 export { ContentSaveButton } from './components/ContentSaveButton';
+export { SearchBar } from './components/SearchBar';
 export { useHomeFeed } from './hooks';

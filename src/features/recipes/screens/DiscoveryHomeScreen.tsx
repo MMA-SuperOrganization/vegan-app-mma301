@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 
 import {
+  AppIcon,
   AppText,
   EmptyState,
   FilterChip,
@@ -90,10 +91,12 @@ export function DiscoveryHomeScreen() {
         onPress={() => router.push('/(discover)/search')}
         style={({ pressed }) => [styles.search, pressed && styles.pressed]}
       >
-        <AppText color={colors.text.secondary}>
+        <AppText style={styles.searchPlaceholder} color={colors.text.secondary}>
           {t('home.searchPlaceholder')}
         </AppText>
-        <AppText color={colors.primary[700]}>⌕</AppText>
+        <View style={styles.searchButton}>
+          <AppIcon name="search" size={20} color="#FFFFFF" decorative />
+        </View>
       </Pressable>
 
       <View style={styles.filters}>
@@ -214,15 +217,27 @@ const styles = StyleSheet.create({
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.xl },
   hero: { gap: spacing.xs, paddingTop: spacing.md },
   search: {
-    minHeight: 56,
-    borderWidth: 1,
+    height: 52,
+    borderWidth: 1.5,
     borderColor: colors.border.default,
     backgroundColor: colors.background.surface,
     borderRadius: radius.xl,
-    paddingHorizontal: spacing.lg,
+    paddingLeft: spacing.lg,
+    paddingRight: 7,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  searchPlaceholder: {
+    fontSize: 15,
+  },
+  searchButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primary[700],
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   section: { gap: spacing.md },

@@ -5,13 +5,13 @@ import {
   AppButton,
   AppInput,
   AppText,
+  BottomSheet,
   CustomHeader,
   ScreenWrapper,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
-import { TrackingSheet } from '../components/TrackingSheet';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { useWeightLogs, useWeightMutations } from '../hooks/useTrackingApi';
 import {
@@ -64,9 +64,7 @@ export function WeightEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
-        header={
-          <CustomHeader title={t('tracking.weightEntry.title')} showBack />
-        }
+        header={<CustomHeader title={t('tracking.weightEntry.title')} showBack />}
       >
         <TrackingQueryState
           loading={logs.isLoading}
@@ -82,9 +80,7 @@ export function WeightEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
-        header={
-          <CustomHeader title={t('tracking.weightEntry.title')} showBack />
-        }
+        header={<CustomHeader title={t('tracking.weightEntry.title')} showBack />}
       >
         <View style={styles.missing}>
           <AppText color={colors.text.secondary}>
@@ -206,7 +202,7 @@ export function WeightEntryScreen() {
         ) : null}
       </View>
 
-      <TrackingSheet
+      <BottomSheet
         visible={confirmDeleteOpen}
         title={t('tracking.weightEntry.deleteConfirmTitle')}
         onClose={() => setConfirmDeleteOpen(false)}
@@ -220,7 +216,7 @@ export function WeightEntryScreen() {
           loading={removeWeight.isPending}
           onPress={() => void confirmDelete()}
         />
-      </TrackingSheet>
+      </BottomSheet>
     </ScreenWrapper>
   );
 }

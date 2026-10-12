@@ -1,27 +1,16 @@
 import axios from 'axios';
 import { appConfig } from '@/config';
 import { getActiveLocale, translate, type TranslationKey } from '@/i18n';
+import {
+  normalizeFirebaseSession,
+  type FirebaseSession,
+  type FirebaseSessionPayload,
+} from './firebaseSession';
+
+export type { FirebaseSession } from './firebaseSession';
 
 const identityBaseUrl = 'https://identitytoolkit.googleapis.com/v1';
 const tokenBaseUrl = 'https://securetoken.googleapis.com/v1';
-
-export interface FirebaseSession {
-  idToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  localId: string;
-  email?: string;
-  displayName?: string;
-}
-
-interface FirebaseAuthResponse {
-  idToken: string;
-  refreshToken: string;
-  expiresIn: string;
-  localId: string;
-  email?: string;
-  displayName?: string;
-}
 
 interface FirebaseRefreshResponse {
   id_token: string;
@@ -88,29 +77,18 @@ function mapFirebaseError(error: unknown): never {
   );
 }
 
-function toSession(response: FirebaseAuthResponse): FirebaseSession {
-  return {
-    idToken: response.idToken,
-    refreshToken: response.refreshToken,
-    expiresIn: Number(response.expiresIn),
-    localId: response.localId,
-    email: response.email,
-    displayName: response.displayName,
-  };
-}
-
 async function passwordRequest(
   endpoint: 'signInWithPassword' | 'signUp',
   email: string,
   password: string
 ) {
   try {
-    const response = await axios.post<FirebaseAuthResponse>(
+    const response = await axios.post<FirebaseSessionPayload>(
       `${identityBaseUrl}/accounts:${endpoint}?key=${requireApiKey()}`,
       { email, password, returnSecureToken: true },
       { timeout: 15_000 }
     );
-    return toSession(response.data);
+    return normalizeFirebaseSession(response.data);
   } catch (error) {
     return mapFirebaseError(error);
   }
@@ -131,7 +109,7 @@ export const firebaseAuth = {
         id_token: googleIdToken,
         providerId: 'google.com',
       }).toString();
-      const response = await axios.post<FirebaseAuthResponse>(
+      const response = await axios.post<FirebaseSessionPayload>(
         `${identityBaseUrl}/accounts:signInWithIdp?key=${requireApiKey()}`,
         {
           postBody,
@@ -141,7 +119,7 @@ export const firebaseAuth = {
         },
         { timeout: 15_000 }
       );
-      return toSession(response.data);
+      return normalizeFirebaseSession(response.data);
     } catch (error) {
       return mapFirebaseError(error);
     }
@@ -149,12 +127,12 @@ export const firebaseAuth = {
 
   async updateDisplayName(session: FirebaseSession, displayName: string) {
     try {
-      const response = await axios.post<FirebaseAuthResponse>(
+      const response = await axios.post<FirebaseSessionPayload>(
         `${identityBaseUrl}/accounts:update?key=${requireApiKey()}`,
         { idToken: session.idToken, displayName, returnSecureToken: true },
         { timeout: 15_000 }
       );
-      return toSession(response.data);
+      return normalizeFirebaseSession(response.data, { ...session, displayName });
     } catch (error) {
       return mapFirebaseError(error);
     }
@@ -186,12 +164,12 @@ export const firebaseAuth = {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         }
       );
-      return {
+      return normalizeFirebaseSession({
         idToken: response.data.id_token,
         refreshToken: response.data.refresh_token,
         expiresIn: Number(response.data.expires_in),
         localId: response.data.user_id,
-      };
+      });
     } catch (error) {
       return mapFirebaseError(error);
     }

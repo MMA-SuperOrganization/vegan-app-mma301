@@ -1,8 +1,11 @@
 import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
-import { AppButton, AppInput, AppText, LoadingSpinner } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { TrackingSheet } from './TrackingSheet';
+import { AppText } from '../AppText';
+import { BottomSheet } from '../BottomSheet';
+import { Button } from '../Button';
+import { Input } from '../Input';
+import { Loading } from '../Loading';
 
 export interface PickerItem {
   id: string;
@@ -44,7 +47,7 @@ export function SearchPickerSheet({
   if (isLoading) {
     content = (
       <View style={styles.state}>
-        <LoadingSpinner />
+        <Loading />
       </View>
     );
   } else if (isError) {
@@ -53,7 +56,7 @@ export function SearchPickerSheet({
         <AppText color={colors.text.secondary} style={styles.center}>
           {t('tracking.picker.error')}
         </AppText>
-        <AppButton title={t('common.retry')} variant="outline" onPress={onRetry} />
+        <Button title={t('common.retry')} variant="outline" onPress={onRetry} />
       </View>
     );
   } else if (items.length === 0) {
@@ -102,8 +105,8 @@ export function SearchPickerSheet({
   }
 
   return (
-    <TrackingSheet visible={visible} title={title} onClose={onClose} tall>
-      <AppInput
+    <BottomSheet visible={visible} title={title} onClose={onClose} tall>
+      <Input
         type="search"
         value={query}
         onChangeText={onQueryChange}
@@ -111,7 +114,7 @@ export function SearchPickerSheet({
         accessibilityLabel={searchPlaceholder}
       />
       <View style={styles.content}>{content}</View>
-    </TrackingSheet>
+    </BottomSheet>
   );
 }
 

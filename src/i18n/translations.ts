@@ -551,6 +551,8 @@ export const vi = {
   'recipe.ingredients': 'Nguyên liệu',
   'recipe.ingredientsFor': 'Nguyên liệu cho {{count}} khẩu phần',
   'recipe.noIngredients': 'Chưa có danh sách nguyên liệu.',
+  'recipe.ingredientsHint': 'Chạm vào nguyên liệu để xem thông tin và hình ảnh.',
+  'recipe.openIngredientA11y': 'Xem chi tiết nguyên liệu {{name}}',
   'recipe.allergens': 'Dị nguyên',
   'recipe.allergensUnknown':
     'Chưa có dữ liệu dị nguyên. Không nên xem món này là an toàn cho người dị ứng.',
@@ -1322,6 +1324,8 @@ export const en: Record<TranslationKey, string> = {
   'recipe.ingredients': 'Ingredients',
   'recipe.ingredientsFor': 'Ingredients for {{count}} servings',
   'recipe.noIngredients': 'No ingredient list yet.',
+  'recipe.ingredientsHint': 'Tap an ingredient to view its details and image.',
+  'recipe.openIngredientA11y': 'View details for {{name}}',
   'recipe.allergens': 'Allergens',
   'recipe.allergensUnknown':
     'Allergen data is unavailable. Do not treat this recipe as safe for allergies.',

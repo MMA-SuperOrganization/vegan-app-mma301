@@ -11,6 +11,19 @@ import { updateSavedPage } from '../src/features/recipes/savedState.ts';
 import { formatTimer, remainingSeconds } from '../src/features/recipes/timer.ts';
 import { buildFoodQuery } from '../src/features/recipes/foodState.ts';
 import { normalizeSearchQuery } from '../src/features/recipes/searchState.ts';
+import {
+  formatIngredientQuantity,
+  formatNutritionValue,
+  roundToOneDecimal,
+} from '../src/features/recipes/recipePresentation.ts';
+
+test('recipe nutrition is rounded to one decimal and ingredient amounts stay compact', () => {
+  assert.equal(roundToOneDecimal(13.274999999999995), 13.3);
+  assert.equal(roundToOneDecimal(69.17999999999999), 69.2);
+  assert.equal(formatNutritionValue(8.611666666666665, 'en'), '8.6');
+  assert.equal(formatNutritionValue(408, 'en'), '408.0');
+  assert.equal(formatIngredientQuantity(240, 'g', 'en'), '240 g');
+});
 
 test('search terms are trimmed and compacted before fuzzy lookup', () => {
   assert.equal(normalizeSearchQuery('  dau   hu  '), 'dau hu');

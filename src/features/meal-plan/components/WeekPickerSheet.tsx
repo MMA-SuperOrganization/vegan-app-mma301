@@ -7,6 +7,7 @@ import {
   addCalendarDays,
   monthStart,
   shiftMonth,
+  weekDates,
   weeksIntersectingMonth,
 } from '../mealPlanState';
 
@@ -43,6 +44,7 @@ export function WeekPickerSheet({
   });
   const formatDate = (date: string) =>
     dateFormatter.format(new Date(`${date}T12:00:00`));
+  const dayFormatter = new Intl.DateTimeFormat(localeTag, { weekday: 'short' });
 
   return (
     <BottomSheet
@@ -96,10 +98,11 @@ export function WeekPickerSheet({
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.weekOptionCopy}>
+              <View style={styles.weekHeading}>
                 <AppText
                   variant="bodyStrong"
                   color={selected ? colors.text.inverse : colors.text.primary}
+                  style={styles.weekTitle}
                 >
                   {t('mealPlan.weekPicker.option', { range })}
                 </AppText>
@@ -111,13 +114,42 @@ export function WeekPickerSheet({
                     {t('mealPlan.week.current')}
                   </AppText>
                 ) : null}
+                {selected ? (
+                  <AppText variant="heading4" color={colors.text.inverse}>
+                    ✓
+                  </AppText>
+                ) : null}
               </View>
-              <AppText
-                variant="heading4"
-                color={selected ? colors.text.inverse : colors.primary[700]}
-              >
-                {selected ? '✓' : '›'}
-              </AppText>
+              <View style={styles.days}>
+                {weekDates(weekStartDate).map((date) => {
+                  const value = new Date(`${date}T12:00:00`);
+                  return (
+                    <View
+                      key={date}
+                      style={[styles.day, selected && styles.selectedDay]}
+                    >
+                      <AppText
+                        variant="bodySmall"
+                        color={
+                          selected ? colors.text.inverse : colors.text.secondary
+                        }
+                        numberOfLines={1}
+                      >
+                        {dayFormatter.format(value)}
+                      </AppText>
+                      <AppText
+                        variant="bodyStrong"
+                        color={
+                          selected ? colors.text.inverse : colors.text.primary
+                        }
+                        numberOfLines={1}
+                      >
+                        {formatDate(date)}
+                      </AppText>
+                    </View>
+                  );
+                })}
+              </View>
             </Pressable>
           );
         })}
@@ -166,11 +198,8 @@ const styles = StyleSheet.create({
   },
   weekList: { gap: spacing.sm, paddingBottom: spacing.md },
   weekOption: {
-    minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.default,
@@ -182,6 +211,23 @@ const styles = StyleSheet.create({
     borderColor: colors.primary[700],
     backgroundColor: colors.primary[700],
   },
-  weekOptionCopy: { flex: 1, gap: spacing.xs },
+  weekHeading: {
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  weekTitle: { flex: 1 },
+  days: { flexDirection: 'row', gap: 3 },
+  day: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: colors.background.selected,
+  },
+  selectedDay: { backgroundColor: 'rgba(255,255,255,0.12)' },
   pressed: { opacity: 0.7 },
 });

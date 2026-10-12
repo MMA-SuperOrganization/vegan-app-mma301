@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Fragment, useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AppButton,
@@ -101,10 +101,8 @@ export function WeightTrackingScreen() {
 
   return (
     <ScreenWrapper
-      scrollable
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
-      contentContainerStyle={styles.screen}
       header={
         <CustomHeader
           title={t('tracking.weight.title')}
@@ -204,37 +202,45 @@ export function WeightTrackingScreen() {
                   )}
                 </View>
 
-                <AppButton
-                  title={t('tracking.weight.add')}
-                  onPress={() => openEntry()}
-                />
-
                 <AppText variant="heading4">
                   {t('tracking.weight.historyTitle')}
                 </AppText>
-                {history.map((log) => (
-                  <LogHistoryItem
-                    key={log._id}
-                    unit="kg"
-                    title={historyTitle(log.recordedAt)}
-                    value={t('tracking.hub.weightValue', {
-                      weight: kg(log.weightKg),
-                    })}
-                    onPress={() => openEntry(log._id)}
-                  />
-                ))}
+                <View style={styles.historyBox}>
+                  <ScrollView showsVerticalScrollIndicator>
+                    {history.map((log, index) => (
+                      <Fragment key={log._id}>
+                        {index > 0 ? <View style={styles.divider} /> : null}
+                        <LogHistoryItem
+                          variant="row"
+                          unit="kg"
+                          title={historyTitle(log.recordedAt)}
+                          value={t('tracking.hub.weightValue', {
+                            weight: kg(log.weightKg),
+                          })}
+                          onPress={() => openEntry(log._id)}
+                        />
+                      </Fragment>
+                    ))}
+                  </ScrollView>
+                </View>
               </>
             )}
           </>
         ) : null}
       </View>
+
+      {latest && !logs.isError && !trendQuery.isError ? (
+        <View style={styles.footer}>
+          <AppButton title={t('tracking.weight.add')} onPress={() => openEntry()} />
+        </View>
+      ) : null}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingBottom: spacing['4xl'] },
   content: {
+    flex: 1,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     gap: spacing.md,
@@ -252,4 +258,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
   },
+  historyBox: {
+    flex: 1,
+    minHeight: 120,
+    borderRadius: radius.xl,
+    padding: spacing.xs,
+    backgroundColor: colors.background.surface,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.border.default,
+  },
+  footer: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
 });

@@ -5,15 +5,16 @@ import {
   AppButton,
   AppInput,
   AppText,
+  BottomSheet,
   CustomHeader,
+  SearchPickerSheet,
   ScreenWrapper,
+  type PickerItem,
 } from '@/components';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { useSafeBack } from '@/hooks';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { SearchPickerSheet, type PickerItem } from '../components/SearchPickerSheet';
-import { TrackingSheet } from '../components/TrackingSheet';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { useFoodOptions, useRecipeOptions } from '../hooks/usePickerOptions';
 import { useDiary, useDiaryMutations } from '../hooks/useTrackingApi';
@@ -28,6 +29,7 @@ import {
   parseTimeOfDay,
   quantityToGrams,
   scaleNutrition,
+  isLocalIsoDate,
   toLocalIsoDate,
   toNutritionValues,
   unitsForFood,
@@ -89,19 +91,23 @@ function textFromNumber(value: number | undefined) {
 }
 
 export function DiaryEntryScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, date: dateParam } = useLocalSearchParams<{
+    id?: string;
+    date?: string;
+  }>();
   const { t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel, unitLabel, nutritionLine } =
     useTrackingFormat();
   const goBack = useSafeBack('/(tracking)/food-diary');
-  const date = toLocalIsoDate(new Date());
+  // The diary day comes from the diary screen; default to today.
+  const date = isLocalIsoDate(dateParam) ? dateParam : toLocalIsoDate(new Date());
   const diary = useDiary(date);
   const entry = id ? diary.data?.data.find((item) => item._id === id) : undefined;
   const { createDiary, updateDiary, removeDiary } = useDiaryMutations();
   const isEditing = Boolean(entry);
 
   const [now] = useState(() => new Date());
-  const entryDate = entry?.date ?? toLocalIsoDate(now);
+  const entryDate = entry?.date ?? date;
   const [sourceType, setSourceType] = useState<DiarySourceType>(
     entry?.sourceType ?? 'recipe'
   );
@@ -187,8 +193,8 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
       >
-        <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
         <TrackingQueryState
           loading={diary.isLoading}
           error={diary.isError}
@@ -203,8 +209,8 @@ export function DiaryEntryScreen() {
       <ScreenWrapper
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
+        header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
       >
-        <CustomHeader title={t('tracking.entry.titleRecipe')} showBack />
         <View style={styles.missing}>
           <AppText color={colors.text.secondary}>
             {t('tracking.entry.notFound')}
@@ -417,12 +423,14 @@ export function DiaryEntryScreen() {
       edges={['top', 'left', 'right', 'bottom']}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.screen}
+      header={
+        <CustomHeader
+          title={t(TITLE_KEYS[sourceType])}
+          showBack
+          backFallbackHref="/(tracking)/food-diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t(TITLE_KEYS[sourceType])}
-        showBack
-        backFallbackHref="/(tracking)/food-diary"
-      />
       <View style={styles.content}>
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('tracking.entry.snapshotHint')}
@@ -603,7 +611,7 @@ export function DiaryEntryScreen() {
         onClose={() => setPickerOpen(false)}
       />
 
-      <TrackingSheet
+      <BottomSheet
         visible={sourceSheetOpen}
         title={t('tracking.entry.switchSource')}
         onClose={() => setSourceSheetOpen(false)}
@@ -624,9 +632,9 @@ export function DiaryEntryScreen() {
             </Pressable>
           ))}
         </View>
-      </TrackingSheet>
+      </BottomSheet>
 
-      <TrackingSheet
+      <BottomSheet
         visible={confirmDeleteOpen}
         title={t('tracking.entry.deleteConfirmTitle')}
         onClose={() => setConfirmDeleteOpen(false)}
@@ -642,7 +650,7 @@ export function DiaryEntryScreen() {
           loading={removeDiary.isPending}
           onPress={() => void confirmDelete()}
         />
-      </TrackingSheet>
+      </BottomSheet>
     </ScreenWrapper>
   );
 }

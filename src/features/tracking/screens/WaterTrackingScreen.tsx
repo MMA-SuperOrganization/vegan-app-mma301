@@ -9,6 +9,7 @@ import {
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { DayNavigator } from '../components/DayNavigator';
 import { LogHistoryItem } from '../components/LogHistoryItem';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WaterGlassRow } from '../components/WaterGlassRow';
@@ -21,6 +22,7 @@ import {
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
 import {
   WATER_GLASS_ML,
+  combineDateAndTime,
   formatTimeOfDay,
   sumWater,
   toLocalIsoDate,
@@ -40,7 +42,9 @@ export function WaterTrackingScreen() {
   const { t } = useTranslation();
   const { formatNumber } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
-  const water = useWater(today);
+  const [date, setDate] = useState(today);
+  const isToday = date === today;
+  const water = useWater(date);
   const waterLogs = water.data?.data ?? [];
   const targetMl = useTrackingTargets().waterMl;
   const { createWater } = useWaterMutations();
@@ -49,11 +53,14 @@ export function WaterTrackingScreen() {
   const historyRef = useRef<ScrollView>(null);
   const itemOffsets = useRef(new Map<string, number>());
 
-  const todayLogs = useMemo(
-    () => waterLogsForDate(waterLogs, today),
-    [waterLogs, today]
+  const dayLogs = useMemo(
+    () => waterLogsForDate(waterLogs, date),
+    [waterLogs, date]
   );
-  const consumedMl = sumWater(todayLogs);
+  const ready = !water.isLoading && !water.isError;
+  // An earlier day with nothing logged is read-only and shows only "no data".
+  const isPastWithoutData = !isToday && dayLogs.length === 0;
+  const consumedMl = sumWater(dayLogs);
   const remainingMl = targetMl ? Math.max(0, targetMl - consumedMl) : null;
   const glasses = waterGlasses(consumedMl, targetMl);
   const ml = (value: number) => formatNumber(value);
@@ -69,17 +76,25 @@ export function WaterTrackingScreen() {
     });
     setFocusId(null);
   };
-  useEffect(scrollToFocus, [focusId, todayLogs]);
+  useEffect(scrollToFocus, [focusId, dayLogs]);
 
   const openModal = (log?: WaterLog) =>
     setModal({ open: true, key: Date.now(), log });
   // Keep `log` while the sheet slides out so its content does not flash.
   const closeModal = () => setModal((current) => ({ ...current, open: false }));
   const addGlass = async () => {
+    // On an earlier day, log the glass at the current time of day on that day.
+    const now = new Date();
+    const recordedAt = isToday
+      ? now.toISOString()
+      : combineDateAndTime(date, {
+          hours: now.getHours(),
+          minutes: now.getMinutes(),
+        });
     try {
       const created = await createWater.mutateAsync({
         amountMl: WATER_GLASS_ML,
-        recordedAt: new Date().toISOString(),
+        recordedAt,
         note: undefined,
       });
       setFocusId(created._id);
@@ -92,27 +107,35 @@ export function WaterTrackingScreen() {
     <ScreenWrapper
       keyboardAvoiding={false}
       edges={['top', 'left', 'right', 'bottom']}
+      header={
+        <CustomHeader
+          title={t('tracking.water.title')}
+          showBack
+          backFallbackHref="/(tabs)/diary"
+        />
+      }
     >
-      <CustomHeader
-        title={t('tracking.water.title')}
-        showBack
-        backFallbackHref="/(tabs)/diary"
-      />
       <View style={styles.content}>
+        <DayNavigator date={date} onChange={setDate} />
         <TrackingQueryState
           loading={water.isLoading}
           error={water.isError}
           onRetry={() => void water.refetch()}
         />
-        {!water.isLoading && !water.isError ? (
+        {ready && isPastWithoutData ? (
+          <AppText color={colors.text.secondary} style={styles.noData}>
+            {t('tracking.day.noData')}
+          </AppText>
+        ) : null}
+        {ready && !isPastWithoutData ? (
           <>
             <AppText variant="bodySmall" color={colors.text.secondary}>
               {targetMl
-                ? t('tracking.water.todayLine', {
+                ? t('tracking.water.totalLine', {
                     consumed: ml(consumedMl),
                     target: ml(targetMl),
                   })
-                : t('tracking.water.todayLineNoTarget', {
+                : t('tracking.water.totalLineNoTarget', {
                     consumed: ml(consumedMl),
                   })}
             </AppText>
@@ -166,19 +189,25 @@ export function WaterTrackingScreen() {
               {t('tracking.water.glassHint', { ml: ml(WATER_GLASS_ML) })}
             </AppText>
 
-            <AppText variant="heading4">{t('tracking.water.historyTitle')}</AppText>
+            <AppText variant="heading4">
+              {isToday
+                ? t('tracking.water.historyTitle')
+                : t('tracking.water.historyTitleDay')}
+            </AppText>
             <View style={styles.historyBox}>
-              {todayLogs.length === 0 ? (
-                <AppText variant="bodySmall" color={colors.text.secondary}>
-                  {t('tracking.water.historyEmpty')}
+              {dayLogs.length === 0 ? (
+                <AppText
+                  variant="bodySmall"
+                  color={colors.text.secondary}
+                  style={styles.historyEmpty}
+                >
+                  {isToday
+                    ? t('tracking.water.historyEmpty')
+                    : t('tracking.water.historyEmptyDay')}
                 </AppText>
               ) : (
-                <ScrollView
-                  ref={historyRef}
-                  contentContainerStyle={styles.historyList}
-                  showsVerticalScrollIndicator
-                >
-                  {todayLogs.map((log) => (
+                <ScrollView ref={historyRef} showsVerticalScrollIndicator>
+                  {dayLogs.map((log, index) => (
                     <View
                       key={log._id}
                       onLayout={(event) => {
@@ -186,7 +215,9 @@ export function WaterTrackingScreen() {
                         if (log._id === focusId) scrollToFocus();
                       }}
                     >
+                      {index > 0 ? <View style={styles.divider} /> : null}
                       <LogHistoryItem
+                        variant="row"
                         unit="ml"
                         title={formatTimeOfDay(log.recordedAt)}
                         value={t('tracking.water.amount', { ml: ml(log.amountMl) })}
@@ -206,19 +237,21 @@ export function WaterTrackingScreen() {
         ) : null}
       </View>
 
-      <View style={styles.footer}>
-        <AppButton
-          title={t('tracking.water.add')}
-          onPress={() => openModal()}
-          loading={createWater.isPending}
-          disabled={water.isLoading || water.isError}
-        />
-      </View>
+      {ready && !isPastWithoutData ? (
+        <View style={styles.footer}>
+          <AppButton
+            title={t('tracking.water.add')}
+            onPress={() => openModal()}
+            loading={createWater.isPending}
+          />
+        </View>
+      ) : null}
 
       <WaterLogModal
         visible={modal.open}
         openKey={modal.key}
         log={modal.log}
+        date={date}
         onClose={closeModal}
         onSaved={(id) => {
           closeModal();
@@ -247,9 +280,15 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 120,
     borderRadius: radius.xl,
-    padding: spacing.sm,
-    backgroundColor: colors.background.muted,
+    padding: spacing.xs,
+    backgroundColor: colors.background.surface,
   },
-  historyList: { gap: spacing.sm },
+  historyEmpty: { padding: spacing.md },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.border.default,
+  },
+  noData: { textAlign: 'center', paddingVertical: spacing['4xl'] },
   footer: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md },
 });

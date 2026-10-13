@@ -1,72 +1,74 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
-import { spacing } from '@/theme';
+
+import {
+  CustomHeader,
+  EmptyState,
+  LoadingSpinner,
+  ScreenWrapper,
+} from '@/components';
 import { useTranslation } from '@/i18n';
-import { ContentResultCard } from '../components/ContentResultCard';
-import { RecipeHeader } from '../components/RecipeHeader';
+import { spacing } from '@/theme';
+
+import { SavedItemList } from '../components/SavedItemList';
 import { useSavedItems } from '../hooks';
+import type { SavedItem } from '../types';
 
 export function SavedLibraryScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const saved = useSavedItems();
+  const items = saved.data?.data ?? [];
+
+  const openSavedItem = (item: SavedItem) => {
+    if (item.targetType === 'recipe') {
+      router.push({
+        pathname: '/(discover)/recipe/[id]',
+        params: { id: item.target?.slug ?? item.targetId },
+      });
+    } else if (item.targetType === 'food-item') {
+      router.push({
+        pathname: '/(discover)/food/[id]',
+        params: { id: item.targetId },
+      });
+    }
+  };
+
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('discover.savedContent')}
-        subtitle={t('saved.subtitle')}
-        backFallbackHref="/(discover)/explore"
-      />
-      {saved.isLoading ? <LoadingSpinner text={t('saved.loading')} /> : null}
-      {saved.isError ? (
-        <EmptyState
-          title={t('saved.loadError')}
-          description={saved.error.message}
-          actionLabel={t('common.retry')}
-          onAction={() => void saved.refetch()}
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={t('discover.savedContent')}
+          showBack
+          backFallbackHref="/(discover)/explore"
         />
-      ) : null}
-      {!saved.isLoading && !saved.isError && !saved.data?.data.length ? (
-        <EmptyState
-          title={t('saved.empty')}
-          description={t('saved.emptyDescription')}
-          actionLabel={t('saved.backToExplore')}
-          onAction={() => router.replace('/(discover)/explore')}
+      }
+      keyboardAvoiding={false}
+    >
+      {saved.isLoading ? (
+        <View style={styles.state}>
+          <LoadingSpinner text={t('saved.loading')} />
+        </View>
+      ) : saved.isError ? (
+        <View style={styles.state}>
+          <EmptyState
+            title={t('saved.loadError')}
+            description={saved.error.message}
+            actionLabel={t('common.retry')}
+            onAction={() => void saved.refetch()}
+          />
+        </View>
+      ) : (
+        <SavedItemList
+          items={items}
+          onOpenItem={openSavedItem}
+          onExplore={() => router.replace('/(discover)/explore')}
         />
-      ) : null}
-      <View style={styles.list}>
-        {saved.data?.data.map((item) =>
-          item.target ? (
-            <ContentResultCard
-              key={item._id}
-              item={{ ...item.target, type: item.targetType }}
-              onPress={
-                item.targetType === 'recipe'
-                  ? () =>
-                      router.push({
-                        pathname: '/(discover)/recipe/[id]',
-                        params: { id: item.target?.slug ?? item.targetId },
-                      })
-                  : item.targetType === 'food-item'
-                    ? () =>
-                        router.push({
-                          pathname: '/(discover)/food/[id]',
-                          params: { id: item.targetId },
-                        })
-                    : undefined
-              }
-            />
-          ) : (
-            <EmptyState key={item._id} title={t('saved.unavailable')} />
-          )
-        )}
-      </View>
+      )}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.xl },
-  list: { gap: spacing.md },
+  state: { flex: 1, padding: spacing.xl, justifyContent: 'center' },
 });

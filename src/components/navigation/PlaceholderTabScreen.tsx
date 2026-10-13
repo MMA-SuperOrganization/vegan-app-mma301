@@ -7,8 +7,11 @@ import { colors, spacing } from '@/theme';
 
 export function PlaceholderTabScreen({ title }: { title: string }) {
   return (
-    <ScreenWrapper edges={['top', 'left', 'right']} keyboardAvoiding={false}>
-      <CustomHeader title={title} showBack={false} />
+    <ScreenWrapper
+      edges={['top', 'left', 'right']}
+      keyboardAvoiding={false}
+      header={<CustomHeader title={title} showBack={false} />}
+    >
       <View style={styles.content}>
         <AppText variant="bodyDefault" color={colors.text.secondary}>
           {title}

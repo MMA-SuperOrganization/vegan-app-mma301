@@ -1,4 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { AppText } from '@/components';
 import { useTranslation } from '@/i18n';
@@ -11,9 +17,11 @@ import { ContentSaveButton } from './ContentSaveButton';
 export function FeaturedRecipeCard({
   item,
   onPress,
+  style,
 }: {
   item: ContentCardData;
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTranslation();
   const metadata = [
@@ -32,7 +40,7 @@ export function FeaturedRecipeCard({
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
     >
       <RecipeImage
         uri={item.coverImageUrl}

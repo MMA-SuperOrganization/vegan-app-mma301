@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMockTrackingData } from '../src/features/tracking/mocks/trackingMocks.ts';
 import {
+  addDays,
   combineDateAndTime,
   daysAgo,
   formatDayMonthYear,
@@ -11,6 +12,7 @@ import {
   weightGoalProgress,
   defaultMealTypeFor,
   groupDiaryByMeal,
+  isLocalIsoDate,
   normalizeDiaryEntry,
   parseDecimal,
   parseTimeOfDay,
@@ -205,4 +207,15 @@ test('water glasses follow the goal and cap when it is passed', () => {
   assert.deepEqual(waterGlasses(500, null), { total: 8, filled: 2 });
   assert.deepEqual(waterGlasses(0, 9000), { total: 16, filled: 0 });
   assert.deepEqual(waterGlasses(0, 100), { total: 1, filled: 0 });
+});
+
+test('day navigation shifts calendar days and validates route dates', () => {
+  assert.equal(addDays('2026-10-12', -1), '2026-10-11');
+  assert.equal(addDays('2026-10-01', -1), '2026-09-30');
+  assert.equal(addDays('2026-12-31', 1), '2027-01-01');
+  assert.equal(addDays('2028-03-01', -1), '2028-02-29');
+  assert.equal(isLocalIsoDate('2026-10-12'), true);
+  for (const bad of ['2026-02-30', '12/10/2026', '2026-1-5', '', undefined, 42]) {
+    assert.equal(isLocalIsoDate(bad), false, String(bad));
+  }
 });

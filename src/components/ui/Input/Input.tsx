@@ -1,5 +1,6 @@
 import { FormField } from '../FormField';
 import { AppText } from '../AppText';
+import { AppIcon } from '../AppIcon';
 import React from 'react';
 import { useFieldState, useDisclosure } from '@/hooks';
 import {
@@ -13,6 +14,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import {
+  colors,
   componentPresets,
   type ComponentPreset,
   capitalize,
@@ -195,6 +197,8 @@ export function Input({
                   {icon.text}
                 </AppText>
               </Pressable>
+            ) : kind === 'search' ? (
+              <AppIcon name="search" size={22} color={colors.primary[700]} decorative />
             ) : (
               <AppText accessible={false} style={icon.style}>
                 {icon.text}

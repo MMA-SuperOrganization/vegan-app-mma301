@@ -4,8 +4,7 @@ import {
   AppButton,
   AppInput,
   AppText,
-  BackButton,
-  ScreenWrapper,
+  SettingsScreenLayout,
   TimezonePickerField,
 } from '@/components';
 import {
@@ -76,90 +75,71 @@ export function EditProfileScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <View style={styles.body}>
-        <View style={styles.header}>
-          <BackButton onPress={goBack} size={48} iconSize={20} />
-          <View style={styles.headerCopy}>
-            <AppText variant="heading2">{t('profile.edit')}</AppText>
-            <AppText variant="bodySmall" color={colors.text.secondary}>
-              {t('profile.editDescription')}
-            </AppText>
-          </View>
-        </View>
-        <View style={styles.fields}>
-          <AppInput
-            label={t('auth.displayName')}
-            value={name}
-            onChangeText={setName}
-            error={errors.name}
-          />
-          <AppInput
-            label={t('profile.bio')}
-            value={bio}
-            onChangeText={setBio}
-            error={errors.bio}
-          />
-          <AppInput
-            label={t('profile.birthDate')}
-            value={dateOfBirth}
-            onChangeText={setDateOfBirth}
-            keyboardType="number-pad"
-            placeholder="DD/MM/YYYY"
-            error={errors.dateOfBirth}
-          />
-          <TimezonePickerField
-            label={t('profile.timezone')}
-            value={timezone}
-            onChange={setTimezone}
-            error={errors.timezone}
-          />
-          <AppInput
-            label={t('onboarding.heightCm')}
-            value={height}
-            onChangeText={setHeight}
-            keyboardType="decimal-pad"
-            error={errors.height}
-          />
-          <AppInput
-            label={t('onboarding.weightKg')}
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="decimal-pad"
-            error={errors.weight}
-          />
-          {storeError ? (
-            <AppText color={colors.status.danger}>{storeError}</AppText>
-          ) : null}
-        </View>
-        <AppButton
-          title={t('profile.save')}
-          loading={isSaving}
-          onPress={() => void save()}
+    <SettingsScreenLayout
+      title={t('profile.edit')}
+      subtitle={t('profile.editDescription')}
+      onBack={goBack}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.fields}>
+        <AppInput
+          label={t('auth.displayName')}
+          value={name}
+          onChangeText={setName}
+          error={errors.name}
         />
+        <AppInput
+          label={t('profile.bio')}
+          value={bio}
+          onChangeText={setBio}
+          error={errors.bio}
+        />
+        <AppInput
+          label={t('profile.birthDate')}
+          value={dateOfBirth}
+          onChangeText={setDateOfBirth}
+          keyboardType="number-pad"
+          placeholder="DD/MM/YYYY"
+          error={errors.dateOfBirth}
+        />
+        <TimezonePickerField
+          label={t('profile.timezone')}
+          value={timezone}
+          onChange={setTimezone}
+          error={errors.timezone}
+        />
+        <AppInput
+          label={t('onboarding.heightCm')}
+          value={height}
+          onChangeText={setHeight}
+          keyboardType="decimal-pad"
+          error={errors.height}
+        />
+        <AppInput
+          label={t('onboarding.weightKg')}
+          value={weight}
+          onChangeText={setWeight}
+          keyboardType="decimal-pad"
+          error={errors.weight}
+        />
+        {storeError ? (
+          <AppText color={colors.status.danger}>{storeError}</AppText>
+        ) : null}
       </View>
-    </ScreenWrapper>
+      <AppButton
+        title={t('profile.save')}
+        loading={isSaving}
+        onPress={() => void save()}
+      />
+    </SettingsScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flexGrow: 1,
-    paddingBottom: spacing.xl,
-  },
-  body: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
+  content: {
     gap: spacing['3xl'],
     justifyContent: 'space-between',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  headerCopy: { flex: 1, gap: spacing.xs },
   fields: { gap: spacing.xl },
 });
 

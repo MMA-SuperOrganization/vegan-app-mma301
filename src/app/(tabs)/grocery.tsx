@@ -1,5 +1,5 @@
-import { GroceryPlaceholderScreen } from '@/features/grocery';
+import { GroceryListsScreen } from '@/features/grocery';
 
 export default function GroceryRoute() {
-  return <GroceryPlaceholderScreen />;
+  return <GroceryListsScreen />;
 }

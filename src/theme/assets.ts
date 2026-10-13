@@ -42,5 +42,17 @@ export const assetRegistry = {
     height: 20,
     xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M11.6666 5L6.66663 10L11.6666 15" stroke="#16583D" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n\n',
   },
+  search: {
+    id: 'core:search',
+    width: 24,
+    height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<circle cx="11" cy="11" r="7" stroke="#16583D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M20 20L16.2 16.2" stroke="#16583D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n\n',
+  },
+  close: {
+    id: 'core:close',
+    width: 20,
+    height: 20,
+    xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4 4L16 16M16 4L4 16" stroke="#16583D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n\n',
+  },
 } as const;
 export type AssetName = keyof typeof assetRegistry;

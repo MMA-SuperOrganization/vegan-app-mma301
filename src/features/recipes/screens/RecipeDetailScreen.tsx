@@ -1,18 +1,23 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+
 import {
   AppButton,
   AppText,
+  CustomHeader,
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
+  Surface,
 } from '@/components';
-import { colors, radius, spacing } from '@/theme';
-import { useTranslation } from '@/i18n';
 import { useProfileStore } from '@/features/profile/profileStore';
-import { RecipeHeader } from '../components/RecipeHeader';
-import { RecipeImage } from '../components/RecipeImage';
+import { useTranslation, type TranslationKey } from '@/i18n';
+import { colors, spacing } from '@/theme';
+
 import { ContentSaveButton } from '../components/ContentSaveButton';
+import { RecipeDetailTabs } from '../components/RecipeDetailTabs';
+import { RecipeHeroSection } from '../components/RecipeHeroSection';
+import { RecipeMacroCards } from '../components/RecipeMacroCards';
 import { useRecipeDetail } from '../hooks';
 
 export function RecipeDetailScreen() {
@@ -23,23 +28,35 @@ export function RecipeDetailScreen() {
   const recipe = useRecipeDetail(id);
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
 
-  if (recipe.isLoading)
+  if (recipe.isLoading) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <RecipeHeader
-          title={t('recipe.detailTitle')}
-          backFallbackHref="/(discover)/explore"
-        />
+      <ScreenWrapper
+        header={
+          <CustomHeader
+            title={t('recipe.detailTitle')}
+            showBack
+            backFallbackHref="/(discover)/explore"
+          />
+        }
+        contentContainerStyle={styles.state}
+      >
         <LoadingSpinner text={t('discover.loadingRecipes')} />
       </ScreenWrapper>
     );
+  }
+
   if (recipe.isError || !recipe.data) {
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <RecipeHeader
-          title={t('recipe.detailTitle')}
-          backFallbackHref="/(discover)/explore"
-        />
+      <ScreenWrapper
+        header={
+          <CustomHeader
+            title={t('recipe.detailTitle')}
+            showBack
+            backFallbackHref="/(discover)/explore"
+          />
+        }
+        contentContainerStyle={styles.state}
+      >
         <EmptyState
           title={t('recipe.openError')}
           description={recipe.error?.message}
@@ -49,21 +66,9 @@ export function RecipeDetailScreen() {
       </ScreenWrapper>
     );
   }
+
   const data = recipe.data;
   const nutrition = data.nutritionPerServing;
-  const nutritionText = [
-    nutrition?.caloriesKcal != null
-      ? `${Math.round(nutrition.caloriesKcal)} kcal`
-      : null,
-    nutrition?.proteinG != null
-      ? `${t('recipe.protein')} ${nutrition.proteinG}g`
-      : null,
-    nutrition?.carbsG != null ? `${t('recipe.carbs')} ${nutrition.carbsG}g` : null,
-    nutrition?.fatG != null ? `${t('recipe.fat')} ${nutrition.fatG}g` : null,
-    nutrition?.fiberG != null ? `${t('recipe.fiber')} ${nutrition.fiberG}g` : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
   const allergenText =
     data.allergenIds === undefined
       ? t('recipe.allergensUnknown')
@@ -76,66 +81,51 @@ export function RecipeDetailScreen() {
                   ?.name ?? t('recipe.unknownAllergen')
             )
             .join(', ');
+  const difficulty = data.difficulty
+    ? t(`filters.difficulty.${data.difficulty}` as TranslationKey)
+    : null;
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('recipe.detailTitle')}
-        subtitle={data.title}
-        backFallbackHref="/(discover)/explore"
+    <ScreenWrapper
+      header={
+        <CustomHeader
+          title={data.title ?? t('recipe.detailTitle')}
+          showBack
+          backFallbackHref="/(discover)/explore"
+        />
+      }
+      scrollable
+      contentContainerStyle={styles.screen}
+    >
+      <RecipeHeroSection
+        title={data.title}
+        coverImageUrl={data.coverImageUrl}
+        summary={data.summary}
+        description={data.description}
+        servings={data.servings}
+        prepMinutes={data.prepMinutes}
+        cookMinutes={data.cookMinutes}
+        difficulty={difficulty}
       />
-      <RecipeImage
-        uri={data.coverImageUrl}
-        style={styles.cover}
-        fallbackSize="large"
+
+      <RecipeMacroCards
+        caloriesKcal={nutrition?.caloriesKcal}
+        proteinG={nutrition?.proteinG}
+        carbsG={nutrition?.carbsG}
+        fatG={nutrition?.fatG}
       />
-      <InfoBlock title={t('recipe.info')}>
-        <AppText color={colors.text.secondary}>
-          {data.summary || data.description || t('recipe.noDescription')}
-        </AppText>
-        <AppText>
-          {[
-            data.servings ? t('recipe.servings', { count: data.servings }) : null,
-            data.prepMinutes != null
-              ? t('recipe.prepMinutes', { count: data.prepMinutes })
-              : null,
-            data.cookMinutes != null
-              ? t('recipe.cookMinutes', { count: data.cookMinutes })
-              : null,
-            data.difficulty,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </AppText>
-      </InfoBlock>
-      <InfoBlock title={t('recipe.nutritionPerServing')}>
-        <AppText color={colors.primary[700]}>
-          {nutritionText || t('recipe.noNutrition')}
-        </AppText>
-      </InfoBlock>
-      <InfoBlock
-        title={
-          data.servings
-            ? t('recipe.ingredientsFor', { count: data.servings })
-            : t('recipe.ingredients')
-        }
-      >
-        {data.ingredients?.length ? (
-          data.ingredients.map((item) => (
-            <AppText key={`${item.foodItemId}-${item.quantity}`}>
-              • {item.foodNameSnapshot}: {item.quantity} {item.unit}
-              {item.note ? ` · ${item.note}` : ''}
-            </AppText>
-          ))
-        ) : (
-          <AppText color={colors.text.secondary}>
-            {t('recipe.noIngredients')}
-          </AppText>
-        )}
-      </InfoBlock>
-      <InfoBlock title={t('recipe.allergens')}>
+
+      <RecipeDetailTabs
+        servings={data.servings}
+        ingredients={data.ingredients}
+        steps={data.steps}
+      />
+
+      <Surface bordered padding="lg" radius="lg" style={styles.block}>
+        <AppText variant="heading4">{t('recipe.allergens')}</AppText>
         <AppText color={colors.text.secondary}>{allergenText}</AppText>
-      </InfoBlock>
+      </Surface>
+
       <AppButton
         title={t('recipe.startCooking')}
         disabled={!data.steps?.length}
@@ -151,28 +141,8 @@ export function RecipeDetailScreen() {
   );
 }
 
-function InfoBlock({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.block}>
-      <AppText variant="heading4">{title}</AppText>
-      {children}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, gap: spacing.lg },
-  cover: { width: '100%', height: 210, borderRadius: radius.xl },
-  block: {
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background.surface,
-    gap: spacing.sm,
-  },
+  state: { padding: spacing.xl, justifyContent: 'center' },
+  screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.lg },
+  block: { gap: spacing.md },
 });

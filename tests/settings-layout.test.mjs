@@ -15,7 +15,10 @@ const settingsScreens = [
 
 test('setting detail screens share the full-width settings layout', () => {
   for (const screenPath of settingsScreens) {
-    const source = readFileSync(new URL(`../${screenPath}`, import.meta.url), 'utf8');
+    const source = readFileSync(
+      new URL(`../${screenPath}`, import.meta.url),
+      'utf8'
+    );
 
     assert.match(source, /<SettingsScreenLayout\b/, screenPath);
     assert.doesNotMatch(source, /<CustomHeader\b|<BackButton\b/, screenPath);
@@ -38,13 +41,16 @@ const customHeaderHosts = [
   'src/features/tracking/screens/FoodDiaryScreen.tsx',
   'src/features/tracking/screens/WeightTrackingScreen.tsx',
   'src/features/tracking/screens/WaterTrackingScreen.tsx',
-  'src/features/tracking/screens/TrackingComingSoonScreen.tsx',
+  'src/features/tracking/screens/NutritionSummaryScreen.tsx',
   'src/features/tracking/screens/DiaryEntryScreen.tsx',
 ];
 
 test('every custom header is mounted in the fixed screen header slot', () => {
   for (const screenPath of customHeaderHosts) {
-    const source = readFileSync(new URL(`../${screenPath}`, import.meta.url), 'utf8');
+    const source = readFileSync(
+      new URL(`../${screenPath}`, import.meta.url),
+      'utf8'
+    );
 
     assert.match(source, /header=\{/, screenPath);
     assert.doesNotMatch(source, />\s*<CustomHeader\b/, screenPath);

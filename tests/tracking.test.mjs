@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMockTrackingData } from '../src/features/tracking/mocks/trackingMocks.ts';
+import { createTrackingFixture } from './fixtures/trackingFixtures.ts';
 import {
   addDays,
   combineDateAndTime,
@@ -29,7 +29,7 @@ import {
 const now = new Date(2026, 9, 8, 15, 0);
 
 test('tracking overview matches the Figma mock numbers', () => {
-  const overview = selectTrackingOverview(createMockTrackingData(now), now);
+  const overview = selectTrackingOverview(createTrackingFixture(now), now);
   assert.equal(overview.date, '2026-10-08');
   assert.deepEqual(overview.energy, { consumedKcal: 800, targetKcal: 2000 });
   assert.deepEqual(overview.weight, {
@@ -41,7 +41,7 @@ test('tracking overview matches the Figma mock numbers', () => {
 });
 
 test('new water and diary logs for today change the overview; other days do not', () => {
-  const data = createMockTrackingData(now);
+  const data = createTrackingFixture(now);
   const yesterday = new Date(2026, 9, 7, 20, 0);
   data.waterLogs.push(
     {
@@ -62,7 +62,7 @@ test('new water and diary logs for today change the overview; other days do not'
 });
 
 test('diary nutrition totals add every macro', () => {
-  const { diaryEntries } = createMockTrackingData(now);
+  const { diaryEntries } = createTrackingFixture(now);
   assert.deepEqual(sumNutrition(diaryEntries), {
     caloriesKcal: 800,
     proteinG: 39,
@@ -73,7 +73,7 @@ test('diary nutrition totals add every macro', () => {
 });
 
 test('API diary timestamps normalize to the calendar date used by screens', () => {
-  const entry = createMockTrackingData(now).diaryEntries[0];
+  const entry = createTrackingFixture(now).diaryEntries[0];
   assert.equal(
     normalizeDiaryEntry({ ...entry, date: '2026-10-08T00:00:00.000Z' }).date,
     '2026-10-08'
@@ -153,7 +153,7 @@ test('nutrition scales by servings and diary entries group by meal', () => {
     fatG: 6,
     fiberG: 10,
   });
-  const groups = groupDiaryByMeal(createMockTrackingData(now).diaryEntries);
+  const groups = groupDiaryByMeal(createTrackingFixture(now).diaryEntries);
   assert.deepEqual(
     Object.fromEntries(
       Object.entries(groups).map(([meal, items]) => [meal, items.length])

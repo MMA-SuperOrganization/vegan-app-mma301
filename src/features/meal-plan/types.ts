@@ -41,6 +41,7 @@ export interface AddMealInput {
 }
 
 export interface UpdateMealInput {
+  recipeId?: string;
   servings?: number;
   completed?: boolean;
 }

@@ -11,6 +11,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { DayNavigator } from '../components/DayNavigator';
+import { DatePickerSheet } from '../components/DatePickerSheet';
 import { DiaryMealCard } from '../components/DiaryMealCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import {
@@ -35,6 +36,7 @@ export function FoodDiaryScreen() {
 
   const today = toLocalIsoDate(new Date());
   const [date, setDate] = useState(today);
+  const [pickerVisible, setPickerVisible] = useState(false);
   const diary = useDiary(date);
   const summary = useDiarySummary(date);
   const profileTargets = useTrackingTargets();
@@ -49,8 +51,6 @@ export function FoodDiaryScreen() {
   const consumedKcal = sumNutrition(dayEntries).caloriesKcal;
   const ready =
     !diary.isLoading && !summary.isLoading && !diary.isError && !summary.isError;
-  // An earlier day with nothing logged is read-only and shows only "no data".
-  const isPastWithoutData = date !== today && dayEntries.length === 0;
   const mealTypes = byMeal.snack.length
     ? [...PRIMARY_MEAL_TYPES, 'snack' as const]
     : PRIMARY_MEAL_TYPES;
@@ -62,104 +62,111 @@ export function FoodDiaryScreen() {
     });
 
   return (
-    <ScreenWrapper
-      scrollable
-      keyboardAvoiding={false}
-      edges={['top', 'left', 'right', 'bottom']}
-      contentContainerStyle={styles.screen}
-      header={
-        <CustomHeader
-          title={
-            date === today
-              ? t('tracking.foodDiary.title')
-              : t('tracking.foodDiary.titleDay')
-          }
-          showBack
-          backFallbackHref="/(tabs)/diary"
-        />
-      }
-    >
-      <View style={styles.content}>
-        <DayNavigator date={date} onChange={setDate} />
-        <TrackingQueryState
-          loading={diary.isLoading || summary.isLoading}
-          error={diary.isError || summary.isError}
-          onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
-        />
-        {ready && isPastWithoutData ? (
-          <AppText color={colors.text.secondary} style={styles.noData}>
-            {t('tracking.day.noData')}
-          </AppText>
-        ) : null}
-        {ready && !isPastWithoutData ? (
-          <>
-            <View style={styles.energy}>
-              <AppText variant="heading3" color={colors.primary[700]}>
-                {t('tracking.diary.energyTitle')}
-              </AppText>
-              <View style={styles.energyValue}>
-                <AppText variant="display" color={colors.primary[700]}>
-                  {formatNumber(consumedKcal)}
+    <>
+      <ScreenWrapper
+        scrollable
+        keyboardAvoiding={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        contentContainerStyle={styles.screen}
+        header={
+          <CustomHeader
+            title={
+              date === today
+                ? t('tracking.foodDiary.title')
+                : t('tracking.foodDiary.titleDay')
+            }
+            showBack
+            backFallbackHref="/(tabs)/diary"
+          />
+        }
+      >
+        <View style={styles.content}>
+          <DayNavigator
+            date={date}
+            onChange={setDate}
+            onOpenPicker={() => setPickerVisible(true)}
+          />
+          <TrackingQueryState
+            loading={diary.isLoading || summary.isLoading}
+            error={diary.isError || summary.isError}
+            onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
+          />
+          {ready ? (
+            <>
+              <View style={styles.energy}>
+                <AppText variant="heading3" color={colors.primary[700]}>
+                  {t('tracking.diary.energyTitle')}
                 </AppText>
-                <AppText variant="bodyLarge" color={colors.text.secondary}>
-                  {targetKcal
-                    ? t('tracking.diary.ofTargetKcal', {
-                        target: formatNumber(targetKcal),
-                      })
-                    : t('tracking.diary.kcalUnit')}
+                <View style={styles.energyValue}>
+                  <AppText variant="display" color={colors.primary[700]}>
+                    {formatNumber(consumedKcal)}
+                  </AppText>
+                  <AppText variant="bodyLarge" color={colors.text.secondary}>
+                    {targetKcal
+                      ? t('tracking.diary.ofTargetKcal', {
+                          target: formatNumber(targetKcal),
+                        })
+                      : t('tracking.diary.kcalUnit')}
+                  </AppText>
+                </View>
+                {targetKcal ? (
+                  <ProgressBar
+                    value={consumedKcal}
+                    max={targetKcal}
+                    accessibilityLabel={t('tracking.diary.energyTitle')}
+                  />
+                ) : null}
+              </View>
+
+              {mealTypes.map((mealType) => (
+                <DiaryMealCard
+                  key={mealType}
+                  title={mealLabel(mealType)}
+                  entries={byMeal[mealType]}
+                  onPressEntry={openEntry}
+                />
+              ))}
+
+              <AppButton
+                title={t('tracking.diary.viewSummary')}
+                variant="outline"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tracking)/nutrition-summary',
+                    params: { date },
+                  })
+                }
+              />
+
+              <AppButton
+                title={t('tracking.diary.addEntry')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tracking)/diary-entry',
+                    params: { date },
+                  })
+                }
+              />
+
+              <View style={styles.note}>
+                <AppText variant="bodyStrong" color={colors.text.secondary}>
+                  {t('tracking.diary.planVsActualTitle')}
+                </AppText>
+                <AppText variant="bodySmall" color={colors.text.secondary}>
+                  {t('tracking.diary.planVsActualBody')}
                 </AppText>
               </View>
-              {targetKcal ? (
-                <ProgressBar
-                  value={consumedKcal}
-                  max={targetKcal}
-                  accessibilityLabel={t('tracking.diary.energyTitle')}
-                />
-              ) : null}
-            </View>
-
-            {mealTypes.map((mealType) => (
-              <DiaryMealCard
-                key={mealType}
-                title={mealLabel(mealType)}
-                entries={byMeal[mealType]}
-                onPressEntry={openEntry}
-              />
-            ))}
-
-            <AppButton
-              title={t('tracking.diary.viewSummary')}
-              variant="outline"
-              onPress={() =>
-                router.push({
-                  pathname: '/(tracking)/nutrition-summary',
-                  params: { date },
-                })
-              }
-            />
-
-            <AppButton
-              title={t('tracking.diary.addEntry')}
-              onPress={() =>
-                router.push({
-                  pathname: '/(tracking)/diary-entry',
-                  params: { date },
-                })
-              }
-            />
-
-            <View style={styles.note}>
-              <AppText variant="bodyStrong" color={colors.text.secondary}>
-                {t('tracking.diary.planVsActualTitle')}
-              </AppText>
-              <AppText variant="bodySmall" color={colors.text.secondary}>
-                {t('tracking.diary.planVsActualBody')}
-              </AppText>
-            </View>
-          </>
-        ) : null}
-      </View>
-    </ScreenWrapper>
+            </>
+          ) : null}
+        </View>
+      </ScreenWrapper>
+      <DatePickerSheet
+        visible={pickerVisible}
+        selectedDate={date}
+        onSelect={setDate}
+        onClose={() => setPickerVisible(false)}
+      />
+    </>
   );
 }
 
@@ -182,7 +189,6 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: spacing.sm,
   },
-  noData: { textAlign: 'center', paddingVertical: spacing['4xl'] },
   note: {
     gap: spacing.xs,
     paddingHorizontal: spacing.xs,

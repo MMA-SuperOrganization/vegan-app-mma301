@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import {
-  AppButton,
-  AppInput,
-  AppText,
-  SettingsScreenLayout,
-} from '@/components';
+import { AppButton, AppInput, AppText, SettingsScreenLayout } from '@/components';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -25,18 +20,44 @@ export function NutritionProfileScreen() {
   const [calories, setCalories] = useState(
     nutrition?.dailyCalorieTarget?.toString() ?? ''
   );
+  const [protein, setProtein] = useState(
+    nutrition?.proteinTargetG?.toString() ?? ''
+  );
+  const [carbs, setCarbs] = useState(nutrition?.carbTargetG?.toString() ?? '');
+  const [fat, setFat] = useState(nutrition?.fatTargetG?.toString() ?? '');
   const [validation, setValidation] = useState<string | null>(null);
 
   const submit = async () => {
     const heightError = validateMeasurement(height, t('onboarding.height'), 50, 250);
     const weightError = validateMeasurement(weight, t('onboarding.weight'), 10, 500);
     const parsedCalories = calories.trim() ? parseDecimal(calories) : null;
+    const parsedProtein = protein.trim() ? parseDecimal(protein) : null;
+    const parsedCarbs = carbs.trim() ? parseDecimal(carbs) : null;
+    const parsedFat = fat.trim() ? parseDecimal(fat) : null;
     const caloriesError =
       parsedCalories !== null && (parsedCalories < 500 || parsedCalories > 10000)
         ? t('profile.nutritionCaloriesRange')
         : null;
-    setValidation(heightError ?? weightError ?? caloriesError);
-    if (heightError || weightError || caloriesError) return;
+    const proteinError = targetError(parsedProtein, 500, t('profile.proteinRange'));
+    const carbsError = targetError(parsedCarbs, 1500, t('profile.carbsRange'));
+    const fatError = targetError(parsedFat, 500, t('profile.fatRange'));
+    setValidation(
+      heightError ??
+        weightError ??
+        caloriesError ??
+        proteinError ??
+        carbsError ??
+        fatError
+    );
+    if (
+      heightError ||
+      weightError ||
+      caloriesError ||
+      proteinError ||
+      carbsError ||
+      fatError
+    )
+      return;
     const heightCm = parseDecimal(height);
     const currentWeightKg = parseDecimal(weight);
     if (heightCm === null || currentWeightKg === null) return;
@@ -44,6 +65,9 @@ export function NutritionProfileScreen() {
       heightCm,
       currentWeightKg,
       ...(parsedCalories !== null ? { dailyCalorieTarget: parsedCalories } : {}),
+      ...(parsedProtein !== null ? { proteinTargetG: parsedProtein } : {}),
+      ...(parsedCarbs !== null ? { carbTargetG: parsedCarbs } : {}),
+      ...(parsedFat !== null ? { fatTargetG: parsedFat } : {}),
     });
   };
 
@@ -81,6 +105,24 @@ export function NutritionProfileScreen() {
           value={calories}
           onChangeText={setCalories}
           keyboardType="number-pad"
+        />
+        <AppInput
+          label={t('profile.dailyProtein')}
+          value={protein}
+          onChangeText={setProtein}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyCarbs')}
+          value={carbs}
+          onChangeText={setCarbs}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyFat')}
+          value={fat}
+          onChangeText={setFat}
+          keyboardType="decimal-pad"
         />
       </View>
       {validation || error ? (
@@ -122,3 +164,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
 });
+
+function targetError(value: number | null, max: number, message: string) {
+  return value !== null && (value <= 0 || value > max) ? message : null;
+}

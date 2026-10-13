@@ -5,6 +5,7 @@ import {
   groupMealsByType,
   nextServingCount,
   plannedCalories,
+  plannedNutrition,
   monthStart,
   relativeWeekOffset,
   selectEditablePlan,
@@ -24,7 +25,13 @@ const meal = (overrides = {}) => ({
   recipeSnapshot: {
     title: 'Tofu bowl',
     servings: 1,
-    nutritionPerServing: { caloriesKcal: 420 },
+    nutritionPerServing: {
+      caloriesKcal: 420,
+      proteinG: 24,
+      carbsG: 50,
+      fatG: 12,
+      fiberG: 8,
+    },
   },
   ...overrides,
 });
@@ -111,6 +118,13 @@ test('meal groups, calories and serving steps follow the UI rules', () => {
   assert.equal(groups.lunch.length, 0);
   assert.equal(groups.dinner.length, 1);
   assert.equal(plannedCalories(meals), 1050);
+  assert.deepEqual(plannedNutrition(meals), {
+    caloriesKcal: 1050,
+    proteinG: 60,
+    carbsG: 125,
+    fatG: 30,
+    fiberG: 20,
+  });
   assert.equal(nextServingCount(1, 0.5), 1.5);
   assert.equal(nextServingCount(0.5, -0.5), 0.5);
   assert.equal(nextServingCount(100, 0.5), 100);

@@ -3,8 +3,7 @@ export { FoodDiaryScreen } from './screens/FoodDiaryScreen';
 export { DiaryEntryScreen } from './screens/DiaryEntryScreen';
 export { WeightTrackingScreen } from './screens/WeightTrackingScreen';
 export { WaterTrackingScreen } from './screens/WaterTrackingScreen';
-export { TrackingComingSoonScreen } from './screens/TrackingComingSoonScreen';
-export { useTrackingStore } from './store/trackingStore';
+export { NutritionSummaryScreen } from './screens/NutritionSummaryScreen';
 export type {
   DiaryEntry,
   MealType,

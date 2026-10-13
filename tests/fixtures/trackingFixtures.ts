@@ -1,6 +1,9 @@
 // Explicit .ts extension so node:test can load this file directly.
-import { DAY_MS, toLocalIsoDate } from '../trackingState.ts';
-import type { TrackingData } from '../types';
+import {
+  DAY_MS,
+  toLocalIsoDate,
+} from '../../src/features/tracking/trackingState.ts';
+import type { TrackingData } from '../../src/features/tracking/types.ts';
 
 function atTime(day: Date, hours: number, minutes = 0) {
   const date = new Date(day);
@@ -8,8 +11,8 @@ function atTime(day: Date, hours: number, minutes = 0) {
   return date.toISOString();
 }
 
-/** Mock data matching the Figma tracking screens until the API is wired. */
-export function createMockTrackingData(now = new Date()): TrackingData {
+/** Deterministic fixture for pure tracking-state tests. */
+export function createTrackingFixture(now = new Date()): TrackingData {
   const today = toLocalIsoDate(now);
   const daysAgo = (days: number) => new Date(now.getTime() - days * DAY_MS);
 

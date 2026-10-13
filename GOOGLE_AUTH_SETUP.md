@@ -46,10 +46,10 @@ redirect URI; Google returns the ID token directly to the app.
 ## Team setup and Google Play
 
 After cloning, create your own ignored `.env` using the team's Firebase API key
-and Web OAuth client ID, run `npm ci`, then run `npm run android`. The repository
-includes `android/app/debug.keystore` for development only, so team debug builds
-use the same SHA-1 listed above. If you replace that keystore, register its SHA-1
-in Firebase as well.
+and Web OAuth client ID, run `npm ci`, then run `npm run android`. The debug
+keystore is machine-specific and ignored by Git. Android uses the developer
+machine's standard debug signing key, whose SHA-1 must be registered in Firebase
+before Google sign-in is tested on a new workstation.
 
 Before publishing, configure a separate release/upload signing key. The current
 generated release build uses the debug signing configuration and is not ready

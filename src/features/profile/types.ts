@@ -62,4 +62,7 @@ export interface NutritionTargetsUpdate {
   heightCm: number;
   currentWeightKg: number;
   dailyCalorieTarget?: number;
+  proteinTargetG?: number;
+  carbTargetG?: number;
+  fatTargetG?: number;
 }

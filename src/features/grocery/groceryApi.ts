@@ -17,6 +17,13 @@ export const groceryApi = {
     unwrapApiRequest<GroceryList>(() =>
       apiClient.post('/grocery-lists', { name, items: [] })
     ),
+  generateFromMealPlan: (planId: string, name?: string) =>
+    unwrapApiRequest<GroceryList>(() =>
+      apiClient.post(`/meal-plans/${planId}/grocery-list`, {
+        ...(name?.trim() ? { name: name.trim() } : {}),
+        subtractPantry: false,
+      })
+    ),
   update: (id: string, input: { name?: string; status?: GroceryStatus }) =>
     unwrapApiRequest<GroceryList>(() =>
       apiClient.patch(`/grocery-lists/${id}`, input)

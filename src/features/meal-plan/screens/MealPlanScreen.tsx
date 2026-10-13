@@ -3,7 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import {
   AppText,
   CustomHeader,
-  ProgressBar,
+  NutritionTargetCard,
   SearchPickerSheet,
   ScreenWrapper,
   type PickerItem,
@@ -14,7 +14,7 @@ import { useTrackingFormat } from '@/features/tracking/hooks/useTrackingFormat';
 import { useTrackingTargets } from '@/features/tracking/hooks/useTrackingApi';
 import type { MealType } from '@/features/tracking/types';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 import { MealSection } from '../components/MealSection';
 import { WeekDaySelector } from '../components/WeekDaySelector';
 import { WeekNavigator } from '../components/WeekNavigator';
@@ -24,7 +24,7 @@ import {
   groupMealsByType,
   mealsForDate,
   nextServingCount,
-  plannedCalories,
+  plannedNutrition,
   PLANNED_MEAL_TYPES,
   relativeWeekOffset,
   shiftWeekSelection,
@@ -42,20 +42,23 @@ export function MealPlanScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [weekPickerVisible, setWeekPickerVisible] = useState(false);
   const [pickerMealType, setPickerMealType] = useState<MealType | null>(null);
+  const [replacementMeal, setReplacementMeal] = useState<PlannedMeal | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const planQuery = useMealPlan(weekStartDate);
   const actions = useMealPlanActions(weekStartDate);
   const targets = useTrackingTargets();
-  const recipeOptions = useRecipeOptions(searchQuery, pickerMealType !== null);
+  const recipeOptions = useRecipeOptions(
+    searchQuery,
+    pickerMealType !== null || replacementMeal !== null
+  );
   const plan = planQuery.data;
   const selectedMeals = mealsForDate(plan, selectedDate);
   const groupedMeals = groupMealsByType(selectedMeals);
   const visibleMealTypes = groupedMeals.snack.length
     ? [...PLANNED_MEAL_TYPES, 'snack' as const]
     : PLANNED_MEAL_TYPES;
-  const totalCalories = plannedCalories(selectedMeals);
-  const calorieTarget = targets.energyKcal;
+  const nutrition = plannedNutrition(selectedMeals);
   const pending =
     actions.addMeal.isPending ||
     actions.updateMeal.isPending ||
@@ -87,7 +90,24 @@ export function MealPlanScreen() {
   );
 
   const addRecipe = (recipeId: string) => {
-    if (!pickerMealType || pending) return;
+    if (pending) return;
+    if (replacementMeal && plan) {
+      actions.updateMeal.mutate(
+        {
+          planId: plan._id,
+          mealId: replacementMeal.mealId,
+          input: { recipeId },
+        },
+        {
+          onSuccess: () => {
+            setReplacementMeal(null);
+            setSearchQuery('');
+          },
+        }
+      );
+      return;
+    }
+    if (!pickerMealType) return;
     actions.addMeal.mutate(
       {
         planId: plan?._id,
@@ -192,35 +212,43 @@ export function MealPlanScreen() {
               </View>
 
               <View style={styles.calorieCard}>
-                <View style={styles.calorieHeader}>
-                  <View style={styles.calorieCopy}>
-                    <AppText variant="heading4">
-                      {t('mealPlan.calorieProgress')}
-                    </AppText>
-                    <AppText variant="bodySmall" color={colors.text.secondary}>
-                      {calorieTarget
-                        ? t('mealPlan.calorieValue', {
-                            current: formatNumber(totalCalories),
-                            target: formatNumber(calorieTarget),
-                          })
-                        : t('mealPlan.calorieValueNoTarget', {
-                            current: formatNumber(totalCalories),
-                          })}
-                    </AppText>
-                  </View>
-                  {calorieTarget ? (
-                    <AppText variant="bodyStrong" color={colors.primary[700]}>
-                      {formatNumber((totalCalories / calorieTarget) * 100)}%
-                    </AppText>
-                  ) : null}
-                </View>
-                {calorieTarget ? (
-                  <ProgressBar
-                    value={totalCalories}
-                    max={calorieTarget}
-                    accessibilityLabel={t('mealPlan.calorieProgress')}
+                <AppText variant="heading4">
+                  {t('mealPlan.nutritionSummary')}
+                </AppText>
+                <View style={styles.nutritionGrid}>
+                  <NutritionTargetCard
+                    label={t('mealPlan.calories')}
+                    value={nutrition.caloriesKcal}
+                    target={targets.energyKcal}
+                    unit="kcal"
+                    formatNumber={formatNumber}
+                    style={styles.nutritionCard}
                   />
-                ) : null}
+                  <NutritionTargetCard
+                    label={t('mealPlan.protein')}
+                    value={nutrition.proteinG}
+                    target={targets.proteinG}
+                    unit="g"
+                    formatNumber={formatNumber}
+                    style={styles.nutritionCard}
+                  />
+                  <NutritionTargetCard
+                    label={t('mealPlan.carbs')}
+                    value={nutrition.carbsG}
+                    target={targets.carbsG}
+                    unit="g"
+                    formatNumber={formatNumber}
+                    style={styles.nutritionCard}
+                  />
+                  <NutritionTargetCard
+                    label={t('mealPlan.fat')}
+                    value={nutrition.fatG}
+                    target={targets.fatG}
+                    unit="g"
+                    formatNumber={formatNumber}
+                    style={styles.nutritionCard}
+                  />
+                </View>
               </View>
 
               {saveError ? (
@@ -237,6 +265,7 @@ export function MealPlanScreen() {
                   pending={pending}
                   formatNumber={formatNumber}
                   onAdd={() => setPickerMealType(mealType)}
+                  onReplace={(meal) => setReplacementMeal(meal)}
                   onChangeServings={changeServings}
                   onRemove={confirmRemove}
                 />
@@ -247,10 +276,16 @@ export function MealPlanScreen() {
       </ScreenWrapper>
 
       <SearchPickerSheet
-        visible={pickerMealType !== null}
-        title={t('mealPlan.addDishTitle', {
-          meal: pickerMealType ? mealLabel(pickerMealType) : '',
-        })}
+        visible={pickerMealType !== null || replacementMeal !== null}
+        title={
+          replacementMeal
+            ? t('mealPlan.replaceDishTitle', {
+                name: replacementMeal.recipeSnapshot.title,
+              })
+            : t('mealPlan.addDishTitle', {
+                meal: pickerMealType ? mealLabel(pickerMealType) : '',
+              })
+        }
         searchPlaceholder={t('mealPlan.searchPlaceholder')}
         query={searchQuery}
         onQueryChange={setSearchQuery}
@@ -260,8 +295,9 @@ export function MealPlanScreen() {
         onRetry={() => void recipeOptions.refetch()}
         onSelect={addRecipe}
         onClose={() => {
-          if (actions.addMeal.isPending) return;
+          if (pending) return;
           setPickerMealType(null);
+          setReplacementMeal(null);
           setSearchQuery('');
         }}
       />
@@ -291,16 +327,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   calorieCard: {
-    padding: spacing.lg,
     gap: spacing.md,
-    borderRadius: radius.xl,
-    backgroundColor: colors.background.selected,
+    paddingVertical: spacing.sm,
   },
-  calorieHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  calorieCopy: { flex: 1, gap: spacing.xs },
+  nutritionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  nutritionCard: { flexGrow: 1, flexBasis: '46%' },
 });

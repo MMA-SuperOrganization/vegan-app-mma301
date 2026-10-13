@@ -9,6 +9,7 @@ export interface DayNavigatorProps {
   /** Selected local day, `YYYY-MM-DD`. */
   date: string;
   onChange: (date: string) => void;
+  onOpenPicker?: () => void;
 }
 
 /** Bare arrow with a full-size touch target. */
@@ -40,7 +41,7 @@ function ArrowButton({
 }
 
 /** Steps through past days; the future is not selectable. */
-export function DayNavigator({ date, onChange }: DayNavigatorProps) {
+export function DayNavigator({ date, onChange, onOpenPicker }: DayNavigatorProps) {
   const { t } = useTranslation();
   const { formatLongDate, relativeDay } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
@@ -54,7 +55,14 @@ export function DayNavigator({ date, onChange }: DayNavigatorProps) {
         label={t('tracking.day.previous')}
         onPress={() => onChange(addDays(date, -1))}
       />
-      <View style={styles.label} accessibilityLiveRegion="polite">
+      <Pressable
+        accessibilityRole={onOpenPicker ? 'button' : undefined}
+        accessibilityLabel={t('tracking.day.chooseDate')}
+        disabled={!onOpenPicker}
+        onPress={onOpenPicker}
+        style={({ pressed }) => [styles.label, pressed && styles.pressed]}
+        accessibilityLiveRegion="polite"
+      >
         <AppText variant="bodyStrong" color={colors.primary[700]}>
           {relativeDay(age)}
         </AppText>
@@ -64,8 +72,9 @@ export function DayNavigator({ date, onChange }: DayNavigatorProps) {
           style={styles.longDate}
         >
           {formatLongDate(date)}
+          {onOpenPicker ? ' ⌄' : ''}
         </AppText>
-      </View>
+      </Pressable>
       {isToday ? (
         <View style={styles.arrow} />
       ) : (

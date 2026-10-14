@@ -173,6 +173,30 @@ export function isLocalIsoDate(value: unknown): value is string {
   );
 }
 
+/**
+ * A month as calendar cells, Monday first: leading `null`s pad the first week,
+ * then one local `YYYY-MM-DD` per day. `month` is 1–12.
+ */
+export function monthGrid(year: number, month: number): (string | null)[] {
+  const leading = (new Date(year, month - 1, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return [
+    ...Array<null>(leading).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, index) =>
+      toLocalIsoDate(new Date(year, month - 1, index + 1))
+    ),
+  ];
+}
+
+/** The Monday-to-Sunday week (7 local `YYYY-MM-DD` days) containing `isoDate`. */
+export function weekDays(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const mondayOffset = (new Date(year, month - 1, day).getDay() + 6) % 7;
+  return Array.from({ length: 7 }, (_, index) =>
+    addDays(isoDate, index - mondayOffset)
+  );
+}
+
 /** Shifts a local `YYYY-MM-DD` day by whole days (calendar-safe across DST). */
 export function addDays(isoDate: string, days: number) {
   const [year, month, day] = isoDate.split('-').map(Number);
@@ -289,6 +313,46 @@ export function parseDayMonthYear(text: string) {
 export function formatDayMonthYear(isoDate: string) {
   const [year, month, day] = isoDate.split('-');
   return `${day}/${month}/${year}`;
+}
+
+/** Calories per logged meal, in meal order, skipping meals with nothing logged. */
+export function mealCalorieTotals(entries: DiaryEntry[]) {
+  const groups = groupDiaryByMeal(entries);
+  return MEAL_TYPES.filter((mealType) => groups[mealType].length > 0).map(
+    (mealType) => ({
+      mealType,
+      kcal: sumNutrition(groups[mealType]).caloriesKcal,
+    })
+  );
+}
+
+export type MacroKey = 'carbs' | 'protein' | 'fat';
+/** Energy per gram (Atwater factors). */
+const KCAL_PER_GRAM: Record<MacroKey, number> = { carbs: 4, protein: 4, fat: 9 };
+
+/**
+ * Share of energy from carbs, protein and fat as whole percentages that add up
+ * to 100 (largest remainder). Null when no macro energy was eaten.
+ */
+export function macroEnergyShares(
+  nutrition: Pick<NutritionValues, 'carbsG' | 'proteinG' | 'fatG'>
+): Record<MacroKey, number> | null {
+  const energy: Record<MacroKey, number> = {
+    carbs: Math.max(0, nutrition.carbsG) * KCAL_PER_GRAM.carbs,
+    protein: Math.max(0, nutrition.proteinG) * KCAL_PER_GRAM.protein,
+    fat: Math.max(0, nutrition.fatG) * KCAL_PER_GRAM.fat,
+  };
+  const total = energy.carbs + energy.protein + energy.fat;
+  if (total <= 0) return null;
+  const keys: MacroKey[] = ['carbs', 'protein', 'fat'];
+  const exact = keys.map((key) => (energy[key] / total) * 100);
+  const shares = exact.map(Math.floor);
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+    .sort((a, b) => b.remainder - a.remainder);
+  const missing = 100 - shares.reduce((sum, value) => sum + value, 0);
+  for (let i = 0; i < missing; i += 1) shares[order[i].index] += 1;
+  return { carbs: shares[0], protein: shares[1], fat: shares[2] };
 }
 
 export function sumNutrition(entries: DiaryEntry[]): NutritionValues {

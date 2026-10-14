@@ -10,10 +10,10 @@ import {
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { DayNavigator } from '../components/DayNavigator';
-import { DatePickerSheet } from '../components/DatePickerSheet';
+import { CalendarSheet } from '../components/CalendarSheet';
 import { DiaryMealCard } from '../components/DiaryMealCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
+import { WeekStrip } from '../components/WeekStrip';
 import {
   useDiary,
   useDiarySummary,
@@ -51,6 +51,8 @@ export function FoodDiaryScreen() {
   const consumedKcal = sumNutrition(dayEntries).caloriesKcal;
   const ready =
     !diary.isLoading && !summary.isLoading && !diary.isError && !summary.isError;
+  // An earlier day with nothing logged is read-only and shows only "no data".
+  const isPastWithoutData = date !== today && dayEntries.length === 0;
   const mealTypes = byMeal.snack.length
     ? [...PRIMARY_MEAL_TYPES, 'snack' as const]
     : PRIMARY_MEAL_TYPES;
@@ -77,21 +79,27 @@ export function FoodDiaryScreen() {
             }
             showBack
             backFallbackHref="/(tabs)/diary"
+            rightAction={{
+              icon: 'calendar',
+              accessibilityLabel: t('tracking.day.chooseDate'),
+              onPress: () => setPickerVisible(true),
+            }}
           />
         }
       >
         <View style={styles.content}>
-          <DayNavigator
-            date={date}
-            onChange={setDate}
-            onOpenPicker={() => setPickerVisible(true)}
-          />
+          <WeekStrip date={date} onChange={setDate} />
           <TrackingQueryState
             loading={diary.isLoading || summary.isLoading}
             error={diary.isError || summary.isError}
             onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
           />
-          {ready ? (
+          {ready && isPastWithoutData ? (
+            <AppText color={colors.text.secondary} style={styles.noData}>
+              {t('tracking.day.noData')}
+            </AppText>
+          ) : null}
+          {ready && !isPastWithoutData ? (
             <>
               <View style={styles.energy}>
                 <AppText variant="heading3" color={colors.primary[700]}>
@@ -160,7 +168,7 @@ export function FoodDiaryScreen() {
           ) : null}
         </View>
       </ScreenWrapper>
-      <DatePickerSheet
+      <CalendarSheet
         visible={pickerVisible}
         selectedDate={date}
         onSelect={setDate}
@@ -189,6 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: spacing.sm,
   },
+  noData: { textAlign: 'center', paddingVertical: spacing['4xl'] },
   note: {
     gap: spacing.xs,
     paddingHorizontal: spacing.xs,

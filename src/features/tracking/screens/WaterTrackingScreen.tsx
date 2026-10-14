@@ -9,11 +9,12 @@ import {
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { DayNavigator } from '../components/DayNavigator';
+import { CalendarSheet } from '../components/CalendarSheet';
 import { LogHistoryItem } from '../components/LogHistoryItem';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WaterGlassRow } from '../components/WaterGlassRow';
 import { WaterLogModal } from '../components/WaterLogModal';
+import { WeekStrip } from '../components/WeekStrip';
 import {
   useWaterMutations,
   useTrackingTargets,
@@ -43,6 +44,7 @@ export function WaterTrackingScreen() {
   const { formatNumber } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
   const [date, setDate] = useState(today);
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const isToday = date === today;
   const water = useWater(date);
   const waterLogs = water.data?.data ?? [];
@@ -112,11 +114,16 @@ export function WaterTrackingScreen() {
           title={t('tracking.water.title')}
           showBack
           backFallbackHref="/(tabs)/diary"
+          rightAction={{
+            icon: 'calendar',
+            accessibilityLabel: t('tracking.day.chooseDate'),
+            onPress: () => setCalendarVisible(true),
+          }}
         />
       }
     >
       <View style={styles.content}>
-        <DayNavigator date={date} onChange={setDate} />
+        <WeekStrip date={date} onChange={setDate} />
         <TrackingQueryState
           loading={water.isLoading}
           error={water.isError}
@@ -257,6 +264,12 @@ export function WaterTrackingScreen() {
           closeModal();
           setFocusId(id);
         }}
+      />
+      <CalendarSheet
+        visible={calendarVisible}
+        selectedDate={date}
+        onSelect={setDate}
+        onClose={() => setCalendarVisible(false)}
       />
     </ScreenWrapper>
   );

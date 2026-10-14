@@ -54,5 +54,11 @@ export const assetRegistry = {
     height: 20,
     xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4 4L16 16M16 4L4 16" stroke="#16583D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n\n',
   },
+  calendar: {
+    id: 'core:calendar',
+    width: 20,
+    height: 20,
+    xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4.5 4H15.5C16.3 4 17 4.7 17 5.5V15.5C17 16.3 16.3 17 15.5 17H4.5C3.7 17 3 16.3 3 15.5V5.5C3 4.7 3.7 4 4.5 4Z" stroke="#16583D" stroke-width="1.8" stroke-linejoin="round"/>\n<path d="M3 8H17M7 2.5V5.5M13 2.5V5.5" stroke="#16583D" stroke-width="1.8" stroke-linecap="round"/>\n</svg>\n',
+  },
 } as const;
 export type AssetName = keyof typeof assetRegistry;

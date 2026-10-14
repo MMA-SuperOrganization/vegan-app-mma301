@@ -40,6 +40,10 @@ export function useTrackingFormat() {
         month: '2-digit',
         year: 'numeric',
       }).format(new Date(`${isoDate}T00:00:00`));
+    const formatMonthYear = (isoDate: string) =>
+      new Intl.DateTimeFormat(localeTag, { month: 'long', year: 'numeric' }).format(
+        new Date(`${isoDate}T00:00:00`)
+      );
     const formatShortDate = (isoDate: string) =>
       new Intl.DateTimeFormat(localeTag, {
         day: '2-digit',
@@ -68,6 +72,7 @@ export function useTrackingFormat() {
       formatNumber,
       formatLongDate,
       formatShortDate,
+      formatMonthYear,
       relativeDay,
       mealLabel,
       unitLabel,

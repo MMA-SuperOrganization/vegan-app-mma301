@@ -9,6 +9,9 @@
 
 ## Overview
 
+Android setup and Google Sign-In across development machines:
+[Android signing guide](docs/ANDROID_SIGNING.md).
+
 **Vegan Mobile App** is a modern, cross-platform mobile application designed to assist users in adopting, maintaining, and enjoying a vegetarian and plant-based lifestyle. The application provides comprehensive support for discovering delicious vegan recipes, personalized meal planning, AI-powered nutritional recommendations, educational cooking videos, and community interactions.
 
 The project is engineered following **Clean Architecture**, **Feature-First Domain Grouping**, **Strict TypeScript Typing**, and **Centralized Design Tokens** based on Figma specifications.

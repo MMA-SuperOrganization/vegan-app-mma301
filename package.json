@@ -4,6 +4,8 @@
   "main": "expo-router/entry",
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/setup-android-debug-key.mjs",
+    "preandroid": "node scripts/setup-android-debug-key.mjs",
     "dev": "expo start",
     "start": "expo start",
     "android": "expo run:android",

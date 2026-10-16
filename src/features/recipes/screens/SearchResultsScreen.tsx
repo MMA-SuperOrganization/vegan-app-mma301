@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, StyleSheet, View } from 'react-native';
@@ -111,10 +112,7 @@ export function SearchResultsScreen() {
         data={content}
         keyExtractor={(item) => `${item.type ?? 'recipe'}-${item._id}`}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.list,
-          !content.length && styles.growList,
-        ]}
+        contentContainerStyle={[styles.list, !content.length && styles.growList]}
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -144,7 +142,7 @@ export function SearchResultsScreen() {
           ) : results.isError ? (
             <EmptyState
               title={t('discover.searchError')}
-              description={results.error.message}
+              description={getUserErrorMessage(results.error)}
               actionLabel={t('common.retry')}
               onAction={() => void results.refetch()}
             />
@@ -183,9 +181,7 @@ export function SearchResultsScreen() {
           <ContentResultCard
             item={item}
             onPress={
-              item.type === 'recipe' ||
-              item.type === 'food-item' ||
-              !item.type
+              item.type === 'recipe' || item.type === 'food-item' || !item.type
                 ? () => openItem(item)
                 : undefined
             }

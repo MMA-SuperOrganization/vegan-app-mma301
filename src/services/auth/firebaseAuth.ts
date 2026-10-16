@@ -72,7 +72,9 @@ function mapFirebaseError(error: unknown): never {
   };
 
   throw new AuthServiceError(
-    messageKeys[code] ? translate(messageKeys[code]) : translate('firebase.authFailed'),
+    messageKeys[code]
+      ? translate(messageKeys[code])
+      : translate('firebase.authFailed'),
     code
   );
 }

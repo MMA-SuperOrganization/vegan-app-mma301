@@ -67,6 +67,7 @@ test('diagnostic logging does not trigger the Expo error overlay', (t) => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0][0], '[VEGETA_ERROR]');
   assert.equal(calls[0][1].code, 'INVALID_LOGIN_CREDENTIALS');
+  assert.equal(calls[0][1].message, 'Không thể đăng nhập.');
 });
 
 test('auth validation rejects empty and malformed credentials', () => {
@@ -166,4 +167,18 @@ test('persisted onboarding drafts are sanitized before hydration', () => {
       aiProfileConsent: true,
     }
   );
+});
+
+test('release builds retain diagnostics without an error overlay', (t) => {
+  globalThis.__DEV__ = false;
+  t.after(() => {
+    delete globalThis.__DEV__;
+  });
+  const calls = [];
+  t.mock.method(console, 'log', (...args) => calls.push(args));
+  logAppError(
+    toAppErrorDetails(new Error('private detail'), 'auth.login', 'Try again')
+  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][1].message, 'private detail');
 });

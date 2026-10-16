@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
@@ -38,9 +39,7 @@ export function SearchScreen() {
       scrollable
       contentContainerStyle={styles.screen}
     >
-      <AppText color={colors.text.secondary}>
-        {t('discover.searchSubtitle')}
-      </AppText>
+      <AppText color={colors.text.secondary}>{t('discover.searchSubtitle')}</AppText>
 
       <SearchBar
         placeholder={t('discover.searchPlaceholder')}
@@ -63,7 +62,7 @@ export function SearchScreen() {
         recent={recent.data}
         isLoading={recent.isLoading}
         isError={recent.isError}
-        errorMessage={recent.error?.message}
+        errorMessage={recent.error ? getUserErrorMessage(recent.error) : undefined}
         onSelectQuery={(q) => {
           setQuery(q);
           submit(q);

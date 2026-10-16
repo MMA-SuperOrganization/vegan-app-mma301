@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
@@ -59,7 +60,7 @@ export function RecipeDetailScreen() {
       >
         <EmptyState
           title={t('recipe.openError')}
-          description={recipe.error?.message}
+          description={recipe.error ? getUserErrorMessage(recipe.error) : undefined}
           actionLabel={t('common.retry')}
           onAction={() => void recipe.refetch()}
         />

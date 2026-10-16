@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -118,7 +119,7 @@ export function ExploreScreen() {
       {error ? (
         <EmptyState
           title={t('discover.loadError')}
-          description={error.message}
+          description={getUserErrorMessage(error)}
           actionLabel={t('common.retry')}
           onAction={() => void retry()}
         />

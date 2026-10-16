@@ -33,6 +33,7 @@ export const recipeApi = {
     ),
   list: (query: RecipeQuery = {}): Promise<PageResult<ContentCardData>> =>
     pageRequest('/recipes', {
+      foodItemId: query.foodItemId,
       page: query.page ?? 1,
       limit: query.limit ?? 10,
       sort: query.sort ?? 'popular',

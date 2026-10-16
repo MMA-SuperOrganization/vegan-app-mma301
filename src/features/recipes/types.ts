@@ -106,6 +106,7 @@ export interface RecipeFilters {
 }
 
 export interface RecipeQuery extends RecipeFilters {
+  foodItemId?: string;
   page?: number;
   limit?: number;
   q?: string;

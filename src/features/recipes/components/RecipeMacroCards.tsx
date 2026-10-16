@@ -4,6 +4,7 @@ import { AppText, Surface } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 
+import { formatNutritionValue } from '../recipePresentation';
 import type { RecipeMacroCardsProps } from '../types';
 
 export function RecipeMacroCards({
@@ -12,24 +13,24 @@ export function RecipeMacroCards({
   carbsG,
   fatG,
 }: RecipeMacroCardsProps) {
-  const { t } = useTranslation();
+  const { locale, t } = useTranslation();
 
   const nutritionItems = [
     {
-      label: 'kcal',
-      value: caloriesKcal != null ? Math.round(caloriesKcal).toString() : '—',
+      label: t('food.calories'),
+      value: caloriesKcal != null ? `${Math.round(caloriesKcal)} kcal` : '—',
     },
     {
       label: t('recipe.protein'),
-      value: proteinG != null ? `${proteinG}g` : '—',
+      value: proteinG != null ? `${formatNutritionValue(proteinG, locale)} g` : '—',
     },
     {
       label: t('recipe.carbs'),
-      value: carbsG != null ? `${carbsG}g` : '—',
+      value: carbsG != null ? `${formatNutritionValue(carbsG, locale)} g` : '—',
     },
     {
       label: t('recipe.fat'),
-      value: fatG != null ? `${fatG}g` : '—',
+      value: fatG != null ? `${formatNutritionValue(fatG, locale)} g` : '—',
     },
   ];
 

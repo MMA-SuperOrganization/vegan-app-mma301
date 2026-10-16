@@ -11,7 +11,8 @@ import {
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { ContentSaveButton } from '../components/ContentSaveButton';
-import { RecipeHeader } from '../components/RecipeHeader';
+import { DiscoveryDetailHeader } from '../components/DiscoveryDetailHeader';
+import { RecipesWithIngredient } from '../components/RecipesWithIngredient';
 import { RecipeImage } from '../components/RecipeImage';
 import { useAllergenCatalog, useContentCategories, useFoodDetail } from '../hooks';
 import type { NutritionFacts } from '../types';
@@ -41,18 +42,23 @@ export function FoodDetailScreen() {
   const food = useFoodDetail(id);
   const allergens = useAllergenCatalog();
   const categories = useContentCategories('food');
+  const header = (
+    <DiscoveryDetailHeader
+      title={t('food.detailTitle')}
+      subtitle={food.data?.name}
+      backFallbackHref="/(discover)/foods"
+    />
+  );
 
   if (food.isLoading)
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <RecipeHeader title={t('food.detailTitle')} />
+      <ScreenWrapper header={header} contentContainerStyle={styles.screen}>
         <LoadingSpinner text={t('food.loadingDetail')} />
       </ScreenWrapper>
     );
   if (food.isError || !food.data)
     return (
-      <ScreenWrapper contentContainerStyle={styles.screen}>
-        <RecipeHeader title={t('food.detailTitle')} />
+      <ScreenWrapper header={header} contentContainerStyle={styles.screen}>
         <EmptyState
           title={t('food.openError')}
           description={food.error ? getUserErrorMessage(food.error) : undefined}
@@ -73,12 +79,7 @@ export function FoodDetailScreen() {
   );
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
-      <RecipeHeader
-        title={t('food.detailTitle')}
-        subtitle={data.name}
-        backFallbackHref="/(discover)/foods"
-      />
+    <ScreenWrapper header={header} scrollable contentContainerStyle={styles.screen}>
       <RecipeImage uri={data.imageUrl} style={styles.cover} fallbackSize="large" />
       <InfoBlock title={t('food.overview')}>
         {categories.isLoading ? (
@@ -105,6 +106,7 @@ export function FoodDetailScreen() {
           </AppText>
         ) : null}
       </InfoBlock>
+      <RecipesWithIngredient foodItemId={data._id} name={data.name} />
       <InfoBlock title={t('food.nutritionPer100g')}>
         {data.nutritionPer100g ? (
           nutrientRows.map((row) => (

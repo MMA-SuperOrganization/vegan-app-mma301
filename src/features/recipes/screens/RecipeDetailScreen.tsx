@@ -5,7 +5,6 @@ import { StyleSheet } from 'react-native';
 import {
   AppButton,
   AppText,
-  CustomHeader,
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
@@ -16,6 +15,7 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, spacing } from '@/theme';
 
 import { ContentSaveButton } from '../components/ContentSaveButton';
+import { DiscoveryDetailHeader } from '../components/DiscoveryDetailHeader';
 import { RecipeDetailTabs } from '../components/RecipeDetailTabs';
 import { RecipeHeroSection } from '../components/RecipeHeroSection';
 import { RecipeMacroCards } from '../components/RecipeMacroCards';
@@ -33,9 +33,8 @@ export function RecipeDetailScreen() {
     return (
       <ScreenWrapper
         header={
-          <CustomHeader
+          <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
-            showBack
             backFallbackHref="/(discover)/explore"
           />
         }
@@ -50,9 +49,8 @@ export function RecipeDetailScreen() {
     return (
       <ScreenWrapper
         header={
-          <CustomHeader
+          <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
-            showBack
             backFallbackHref="/(discover)/explore"
           />
         }
@@ -89,9 +87,8 @@ export function RecipeDetailScreen() {
   return (
     <ScreenWrapper
       header={
-        <CustomHeader
+        <DiscoveryDetailHeader
           title={data.title ?? t('recipe.detailTitle')}
-          showBack
           backFallbackHref="/(discover)/explore"
         />
       }
@@ -120,6 +117,12 @@ export function RecipeDetailScreen() {
         servings={data.servings}
         ingredients={data.ingredients}
         steps={data.steps}
+        onOpenIngredient={(foodItemId) =>
+          router.push({
+            pathname: '/(discover)/food/[id]',
+            params: { id: foodItemId },
+          })
+        }
       />
 
       <Surface bordered padding="lg" radius="lg" style={styles.block}>

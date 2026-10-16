@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -40,7 +41,7 @@ export function AccountSecurityScreen() {
             .catch((error) =>
               Alert.alert(
                 t('profile.deleteFailed'),
-                error instanceof Error ? error.message : t('profile.deleteFailed')
+                getUserErrorMessage(error, t('profile.deleteFailed'))
               )
             )
             .finally(() => setIsDeleting(false));

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -102,7 +103,7 @@ export function FoodCatalogScreen() {
       {foods.isError ? (
         <EmptyState
           title={t('food.loadError')}
-          description={foods.error.message}
+          description={getUserErrorMessage(foods.error)}
           actionLabel={t('common.retry')}
           onAction={() => void foods.refetch()}
         />

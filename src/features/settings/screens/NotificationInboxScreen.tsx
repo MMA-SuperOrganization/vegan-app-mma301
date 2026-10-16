@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
   AppButton,
@@ -29,7 +30,7 @@ export function NotificationInboxScreen() {
       {notifications.isError ? (
         <EmptyState
           title={t('notifications.loadError')}
-          description={notifications.error.message}
+          description={getUserErrorMessage(notifications.error)}
           actionLabel={t('common.retry')}
           onAction={() => void notifications.refetch()}
         />

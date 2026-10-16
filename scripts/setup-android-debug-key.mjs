@@ -11,11 +11,13 @@ const expectedKeyHash =
   '221e0a3106aa4c3ccc154e0a418b55020b3f9ea6e84f92e8749cd9e2f39f5e58';
 
 export function ensureAndroidDebugKey(destination) {
-  const key = execFileSync('tar', [
-    '-xOf',
-    templatePath,
-    'package/android/app/debug.keystore',
-  ]);
+  // GNU tar treats Windows drive letters as remote hosts. Read from stdin so
+  // both Git Bash's GNU tar and Windows' bundled tar accept the same archive.
+  const key = execFileSync(
+    'tar',
+    ['-xzOf', '-', 'package/android/app/debug.keystore'],
+    { input: readFileSync(templatePath) }
+  );
   if (createHash('sha256').update(key).digest('hex') !== expectedKeyHash) {
     throw new Error(
       'Expo template debug key changed. Review its SHA-1 registration before building.'

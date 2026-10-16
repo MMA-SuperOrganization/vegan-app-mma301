@@ -1,10 +1,63 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import test from 'node:test';
 import { ensureAndroidDebugKey } from '../scripts/setup-android-debug-key.mjs';
+
+const gitBashTar = join(
+  process.env.ProgramFiles ?? 'C:/Program Files',
+  'Git/usr/bin/tar.exe'
+);
+
+test(
+  'setup works with GNU tar from Git Bash and Windows paths containing spaces',
+  {
+    skip: process.platform !== 'win32' || !existsSync(gitBashTar),
+  },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), 'vegeta debug key '));
+    try {
+      const destination = join(directory, 'android/app/debug.keystore');
+      const scriptUrl = new URL(
+        '../scripts/setup-android-debug-key.mjs',
+        import.meta.url
+      ).href;
+      const pathKey =
+        Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ??
+        'PATH';
+      execFileSync(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `const { ensureAndroidDebugKey } = await import(${JSON.stringify(scriptUrl)}); ensureAndroidDebugKey(process.argv[1]);`,
+          destination,
+        ],
+        {
+          env: {
+            ...process.env,
+            [pathKey]: `${dirname(gitBashTar)}${delimiter}${process.env[pathKey] ?? ''}`,
+          },
+        }
+      );
+      assert.equal(
+        createHash('sha256').update(readFileSync(destination)).digest('hex'),
+        '221e0a3106aa4c3ccc154e0a418b55020b3f9ea6e84f92e8749cd9e2f39f5e58'
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }
+);
 
 test('fresh checkouts get the same development key and setup is repeatable', () => {
   const directory = mkdtempSync(join(tmpdir(), 'vegeta-debug-key-'));

@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { create } from 'zustand';
 import { useAuthStore } from '@/features/auth/store/authStore';
 import { completeOnboarding } from './onboardingCompletion';
@@ -90,10 +91,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     } catch (error) {
       set({
         isLoadingAllergens: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : translate('onboarding.error.loadAllergens'),
+        error: getUserErrorMessage(
+          error,
+          translate('onboarding.error.loadAllergens')
+        ),
       });
     }
   },
@@ -105,7 +106,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     try {
       await completeOnboarding(draft, draftUserId);
       useAuthStore.getState().markOnboardingCompleted();
-      if (draftUserId && !(await useProfileStore.getState().load(draftUserId, true))) {
+      if (
+        draftUserId &&
+        !(await useProfileStore.getState().load(draftUserId, true))
+      ) {
         throw new Error(translate('onboarding.error.reloadProfile'));
       }
       set({ isSaving: false, draft: initialOnboardingDraft });
@@ -113,7 +117,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     } catch (error) {
       set({
         isSaving: false,
-        error: error instanceof Error ? error.message : translate('onboarding.error.saveProfile'),
+        error: getUserErrorMessage(error, translate('onboarding.error.saveProfile')),
       });
       return false;
     }

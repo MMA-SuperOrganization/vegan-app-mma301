@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -53,7 +54,7 @@ export function SavedLibraryScreen() {
         <View style={styles.state}>
           <EmptyState
             title={t('saved.loadError')}
-            description={saved.error.message}
+            description={getUserErrorMessage(saved.error)}
             actionLabel={t('common.retry')}
             onAction={() => void saved.refetch()}
           />

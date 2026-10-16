@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import {
   Pressable,
   StyleSheet,
@@ -87,7 +88,7 @@ export function ContentSaveButton({
       />
       {mutation.error ? (
         <AppText variant="caption" color={colors.status.danger}>
-          {mutation.error.message}
+          {getUserErrorMessage(mutation.error)}
         </AppText>
       ) : null}
     </View>

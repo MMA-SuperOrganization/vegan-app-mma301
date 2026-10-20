@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
   AppText,
@@ -24,6 +24,7 @@ import {
   PRIMARY_MEAL_TYPES,
   diaryEntriesForDate,
   groupDiaryByMeal,
+  isLocalIsoDate,
   sumNutrition,
   toLocalIsoDate,
 } from '../trackingState';
@@ -31,12 +32,18 @@ import type { DiaryEntry } from '../types';
 
 export function FoodDiaryScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ date?: string }>();
   const { t } = useTranslation();
   const { formatNumber, mealLabel } = useTrackingFormat();
 
   const today = toLocalIsoDate(new Date());
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(
+    isLocalIsoDate(params.date) ? params.date : today
+  );
   const [pickerVisible, setPickerVisible] = useState(false);
+  useEffect(() => {
+    if (isLocalIsoDate(params.date)) setDate(params.date);
+  }, [params.date]);
   const diary = useDiary(date);
   const summary = useDiarySummary(date);
   const profileTargets = useTrackingTargets();
@@ -51,8 +58,6 @@ export function FoodDiaryScreen() {
   const consumedKcal = sumNutrition(dayEntries).caloriesKcal;
   const ready =
     !diary.isLoading && !summary.isLoading && !diary.isError && !summary.isError;
-  // An earlier day with nothing logged is read-only and shows only "no data".
-  const isPastWithoutData = date !== today && dayEntries.length === 0;
   const mealTypes = byMeal.snack.length
     ? [...PRIMARY_MEAL_TYPES, 'snack' as const]
     : PRIMARY_MEAL_TYPES;
@@ -94,12 +99,12 @@ export function FoodDiaryScreen() {
             error={diary.isError || summary.isError}
             onRetry={() => void Promise.all([diary.refetch(), summary.refetch()])}
           />
-          {ready && isPastWithoutData ? (
+          {ready && dayEntries.length === 0 ? (
             <AppText color={colors.text.secondary} style={styles.noData}>
               {t('tracking.day.noData')}
             </AppText>
           ) : null}
-          {ready && !isPastWithoutData ? (
+          {ready ? (
             <>
               <View style={styles.energy}>
                 <AppText variant="heading3" color={colors.primary[700]}>

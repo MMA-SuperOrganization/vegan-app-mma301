@@ -2,10 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   groceryProgress,
+  groceryDateRange,
   groupGroceryItems,
   parseGroceryQuantity,
   updateItemChecked,
 } from '../src/features/grocery/groceryState.ts';
+
+test('grocery range accepts a subset of the selected week and rejects rollover and reversed dates', () => {
+  assert.deepEqual(groceryDateRange('20/10/2026', '22/10/2026', '2026-10-19'), {
+    from: '2026-10-20',
+    to: '2026-10-22',
+  });
+  for (const [from, to] of [
+    ['22/10/2026', '20/10/2026'],
+    ['18/10/2026', '20/10/2026'],
+    ['20/10/2026', '26/10/2026'],
+    ['31/02/2026', '22/10/2026'],
+    ['', ''],
+  ]) {
+    assert.equal(groceryDateRange(from, to, '2026-10-19'), null);
+  }
+});
 
 const items = [
   {
@@ -71,5 +88,8 @@ test('optimistic checkbox update is immutable and only changes its target', () =
   assert.notEqual(updated, list);
   assert.equal(updated.items.find((item) => item.itemId === 'carrot').checked, true);
   assert.equal(list.items.find((item) => item.itemId === 'carrot').checked, false);
-  assert.equal(updated.items.find((item) => item.itemId === 'pepper').checked, false);
+  assert.equal(
+    updated.items.find((item) => item.itemId === 'pepper').checked,
+    false
+  );
 });

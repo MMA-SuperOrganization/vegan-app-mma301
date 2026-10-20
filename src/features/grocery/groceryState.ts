@@ -1,4 +1,5 @@
 import type { GroceryItem, GroceryList } from './types';
+import { addDays, parseDayMonthYear } from '../tracking/trackingState.ts';
 
 export interface GroceryGroup {
   category: string;
@@ -49,4 +50,15 @@ export function updateItemChecked(
       item.itemId === itemId ? { ...item, checked } : item
     ),
   };
+}
+export function groceryDateRange(
+  fromText: string,
+  toText: string,
+  weekStart: string
+) {
+  const from = parseDayMonthYear(fromText);
+  const to = parseDayMonthYear(toText);
+  if (!from || !to || from > to || from < weekStart || to > addDays(weekStart, 6))
+    return null;
+  return { from, to };
 }

@@ -6,6 +6,7 @@ import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
+import { parseNutritionTarget } from '../validation';
 
 export function NutritionProfileScreen() {
   const { t } = useTranslation();
@@ -30,17 +31,16 @@ export function NutritionProfileScreen() {
   const submit = async () => {
     const heightError = validateMeasurement(height, t('onboarding.height'), 50, 250);
     const weightError = validateMeasurement(weight, t('onboarding.weight'), 10, 500);
-    const parsedCalories = calories.trim() ? parseDecimal(calories) : null;
-    const parsedProtein = protein.trim() ? parseDecimal(protein) : null;
-    const parsedCarbs = carbs.trim() ? parseDecimal(carbs) : null;
-    const parsedFat = fat.trim() ? parseDecimal(fat) : null;
-    const caloriesError =
-      parsedCalories !== null && (parsedCalories < 500 || parsedCalories > 10000)
-        ? t('profile.nutritionCaloriesRange')
-        : null;
-    const proteinError = targetError(parsedProtein, 500, t('profile.proteinRange'));
-    const carbsError = targetError(parsedCarbs, 1500, t('profile.carbsRange'));
-    const fatError = targetError(parsedFat, 500, t('profile.fatRange'));
+    const calorieTarget = parseNutritionTarget(calories, 500, 10000);
+    const proteinTarget = parseNutritionTarget(protein, 0, 500);
+    const carbTarget = parseNutritionTarget(carbs, 0, 1500);
+    const fatTarget = parseNutritionTarget(fat, 0, 500);
+    const caloriesError = calorieTarget.valid
+      ? null
+      : t('profile.nutritionCaloriesRange');
+    const proteinError = proteinTarget.valid ? null : t('profile.proteinRange');
+    const carbsError = carbTarget.valid ? null : t('profile.carbsRange');
+    const fatError = fatTarget.valid ? null : t('profile.fatRange');
     setValidation(
       heightError ??
         weightError ??
@@ -64,10 +64,10 @@ export function NutritionProfileScreen() {
     await save({
       heightCm,
       currentWeightKg,
-      ...(parsedCalories !== null ? { dailyCalorieTarget: parsedCalories } : {}),
-      ...(parsedProtein !== null ? { proteinTargetG: parsedProtein } : {}),
-      ...(parsedCarbs !== null ? { carbTargetG: parsedCarbs } : {}),
-      ...(parsedFat !== null ? { fatTargetG: parsedFat } : {}),
+      dailyCalorieTarget: calorieTarget.value,
+      proteinTargetG: proteinTarget.value,
+      carbTargetG: carbTarget.value,
+      fatTargetG: fatTarget.value,
     });
   };
 
@@ -164,7 +164,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
 });
-
-function targetError(value: number | null, max: number, message: string) {
-  return value !== null && (value <= 0 || value > max) ? message : null;
-}

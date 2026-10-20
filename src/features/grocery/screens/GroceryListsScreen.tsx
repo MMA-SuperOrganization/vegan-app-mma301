@@ -39,6 +39,11 @@ export function GroceryListsScreen() {
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('grocery.subtitle')}
         </AppText>
+        <AppButton
+          title={t('pantry.open')}
+          variant="outline"
+          onPress={() => router.push('/pantry')}
+        />
         <View style={styles.filters}>
           {statuses.map((value) => (
             <FilterChip

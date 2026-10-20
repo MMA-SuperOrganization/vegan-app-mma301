@@ -44,6 +44,8 @@ The exact per-screen evidence is in `SCREEN_IMPLEMENTATION_MATRIX.md`. The histo
 
 ## Next implementation groups
 
+Pantry checkpoint (2026-10-20): manual inventory and ingredient editing are now integrated at `/pantry` and `/pantry/item`, reachable from Grocery. Search, expiry filters, authenticated CRUD, Vietnamese/English, validation and error/retry are implemented. Mobile web QA at 390 × 844 uses the real frontend and an injected backend with in-memory persistence; native QA is still separate. See `docs/PANTRY.md`. Scheduled expiry reminders and bulk-add UI remain outside this checkpoint.
+
 1. Complete community discovery: reviews, blog, comments and video (screens 16, 18–24).
 2. Pantry, ingredient detail/editing and expiry reminders (screens 25–28, 103).
 3. AI assistant, recognition and history (screens 29–30, 34–37, 96).

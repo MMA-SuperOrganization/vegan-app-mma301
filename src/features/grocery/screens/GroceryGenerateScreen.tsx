@@ -22,6 +22,8 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { useGroceryActions } from '../hooks';
+import { groceryDateRange } from '../groceryState';
+import { addDays, formatDayMonthYear } from '@/features/tracking/trackingState';
 
 export function GroceryGenerateScreen() {
   const router = useRouter();
@@ -32,12 +34,36 @@ export function GroceryGenerateScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [name, setName] = useState('');
+  const [rangeDraft, setRangeDraft] = useState<{
+    week: string;
+    from: string;
+    to: string;
+  } | null>(null);
+  const fromText =
+    rangeDraft?.week === weekStartDate
+      ? rangeDraft.from
+      : formatDayMonthYear(weekStartDate);
+  const toText =
+    rangeDraft?.week === weekStartDate
+      ? rangeDraft.to
+      : formatDayMonthYear(addDays(weekStartDate, 6));
+  const range = groceryDateRange(fromText, toText, weekStartDate);
   const planQuery = useMealPlan(weekStartDate);
   const actions = useGroceryActions();
   const plan = planQuery.data;
   const dishCount = useMemo(
-    () => plan?.days.reduce((total, day) => total + day.meals.length, 0) ?? 0,
-    [plan?.days]
+    () =>
+      range
+        ? (plan?.days.reduce(
+            (total, day) =>
+              total +
+              (day.date >= range.from && day.date <= range.to
+                ? day.meals.length
+                : 0),
+            0
+          ) ?? 0)
+        : 0,
+    [plan?.days, range?.from, range?.to]
   );
 
   const moveToWeek = (weekDelta: number) => {
@@ -55,11 +81,12 @@ export function GroceryGenerateScreen() {
   };
 
   const generate = async () => {
-    if (!plan || dishCount === 0 || actions.generate.isPending) return;
+    if (!plan || !range || dishCount === 0 || actions.generate.isPending) return;
     try {
       const list = await actions.generate.mutateAsync({
         planId: plan._id,
         name: name.trim() || undefined,
+        range,
       });
       router.replace({ pathname: '/(grocery)/[id]', params: { id: list._id } });
     } catch {
@@ -110,6 +137,29 @@ export function GroceryGenerateScreen() {
           {plan ? (
             <View style={styles.planCard}>
               <AppText variant="heading4">{plan.title}</AppText>
+              <AppInput
+                label={t('grocery.fromDate')}
+                value={fromText}
+                placeholder="DD/MM/YYYY"
+                editable={!actions.generate.isPending}
+                onChangeText={(from) =>
+                  setRangeDraft({ week: weekStartDate, from, to: toText })
+                }
+              />
+              <AppInput
+                label={t('grocery.toDate')}
+                value={toText}
+                placeholder="DD/MM/YYYY"
+                editable={!actions.generate.isPending}
+                onChangeText={(to) =>
+                  setRangeDraft({ week: weekStartDate, from: fromText, to })
+                }
+              />
+              {!range ? (
+                <AppText color={colors.status.danger}>
+                  {t('grocery.dateRangeError')}
+                </AppText>
+              ) : null}
               <AppText color={colors.text.secondary}>
                 {t('grocery.generateDishCount', { count: dishCount })}
               </AppText>
@@ -138,7 +188,7 @@ export function GroceryGenerateScreen() {
           <AppButton
             title={t('grocery.generateAction')}
             loading={actions.generate.isPending}
-            disabled={!plan || dishCount === 0}
+            disabled={!plan || !range || dishCount === 0}
             onPress={() => void generate()}
           />
         </View>

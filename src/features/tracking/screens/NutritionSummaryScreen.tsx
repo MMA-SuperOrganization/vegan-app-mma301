@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -12,6 +12,8 @@ import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { MacroDonutChart, type MacroSlice } from '../components/MacroDonutChart';
 import { TrackingQueryState } from '../components/TrackingQueryState';
+import { CalendarSheet } from '../components/CalendarSheet';
+import { WeekStrip } from '../components/WeekStrip';
 import {
   useDiary,
   useDiarySummary,
@@ -32,8 +34,10 @@ export function NutritionSummaryScreen() {
   const { t } = useTranslation();
   const { formatLongDate, formatNumber, mealLabel } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
-  // The day comes from the diary screen, which owns day selection.
-  const date = isLocalIsoDate(params.date) ? params.date : today;
+  const [date, setDate] = useState(
+    isLocalIsoDate(params.date) ? params.date : today
+  );
+  const [pickerVisible, setPickerVisible] = useState(false);
   const summary = useDiarySummary(date);
   const diary = useDiary(date);
   const profileTargets = useTrackingTargets();
@@ -46,9 +50,12 @@ export function NutritionSummaryScreen() {
     [diaryEntries, date]
   );
   const shares = nutrition ? macroEnergyShares(nutrition) : null;
-  const ready = !summary.isLoading && !summary.isError && Boolean(nutrition);
-  // An earlier day with nothing logged shows only "no data", like the diary.
-  const isPastWithoutData = date !== today && (summary.data?.entryCount ?? 0) === 0;
+  const ready =
+    !summary.isLoading &&
+    !summary.isError &&
+    !diary.isLoading &&
+    !diary.isError &&
+    Boolean(nutrition);
 
   const slices: MacroSlice[] =
     shares && nutrition
@@ -93,131 +100,154 @@ export function NutritionSummaryScreen() {
     : t('tracking.summary.mealsEmpty');
 
   return (
-    <ScreenWrapper
-      scrollable
-      keyboardAvoiding={false}
-      edges={['top', 'left', 'right', 'bottom']}
-      contentContainerStyle={styles.screen}
-      header={
-        <CustomHeader
-          title={t('tracking.summary.title')}
-          showBack
-          backFallbackHref="/(tracking)/food-diary"
-        />
-      }
-    >
-      <View style={styles.content}>
-        <TrackingQueryState
-          loading={summary.isLoading}
-          error={summary.isError}
-          onRetry={() => void summary.refetch()}
-        />
-        {ready && isPastWithoutData ? (
-          <AppText color={colors.text.secondary} style={styles.noData}>
-            {t('tracking.day.noData')}
-          </AppText>
-        ) : null}
-        {ready && nutrition && !isPastWithoutData ? (
-          <>
-            <View style={styles.heading}>
-              <AppText variant="heading3">{formatLongDate(date)}</AppText>
-              <AppText color={colors.text.secondary}>
-                {t('tracking.summary.entryCount', {
-                  count: summary.data?.entryCount ?? 0,
-                })}
-              </AppText>
-            </View>
-            <View style={styles.grid}>
-              <NutritionTargetCard
-                label={t('tracking.summary.calories')}
-                value={nutrition.caloriesKcal}
-                target={targets?.caloriesKcal ?? profileTargets.energyKcal}
-                unit="kcal"
-                formatNumber={formatNumber}
-                style={styles.card}
-              />
-              <NutritionTargetCard
-                label={t('tracking.summary.protein')}
-                value={nutrition.proteinG}
-                target={targets?.proteinG ?? profileTargets.proteinG}
-                unit="g"
-                formatNumber={formatNumber}
-                style={styles.card}
-              />
-              <NutritionTargetCard
-                label={t('tracking.summary.carbs')}
-                value={nutrition.carbsG}
-                target={targets?.carbsG ?? profileTargets.carbsG}
-                unit="g"
-                formatNumber={formatNumber}
-                style={styles.card}
-              />
-              <NutritionTargetCard
-                label={t('tracking.summary.fat')}
-                value={nutrition.fatG}
-                target={targets?.fatG ?? profileTargets.fatG}
-                unit="g"
-                formatNumber={formatNumber}
-                style={styles.card}
-              />
-              <NutritionTargetCard
-                label={t('tracking.summary.fiber')}
-                value={nutrition.fiberG}
-                target={targets?.fiberG ?? profileTargets.fiberG}
-                unit="g"
-                formatNumber={formatNumber}
-                style={styles.card}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <AppText variant="heading4">
-                {t('tracking.summary.macroTitle')}
-              </AppText>
-              {slices.length ? (
-                <MacroDonutChart
-                  slices={slices}
-                  accessibilityLabel={t('tracking.summary.macroA11y', {
-                    carbs: shares?.carbs ?? 0,
-                    protein: shares?.protein ?? 0,
-                    fat: shares?.fat ?? 0,
-                  })}
-                />
-              ) : (
-                <AppText variant="bodySmall" color={colors.text.secondary}>
-                  {t('tracking.summary.macroEmpty')}
-                </AppText>
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <AppText variant="heading4">
-                {t('tracking.summary.mealsTitle')}
-              </AppText>
-              <AppText color={colors.text.secondary}>{mealsLine}</AppText>
-            </View>
-
-            <AppText variant="bodySmall" color={colors.text.secondary}>
-              {t('tracking.summary.description')}
+    <>
+      <ScreenWrapper
+        scrollable
+        keyboardAvoiding={false}
+        edges={['top', 'left', 'right', 'bottom']}
+        contentContainerStyle={styles.screen}
+        header={
+          <CustomHeader
+            title={t('tracking.summary.title')}
+            showBack
+            onBack={() =>
+              router.dismissTo({
+                pathname: '/(tracking)/food-diary',
+                params: { date },
+              })
+            }
+            backFallbackHref={{
+              pathname: '/(tracking)/food-diary',
+              params: { date },
+            }}
+            rightAction={{
+              icon: 'calendar',
+              accessibilityLabel: t('tracking.day.chooseDate'),
+              onPress: () => setPickerVisible(true),
+            }}
+          />
+        }
+      >
+        <View style={styles.content}>
+          <WeekStrip date={date} onChange={setDate} />
+          <TrackingQueryState
+            loading={summary.isLoading || diary.isLoading}
+            error={summary.isError || diary.isError}
+            onRetry={() => void Promise.all([summary.refetch(), diary.refetch()])}
+          />
+          {ready && summary.data?.entryCount === 0 ? (
+            <AppText color={colors.text.secondary} style={styles.noData}>
+              {t('tracking.day.noData')}
             </AppText>
+          ) : null}
+          {ready && nutrition ? (
+            <>
+              <View style={styles.heading}>
+                <AppText variant="heading3">{formatLongDate(date)}</AppText>
+                <AppText color={colors.text.secondary}>
+                  {t('tracking.summary.entryCount', {
+                    count: summary.data?.entryCount ?? 0,
+                  })}
+                </AppText>
+              </View>
+              <View style={styles.grid}>
+                <NutritionTargetCard
+                  label={t('tracking.summary.calories')}
+                  value={nutrition.caloriesKcal}
+                  target={targets?.caloriesKcal ?? profileTargets.energyKcal}
+                  unit="kcal"
+                  formatNumber={formatNumber}
+                  style={styles.card}
+                />
+                <NutritionTargetCard
+                  label={t('tracking.summary.protein')}
+                  value={nutrition.proteinG}
+                  target={targets?.proteinG ?? profileTargets.proteinG}
+                  unit="g"
+                  formatNumber={formatNumber}
+                  style={styles.card}
+                />
+                <NutritionTargetCard
+                  label={t('tracking.summary.carbs')}
+                  value={nutrition.carbsG}
+                  target={targets?.carbsG ?? profileTargets.carbsG}
+                  unit="g"
+                  formatNumber={formatNumber}
+                  style={styles.card}
+                />
+                <NutritionTargetCard
+                  label={t('tracking.summary.fat')}
+                  value={nutrition.fatG}
+                  target={targets?.fatG ?? profileTargets.fatG}
+                  unit="g"
+                  formatNumber={formatNumber}
+                  style={styles.card}
+                />
+                <NutritionTargetCard
+                  label={t('tracking.summary.fiber')}
+                  value={nutrition.fiberG}
+                  target={targets?.fiberG ?? profileTargets.fiberG}
+                  unit="g"
+                  formatNumber={formatNumber}
+                  style={styles.card}
+                />
+              </View>
 
-            <AppButton
-              title={t('tracking.summary.editTargets')}
-              onPress={() => router.push('/nutrition-profile')}
-            />
+              <View style={styles.section}>
+                <AppText variant="heading4">
+                  {t('tracking.summary.macroTitle')}
+                </AppText>
+                {slices.length ? (
+                  <MacroDonutChart
+                    slices={slices}
+                    accessibilityLabel={t('tracking.summary.macroA11y', {
+                      carbs: shares?.carbs ?? 0,
+                      protein: shares?.protein ?? 0,
+                      fat: shares?.fat ?? 0,
+                    })}
+                  />
+                ) : (
+                  <AppText variant="bodySmall" color={colors.text.secondary}>
+                    {t('tracking.summary.macroEmpty')}
+                  </AppText>
+                )}
+              </View>
 
-            <View style={styles.note}>
-              <AppText variant="bodyStrong" color={colors.text.secondary}>
-                {t('tracking.summary.historyTitle')}
-              </AppText>
+              <View style={styles.section}>
+                <AppText variant="heading4">
+                  {t('tracking.summary.mealsTitle')}
+                </AppText>
+                <AppText color={colors.text.secondary}>{mealsLine}</AppText>
+              </View>
+
               <AppText variant="bodySmall" color={colors.text.secondary}>
-                {t('tracking.summary.historyBody')}
+                {t('tracking.summary.description')}
               </AppText>
-            </View>
-          </>
-        ) : null}
-      </View>
-    </ScreenWrapper>
+
+              <AppButton
+                title={t('tracking.summary.editTargets')}
+                onPress={() => router.push('/nutrition-profile')}
+              />
+
+              <View style={styles.note}>
+                <AppText variant="bodyStrong" color={colors.text.secondary}>
+                  {t('tracking.summary.historyTitle')}
+                </AppText>
+                <AppText variant="bodySmall" color={colors.text.secondary}>
+                  {t('tracking.summary.historyBody')}
+                </AppText>
+              </View>
+            </>
+          ) : null}
+        </View>
+      </ScreenWrapper>
+      <CalendarSheet
+        visible={pickerVisible}
+        selectedDate={date}
+        onSelect={setDate}
+        onClose={() => setPickerVisible(false)}
+      />
+    </>
   );
 }
 

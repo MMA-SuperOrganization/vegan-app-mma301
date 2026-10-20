@@ -3,7 +3,7 @@ import { AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { toLocalIsoDate, weekDays } from '../trackingState';
+import { addDays, toLocalIsoDate, weekDays } from '../trackingState';
 
 export interface WeekStripProps {
   /** Selected local day, `YYYY-MM-DD`. */
@@ -13,13 +13,47 @@ export interface WeekStripProps {
 
 /** The selected day's week as tappable day pills; future days are disabled. */
 export function WeekStrip({ date, onChange }: WeekStripProps) {
-  const { locale } = useTranslation();
+  const { locale, t } = useTranslation();
   const { formatLongDate, formatMonthYear } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
   const localeTag = locale === 'vi' ? 'vi-VN' : 'en-US';
 
   return (
     <View style={styles.container}>
+      <View style={styles.navigation}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('tracking.day.previous')}
+          onPress={() => onChange(addDays(date, -1))}
+          style={styles.navigationButton}
+        >
+          <AppText color={colors.primary[700]}>
+            ‹ {t('tracking.day.previous')}
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('tracking.day.today')}
+          onPress={() => onChange(today)}
+          style={styles.navigationButton}
+        >
+          <AppText color={colors.primary[700]}>{t('tracking.day.today')}</AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('tracking.day.next')}
+          accessibilityState={{ disabled: date >= today }}
+          disabled={date >= today}
+          onPress={() => onChange(addDays(date, 1))}
+          style={styles.navigationButton}
+        >
+          <AppText
+            color={date >= today ? colors.text.secondary : colors.primary[700]}
+          >
+            {t('tracking.day.next')} ›
+          </AppText>
+        </Pressable>
+      </View>
       <AppText
         variant="bodyStrong"
         color={colors.text.secondary}
@@ -76,6 +110,16 @@ export function WeekStrip({ date, onChange }: WeekStripProps) {
 }
 
 const styles = StyleSheet.create({
+  navigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  navigationButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
   container: { gap: spacing.sm },
   month: { textTransform: 'capitalize' },
   row: { flexDirection: 'row', gap: spacing.xs },

@@ -51,8 +51,15 @@ export function useGroceryActions(listId?: string) {
     onSuccess: storeList,
   });
   const generate = useMutation({
-    mutationFn: ({ planId, name }: { planId: string; name?: string }) =>
-      groceryApi.generateFromMealPlan(planId, name),
+    mutationFn: ({
+      planId,
+      name,
+      range,
+    }: {
+      planId: string;
+      name?: string;
+      range?: { from: string; to: string };
+    }) => groceryApi.generateFromMealPlan(planId, name, range),
     onSuccess: storeList,
   });
   const update = useMutation({

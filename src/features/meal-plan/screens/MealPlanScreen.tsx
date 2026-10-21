@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { isLocalIsoDate } from '@/features/tracking/trackingState';
 import { Alert, StyleSheet, View } from 'react-native';
 import {
   AppText,
+  AppButton,
   CustomHeader,
   NutritionTargetCard,
   SearchPickerSheet,
@@ -34,25 +37,38 @@ import {
 import type { PlannedMeal } from '../types';
 
 export function MealPlanScreen() {
+  const params = useLocalSearchParams<{ planId?: string; date?: string }>();
+  const router = useRouter();
   const { locale, t } = useTranslation();
   const { formatNumber, formatShortDate, mealLabel } = useTrackingFormat();
   const today = toIsoDate(new Date());
   const currentWeekStartDate = startOfWeek(new Date());
-  const [weekStartDate, setWeekStartDate] = useState(currentWeekStartDate);
-  const [selectedDate, setSelectedDate] = useState(today);
+  const initialDate = isLocalIsoDate(params.date || '') ? params.date! : today;
+  const [weekStartDate, setWeekStartDate] = useState(
+    params.planId ? initialDate : startOfWeek(new Date(initialDate + 'T12:00:00'))
+  );
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  useEffect(() => {
+    if (!params.planId || !isLocalIsoDate(params.date || '')) return;
+    setWeekStartDate(params.date!);
+    setSelectedDate(params.date!);
+    setConfirmActivation(false);
+  }, [params.planId, params.date]);
   const [weekPickerVisible, setWeekPickerVisible] = useState(false);
   const [pickerMealType, setPickerMealType] = useState<MealType | null>(null);
   const [replacementMeal, setReplacementMeal] = useState<PlannedMeal | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [confirmActivation, setConfirmActivation] = useState(false);
 
-  const planQuery = useMealPlan(weekStartDate);
-  const actions = useMealPlanActions(weekStartDate);
+  const planQuery = useMealPlan(weekStartDate, params.planId);
+  const actions = useMealPlanActions(weekStartDate, params.planId);
   const targets = useTrackingTargets();
   const recipeOptions = useRecipeOptions(
     searchQuery,
     pickerMealType !== null || replacementMeal !== null
   );
   const plan = planQuery.data;
+  const readOnly = Boolean(plan && !['draft', 'active'].includes(plan.status));
   const selectedMeals = mealsForDate(plan, selectedDate);
   const groupedMeals = groupMealsByType(selectedMeals);
   const visibleMealTypes = groupedMeals.snack.length
@@ -62,11 +78,13 @@ export function MealPlanScreen() {
   const pending =
     actions.addMeal.isPending ||
     actions.updateMeal.isPending ||
-    actions.removeMeal.isPending;
+    actions.removeMeal.isPending ||
+    actions.activate.isPending;
   const saveError =
     actions.addMeal.isError ||
     actions.updateMeal.isError ||
-    actions.removeMeal.isError;
+    actions.removeMeal.isError ||
+    actions.activate.isError;
 
   const mealCounts = useMemo(
     () =>
@@ -90,7 +108,7 @@ export function MealPlanScreen() {
   );
 
   const addRecipe = (recipeId: string) => {
-    if (pending) return;
+    if (pending || readOnly) return;
     if (replacementMeal && plan) {
       actions.updateMeal.mutate(
         {
@@ -123,7 +141,7 @@ export function MealPlanScreen() {
   };
 
   const changeServings = (meal: PlannedMeal, delta: number) => {
-    if (!plan) return;
+    if (!plan || pending || readOnly) return;
     const servings = nextServingCount(meal.servings, delta);
     if (servings === meal.servings) return;
     actions.updateMeal.mutate({
@@ -134,7 +152,7 @@ export function MealPlanScreen() {
   };
 
   const confirmRemove = (meal: PlannedMeal) => {
-    if (!plan) return;
+    if (!plan || pending || readOnly) return;
     Alert.alert(
       t('mealPlan.removeConfirmTitle'),
       t('mealPlan.removeConfirmBody', { name: meal.recipeSnapshot.title }),
@@ -151,17 +169,20 @@ export function MealPlanScreen() {
   };
 
   const moveToWeek = (weekDelta: number) => {
+    router.setParams({ planId: undefined });
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
     setSelectedDate(next.selectedDate);
   };
 
   const returnToCurrentWeek = () => {
+    router.setParams({ planId: undefined });
     setWeekStartDate(currentWeekStartDate);
     setSelectedDate(today);
   };
 
   const selectWeek = (nextWeekStartDate: string) => {
+    router.setParams({ planId: undefined });
     const weekDelta = relativeWeekOffset(weekStartDate, nextWeekStartDate);
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
@@ -178,6 +199,59 @@ export function MealPlanScreen() {
         header={<CustomHeader title={t('mealPlan.title')} showBack={false} />}
       >
         <View style={styles.content}>
+          {params.planId && plan ? (
+            <View style={{ gap: spacing.sm }}>
+              <AppText variant="heading3">{plan.title}</AppText>
+              <AppText>
+                {plan.status === 'active'
+                  ? locale === 'vi'
+                    ? 'Thực đơn đang dùng'
+                    : 'Active meal plan'
+                  : locale === 'vi'
+                    ? 'Thực đơn đã lưu'
+                    : 'Saved meal plan'}
+              </AppText>
+              {plan.status === 'draft' ? (
+                confirmActivation ? (
+                  <>
+                    <AppText>
+                      {locale === 'vi'
+                        ? 'Thực đơn đang dùng của cùng tuần sẽ được lưu trữ. Xác nhận dùng thực đơn này?'
+                        : 'The current active plan for this week will be archived. Activate this plan?'}
+                    </AppText>
+                    <AppButton
+                      title={
+                        locale === 'vi'
+                          ? 'Xác nhận dùng thực đơn'
+                          : 'Confirm activation'
+                      }
+                      disabled={pending}
+                      loading={actions.activate.isPending}
+                      onPress={() =>
+                        actions.activate.mutate(plan._id, {
+                          onSuccess: () => setConfirmActivation(false),
+                        })
+                      }
+                    />
+                    <AppButton
+                      title={locale === 'vi' ? 'Hủy' : 'Cancel'}
+                      variant="ghost"
+                      disabled={pending}
+                      onPress={() => setConfirmActivation(false)}
+                    />
+                  </>
+                ) : (
+                  <AppButton
+                    title={
+                      locale === 'vi' ? 'Dùng thực đơn này' : 'Activate this plan'
+                    }
+                    disabled={pending}
+                    onPress={() => setConfirmActivation(true)}
+                  />
+                )
+              ) : null}
+            </View>
+          ) : null}
           <WeekNavigator
             weekStartDate={weekStartDate}
             currentWeekStartDate={currentWeekStartDate}
@@ -262,7 +336,7 @@ export function MealPlanScreen() {
                   key={mealType}
                   title={mealLabel(mealType)}
                   meals={groupedMeals[mealType]}
-                  pending={pending}
+                  pending={pending || readOnly}
                   formatNumber={formatNumber}
                   onAdd={() => setPickerMealType(mealType)}
                   onReplace={(meal) => setReplacementMeal(meal)}
@@ -290,7 +364,7 @@ export function MealPlanScreen() {
         query={searchQuery}
         onQueryChange={setSearchQuery}
         items={pickerItems}
-        isLoading={recipeOptions.isLoading || actions.addMeal.isPending}
+        isLoading={recipeOptions.isLoading || pending}
         isError={recipeOptions.isError}
         onRetry={() => void recipeOptions.refetch()}
         onSelect={addRecipe}

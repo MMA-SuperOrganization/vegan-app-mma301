@@ -8,6 +8,7 @@ import {
   CustomHeader,
   EmptyState,
   ScreenWrapper,
+  Toggle,
 } from '@/components';
 import { WeekNavigator } from '@/features/meal-plan/components/WeekNavigator';
 import { WeekPickerSheet } from '@/features/meal-plan/components/WeekPickerSheet';
@@ -27,7 +28,8 @@ import { addDays, formatDayMonthYear } from '@/features/tracking/trackingState';
 
 export function GroceryGenerateScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const [subtractPantry, setSubtractPantry] = useState(false);
   const today = toIsoDate(new Date());
   const currentWeekStartDate = startOfWeek(new Date());
   const [weekStartDate, setWeekStartDate] = useState(currentWeekStartDate);
@@ -87,6 +89,7 @@ export function GroceryGenerateScreen() {
         planId: plan._id,
         name: name.trim() || undefined,
         range,
+        subtractPantry,
       });
       router.replace({ pathname: '/(grocery)/[id]', params: { id: list._id } });
     } catch {
@@ -137,6 +140,16 @@ export function GroceryGenerateScreen() {
           {plan ? (
             <View style={styles.planCard}>
               <AppText variant="heading4">{plan.title}</AppText>
+              <Toggle
+                label={
+                  locale === 'vi'
+                    ? 'Trừ nguyên liệu đang có trong kho'
+                    : 'Subtract ingredients available in pantry'
+                }
+                value={subtractPantry}
+                onValueChange={setSubtractPantry}
+                disabled={actions.generate.isPending}
+              />
               <AppInput
                 label={t('grocery.fromDate')}
                 value={fromText}

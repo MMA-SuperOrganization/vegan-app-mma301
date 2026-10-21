@@ -45,6 +45,7 @@ export interface UserProfile {
 
 export interface ProfileUpdate {
   displayName: string;
+  gender?: PersonalProfile['gender'] | null;
   bio?: string;
   dateOfBirth?: string | null;
   timezone?: string;

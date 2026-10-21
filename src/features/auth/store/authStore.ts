@@ -121,7 +121,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       await authApi.logout();
-    } finally {
       set({
         user: null,
         token: null,
@@ -129,6 +128,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: captureError(
+          error,
+          'logout',
+          translate('error.unexpected'),
+          'LOGOUT_FAILED'
+        ),
+      });
+      throw error;
     }
   },
 

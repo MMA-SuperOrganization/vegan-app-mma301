@@ -1,6 +1,14 @@
 import type { FoodUnit } from '@/features/tracking/types';
 
 export type PantryUnit = FoodUnit;
+export interface IngredientReviewValue {
+  foodItemId?: string;
+  name: string;
+  quantity: number;
+  unit: FoodUnit;
+  expiryDate?: string;
+  reviewKey?: string;
+}
 
 export interface PantryItem {
   itemId: string;

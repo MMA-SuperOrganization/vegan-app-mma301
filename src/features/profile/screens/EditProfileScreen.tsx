@@ -17,6 +17,8 @@ import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 import { isValidIanaTimezone, validateProfileText } from '../validation';
+import { SelectionField } from '@/features/onboarding/components/SelectionField';
+import type { PersonalProfile } from '../types';
 
 export function EditProfileScreen() {
   const goBack = useSafeBack('/(tabs)/profile');
@@ -26,6 +28,9 @@ export function EditProfileScreen() {
   const isSaving = useProfileStore((state) => state.isSaving);
   const storeError = useProfileStore((state) => state.error);
   const [name, setName] = useState(data?.user.name ?? '');
+  const [gender, setGender] = useState<NonNullable<PersonalProfile['gender']>>(
+    data?.profile?.gender ?? 'prefer_not_to_say'
+  );
   const [bio, setBio] = useState(data?.profile?.bio ?? '');
   const [dateOfBirth, setDateOfBirth] = useState(
     toDateInput(data?.profile?.dateOfBirth)
@@ -62,6 +67,7 @@ export function EditProfileScreen() {
     if (
       await update({
         displayName: name.trim(),
+        gender,
         bio: bio.trim(),
         dateOfBirth: dateOfBirth.trim()
           ? (dateInputToIso(dateOfBirth) ?? undefined)
@@ -101,6 +107,15 @@ export function EditProfileScreen() {
           keyboardType="number-pad"
           placeholder="DD/MM/YYYY"
           error={errors.dateOfBirth}
+        />
+        <SelectionField
+          label={t('profile.gender')}
+          placeholder={t('profile.gender')}
+          value={gender}
+          onChange={setGender}
+          options={(
+            ['female', 'male', 'non_binary', 'other', 'prefer_not_to_say'] as const
+          ).map((value) => ({ value, label: t(`profile.gender.${value}`) }))}
         />
         <TimezonePickerField
           label={t('profile.timezone')}

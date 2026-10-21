@@ -20,12 +20,13 @@ export const groceryApi = {
   generateFromMealPlan: (
     planId: string,
     name?: string,
-    range?: { from: string; to: string }
+    range?: { from: string; to: string },
+    subtractPantry = false
   ) =>
     unwrapApiRequest<GroceryList>(() =>
       apiClient.post(`/meal-plans/${planId}/grocery-list`, {
         ...(name?.trim() ? { name: name.trim() } : {}),
-        subtractPantry: false,
+        subtractPantry,
         ...range,
       })
     ),

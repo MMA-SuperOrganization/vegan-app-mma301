@@ -161,6 +161,11 @@ export function PantryScreen() {
       </View>
       <View style={styles.footer}>
         <AppButton
+          title={locale === 'vi' ? 'Kho nâng cao' : 'Advanced pantry'}
+          variant="outline"
+          onPress={() => router.push('/pantry/advanced')}
+        />
+        <AppButton
           title={t('pantry.add')}
           onPress={() => router.push('/pantry/item')}
         />

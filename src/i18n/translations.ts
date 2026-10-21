@@ -1,4 +1,10 @@
 export const vi = {
+  'profile.gender': 'Giới tính',
+  'profile.gender.female': 'Nữ',
+  'profile.gender.male': 'Nam',
+  'profile.gender.non_binary': 'Phi nhị nguyên',
+  'profile.gender.other': 'Khác',
+  'profile.gender.prefer_not_to_say': 'Không muốn tiết lộ',
   'common.loadMore': 'Xem thêm',
   'pantry.title': 'Kho nguyên liệu',
   'pantry.open': 'Mở kho nguyên liệu',
@@ -886,6 +892,12 @@ export const vi = {
 export type TranslationKey = keyof typeof vi;
 
 export const en: Record<TranslationKey, string> = {
+  'profile.gender': 'Gender',
+  'profile.gender.female': 'Female',
+  'profile.gender.male': 'Male',
+  'profile.gender.non_binary': 'Non-binary',
+  'profile.gender.other': 'Other',
+  'profile.gender.prefer_not_to_say': 'Prefer not to say',
   'common.loadMore': 'Load more',
   'pantry.title': 'Pantry',
   'pantry.open': 'Open pantry',

@@ -13,6 +13,7 @@ import type {
   WeightLog,
 } from '../types';
 import { normalizeDiaryEntry } from '../trackingState';
+import { collectPages } from '@/services/api/collectPages';
 
 export interface DateRangeQuery {
   date?: string;
@@ -86,8 +87,10 @@ export type SaveWaterInput = Pick<WaterLog, 'amountMl' | 'recordedAt' | 'note'>;
 export const trackingApi = {
   diary: {
     list: async (query: DateRangeQuery) => {
-      const page = await unwrapApiPageRequest<DiaryEntry>(() =>
-        apiClient.get('/diary', { params: query })
+      const page = await collectPages((page) =>
+        unwrapApiPageRequest<DiaryEntry>(() =>
+          apiClient.get('/diary', { params: { ...query, page } })
+        )
       );
       return { ...page, data: page.data.map(normalizeDiaryEntry) };
     },
@@ -110,8 +113,10 @@ export const trackingApi = {
   },
   weight: {
     list: (query: DateRangeQuery) =>
-      unwrapApiPageRequest<WeightLog>(() =>
-        apiClient.get('/weight-logs', { params: query })
+      collectPages((page) =>
+        unwrapApiPageRequest<WeightLog>(() =>
+          apiClient.get('/weight-logs', { params: { ...query, page } })
+        )
       ),
     trend: (query: DateRangeQuery) =>
       unwrapApiRequest<WeightTrend>(() =>

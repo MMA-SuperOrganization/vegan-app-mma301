@@ -10,22 +10,28 @@ const mealPlanKeys = {
     [...mealPlanKeys.root(userId), 'week', weekStartDate] as const,
 };
 
-export function useMealPlan(weekStartDate: string) {
+export function useMealPlan(weekStartDate: string, planId?: string) {
   const userId = useAuthStore((state) => state.user?.id);
   return useQuery({
-    queryKey: mealPlanKeys.week(userId, weekStartDate),
+    queryKey: [...mealPlanKeys.week(userId, weekStartDate), planId ?? 'selected'],
     queryFn: async () =>
-      selectEditablePlan((await mealPlanApi.listWeek(weekStartDate)).data),
+      planId
+        ? mealPlanApi.detail(planId)
+        : selectEditablePlan((await mealPlanApi.listWeek(weekStartDate)).data),
     enabled: Boolean(userId),
   });
 }
 
-export function useMealPlanActions(weekStartDate: string) {
+export function useMealPlanActions(weekStartDate: string, planId?: string) {
   const client = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
-  const weekKey = mealPlanKeys.week(userId, weekStartDate);
+  const weekKey = [
+    ...mealPlanKeys.week(userId, weekStartDate),
+    planId ?? 'selected',
+  ];
   const storePlan = (plan: MealPlan) => {
     client.setQueryData(weekKey, plan);
+    void client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) });
   };
 
   const addMeal = useMutation({
@@ -66,5 +72,9 @@ export function useMealPlanActions(weekStartDate: string) {
     onSuccess: storePlan,
   });
 
-  return { addMeal, updateMeal, removeMeal };
+  const activate = useMutation({
+    mutationFn: mealPlanApi.activate,
+    onSuccess: storePlan,
+  });
+  return { addMeal, updateMeal, removeMeal, activate };
 }

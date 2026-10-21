@@ -7,21 +7,14 @@ import { spacing } from '@/theme';
 import { ContentResultCard } from './ContentResultCard';
 import type { SavedItemListProps } from '../types';
 
-export function SavedItemList({
-  items,
-  onOpenItem,
-  onExplore,
-}: SavedItemListProps) {
+export function SavedItemList({ items, onOpenItem, onExplore }: SavedItemListProps) {
   const { t } = useTranslation();
 
   return (
     <FlatList
       data={items}
       keyExtractor={(item) => item._id}
-      contentContainerStyle={[
-        styles.list,
-        !items.length && styles.emptyList,
-      ]}
+      contentContainerStyle={[styles.list, !items.length && styles.emptyList]}
       ItemSeparatorComponent={ListSeparator}
       ListEmptyComponent={
         <EmptyState
@@ -35,11 +28,7 @@ export function SavedItemList({
         item.target ? (
           <ContentResultCard
             item={{ ...item.target, type: item.targetType }}
-            onPress={
-              item.targetType === 'recipe' || item.targetType === 'food-item'
-                ? () => onOpenItem(item)
-                : undefined
-            }
+            onPress={() => onOpenItem(item)}
           />
         ) : (
           <EmptyState title={t('saved.unavailable')} />

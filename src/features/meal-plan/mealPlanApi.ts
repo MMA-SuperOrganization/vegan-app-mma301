@@ -5,6 +5,14 @@ import type { AddMealInput, MealPlan, UpdateMealInput } from './types';
 const normalize = (plan: MealPlan) => normalizeMealPlan(plan);
 
 export const mealPlanApi = {
+  activate: (id: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post('/meal-plans/' + id + '/activate', {})
+    ).then(normalize),
+  detail: (id: string) =>
+    unwrapApiRequest<MealPlan>(() => apiClient.get('/meal-plans/' + id)).then(
+      normalize
+    ),
   listWeek: (weekStartDate: string) =>
     unwrapApiPageRequest<MealPlan>(() =>
       apiClient.get('/meal-plans', {

@@ -75,6 +75,7 @@ export const profileApi = {
       apiClient.put('/profiles/me', {
         bio: values.bio?.trim() ?? '',
         dateOfBirth: values.dateOfBirth || null,
+        ...(values.gender !== undefined ? { gender: values.gender } : {}),
         timezone: values.timezone?.trim() || 'Asia/Ho_Chi_Minh',
       })
     );

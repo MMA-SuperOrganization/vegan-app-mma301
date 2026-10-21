@@ -55,11 +55,13 @@ export function useGroceryActions(listId?: string) {
       planId,
       name,
       range,
+      subtractPantry,
     }: {
       planId: string;
       name?: string;
       range?: { from: string; to: string };
-    }) => groceryApi.generateFromMealPlan(planId, name, range),
+      subtractPantry?: boolean;
+    }) => groceryApi.generateFromMealPlan(planId, name, range, subtractPantry),
     onSuccess: storeList,
   });
   const update = useMutation({

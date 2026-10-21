@@ -1,4 +1,5 @@
 import { getUserErrorMessage } from '@/services/errors';
+import { contentHref } from '../contentNavigation';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
@@ -22,17 +23,13 @@ export function SavedLibraryScreen() {
   const items = saved.data?.data ?? [];
 
   const openSavedItem = (item: SavedItem) => {
-    if (item.targetType === 'recipe') {
-      router.push({
-        pathname: '/(discover)/recipe/[id]',
-        params: { id: item.target?.slug ?? item.targetId },
-      });
-    } else if (item.targetType === 'food-item') {
-      router.push({
-        pathname: '/(discover)/food/[id]',
-        params: { id: item.targetId },
-      });
-    }
+    router.push(
+      contentHref({
+        _id: item.targetId,
+        slug: item.target?.slug,
+        type: item.targetType,
+      })
+    );
   };
 
   return (

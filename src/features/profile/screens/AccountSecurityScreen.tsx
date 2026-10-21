@@ -23,9 +23,13 @@ export function AccountSecurityScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const resetProfile = useProfileStore((state) => state.reset);
   const signOut = async () => {
-    await logout();
-    resetProfile();
-    router.replace('/(auth)/login');
+    try {
+      await logout();
+      resetProfile();
+      router.replace('/(auth)/login');
+    } catch {
+      // The auth store exposes the retryable error on this screen.
+    }
   };
   const deleteAccount = () =>
     Alert.alert(t('profile.deleteAccount'), t('profile.deleteAccountWarning'), [

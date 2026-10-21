@@ -23,7 +23,7 @@ import { useRecipeDetail } from '../hooks';
 
 export function RecipeDetailScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
@@ -140,6 +140,16 @@ export function RecipeDetailScreen() {
       <ContentSaveButton
         content={{ ...data, type: 'recipe' }}
         initialSaved={data.isSaved}
+      />
+      <AppButton
+        title={locale === 'vi' ? 'Báo cáo công thức' : 'Report recipe'}
+        variant="ghost"
+        onPress={() =>
+          router.push({
+            pathname: '/community/report',
+            params: { targetType: 'recipe', targetId: data._id },
+          })
+        }
       />
     </ScreenWrapper>
   );

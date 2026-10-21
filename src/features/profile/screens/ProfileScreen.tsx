@@ -84,6 +84,19 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      <MenuSection title={t('pantry.title')}>
+        <MenuItem
+          title={t('pantry.open')}
+          subtitle={t('pantry.subtitle')}
+          onPress={() => router.push('/pantry')}
+        />
+        <MenuItem
+          title={t('pantry.add')}
+          subtitle={t('pantry.addDescription')}
+          onPress={() => router.push('/pantry/item')}
+        />
+      </MenuSection>
+
       <MenuSection title={t('profile.healthSection')}>
         <MenuItem
           title={t('profile.nutrition')}

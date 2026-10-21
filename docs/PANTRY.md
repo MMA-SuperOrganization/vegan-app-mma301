@@ -1,6 +1,6 @@
 # Kho nguyên liệu / Pantry
 
-Mở **Mua sắm → Mở kho nguyên liệu** (English: **Grocery → Open pantry**).
+Trang **Cá nhân** có mục **Kho nguyên liệu**, với hai lựa chọn **Mở kho nguyên liệu** và **Thêm nguyên liệu** để vào form thêm trực tiếp. Tab **Mua sắm → Mở kho nguyên liệu** vẫn dùng chung màn hình quản lý kho.
 
 - `/pantry`: xem, tìm và lọc nguyên liệu theo tất cả / sắp hết hạn trong 7 ngày / đã hết hạn.
 - `/pantry/item`: chọn thực phẩm trong danh mục có tìm kiếm và tải thêm, nhập số lượng, đơn vị, hạn dùng và ghi chú để thêm.

@@ -10,6 +10,7 @@ import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { reminderApi } from './reminderApi';
 import { pushRegistrationKey } from './deviceRegistration';
+import { normalizePushRegistrationError } from './pushErrors';
 
 export function DevicePushRegistration() {
   const vi = useTranslation().locale === 'vi';
@@ -33,7 +34,11 @@ export function DevicePushRegistration() {
       });
       const permission = await Notifications.requestPermissionsAsync();
       if (!permission.granted) throw new Error('NOTIFICATION_PERMISSION_REQUIRED');
-      const token = await Notifications.getDevicePushTokenAsync();
+      const token = await Notifications.getDevicePushTokenAsync().catch(
+        (error: unknown) => {
+          throw normalizePushRegistrationError(error);
+        }
+      );
       const result = await reminderApi.registerDevice(String(token.data), 'Android');
       await storage.setItem(key, result.tokenId);
       setTokenId(result.tokenId);

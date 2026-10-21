@@ -47,3 +47,6 @@ serviceAccount*.json
 
 # typescript
 *.tsbuildinfo
+
+# Generated device/browser screenshots, UI dumps and run logs
+/test-results/

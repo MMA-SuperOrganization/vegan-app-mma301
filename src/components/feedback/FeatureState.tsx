@@ -19,6 +19,10 @@ export function FeatureState({
     (error as { code?: string; message?: string })?.code ||
     (error instanceof Error ? error.message : '');
   const messages: Record<string, [string, string]> = {
+    PUSH_CONFIGURATION_REQUIRED: [
+      'Bản Android này chưa được cấu hình nhận thông báo. Vui lòng liên hệ hỗ trợ để cập nhật ứng dụng.',
+      'Push notifications are not configured in this Android build. Contact support for an app update.',
+    ],
     AI_DISABLED: [
       'Dịch vụ AI chưa được bật trên máy chủ.',
       'AI is not enabled on the server.',

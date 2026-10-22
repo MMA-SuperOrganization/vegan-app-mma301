@@ -1,6 +1,10 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// Native Firebase is optional on checkouts without local provider configuration.
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -88,6 +92,15 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.ngocthang.veganapp'
+
+    // A short local staging path avoids Ninja's Windows path limit in deep checkouts.
+    if (findProperty('vegeta.cmakeStagingDirectory')) {
+        externalNativeBuild {
+            cmake {
+                buildStagingDirectory file(findProperty('vegeta.cmakeStagingDirectory'))
+            }
+        }
+    }
     defaultConfig {
         applicationId 'com.ngocthang.veganapp'
         minSdkVersion rootProject.ext.minSdkVersion

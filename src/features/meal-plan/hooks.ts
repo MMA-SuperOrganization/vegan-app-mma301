@@ -22,6 +22,15 @@ export function useMealPlan(weekStartDate: string, planId?: string) {
   });
 }
 
+export function useWeekMealPlans(weekStartDate: string) {
+  const userId = useAuthStore((state) => state.user?.id);
+  return useQuery({
+    queryKey: [...mealPlanKeys.root(userId), 'options', weekStartDate],
+    queryFn: () => mealPlanApi.listWeek(weekStartDate),
+    enabled: Boolean(userId),
+  });
+}
+
 export function useMealPlanActions(weekStartDate: string, planId?: string) {
   const client = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);

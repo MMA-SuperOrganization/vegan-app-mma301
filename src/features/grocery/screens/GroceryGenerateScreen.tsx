@@ -12,7 +12,9 @@ import {
 } from '@/components';
 import { WeekNavigator } from '@/features/meal-plan/components/WeekNavigator';
 import { WeekPickerSheet } from '@/features/meal-plan/components/WeekPickerSheet';
-import { useMealPlan } from '@/features/meal-plan/hooks';
+import { useWeekMealPlans } from '@/features/meal-plan/hooks';
+import { selectEditablePlan } from '@/features/meal-plan/mealPlanState';
+import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import {
   relativeWeekOffset,
   shiftWeekSelection,
@@ -36,6 +38,10 @@ export function GroceryGenerateScreen() {
   const [selectedDate, setSelectedDate] = useState(today);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [name, setName] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<{
+    week: string;
+    id: string;
+  } | null>(null);
   const [rangeDraft, setRangeDraft] = useState<{
     week: string;
     from: string;
@@ -50,9 +56,16 @@ export function GroceryGenerateScreen() {
       ? rangeDraft.to
       : formatDayMonthYear(addDays(weekStartDate, 6));
   const range = groceryDateRange(fromText, toText, weekStartDate);
-  const planQuery = useMealPlan(weekStartDate);
+  const planQuery = useWeekMealPlans(weekStartDate);
   const actions = useGroceryActions();
-  const plan = planQuery.data;
+  const plans = planQuery.data?.data ?? [];
+  const plan =
+    (selectedPlan?.week === weekStartDate
+      ? plans.find((candidate) => candidate._id === selectedPlan.id)
+      : null) ??
+    selectEditablePlan(plans) ??
+    plans[0] ??
+    null;
   const dishCount = useMemo(
     () =>
       range
@@ -131,6 +144,31 @@ export function GroceryGenerateScreen() {
             error={planQuery.isError}
             onRetry={() => void planQuery.refetch()}
           />
+          {plans.length ? (
+            <SelectionField
+              label={locale === 'vi' ? 'Chọn thực đơn' : 'Choose meal plan'}
+              placeholder=""
+              value={plan?._id ?? null}
+              options={plans.map((candidate) => ({
+                value: candidate._id,
+                label:
+                  candidate.title +
+                  ' · ' +
+                  (locale === 'vi'
+                    ? {
+                        draft: 'Bản nháp',
+                        active: 'Đang dùng',
+                        archived: 'Đã lưu trữ',
+                        completed: 'Đã hoàn tất',
+                      }[candidate.status]
+                    : candidate.status),
+              }))}
+              onChange={(id) => {
+                if (!actions.generate.isPending)
+                  setSelectedPlan({ week: weekStartDate, id });
+              }}
+            />
+          ) : null}
           {!planQuery.isLoading && !planQuery.isError && !plan ? (
             <EmptyState
               title={t('grocery.generateEmptyTitle')}

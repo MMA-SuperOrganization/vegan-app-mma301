@@ -1,5 +1,6 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { normalizeMealPlan } from './mealPlanState';
+import { collectPages } from '@/services/api/collectPages';
 import type { AddMealInput, MealPlan, UpdateMealInput } from './types';
 
 const normalize = (plan: MealPlan) => normalizeMealPlan(plan);
@@ -14,10 +15,12 @@ export const mealPlanApi = {
       normalize
     ),
   listWeek: (weekStartDate: string) =>
-    unwrapApiPageRequest<MealPlan>(() =>
-      apiClient.get('/meal-plans', {
-        params: { page: 1, limit: 10, weekStartDate },
-      })
+    collectPages((page) =>
+      unwrapApiPageRequest<MealPlan>(() =>
+        apiClient.get('/meal-plans', {
+          params: { page, limit: 100, weekStartDate },
+        })
+      )
     ).then((page) => ({ ...page, data: page.data.map(normalize) })),
   create: (weekStartDate: string) =>
     unwrapApiRequest<MealPlan>(() =>

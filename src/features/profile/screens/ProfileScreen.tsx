@@ -134,11 +134,27 @@ export function ProfileScreen() {
           onPress={() => router.push('/ai/ingredients')}
         />
         <MenuItem
+          title={vi ? 'Tóm tắt video bằng AI' : 'AI video summary'}
+          subtitle={
+            vi ? 'Tạo tóm tắt từ bản lời thoại' : 'Summarize a video transcript'
+          }
+          onPress={() => router.push('/ai/video-summary')}
+        />
+        <MenuItem
           title={vi ? 'Cộng đồng' : 'Community'}
           subtitle={
             vi ? 'Chia sẻ bài viết và bình luận' : 'Share posts and comments'
           }
           onPress={() => router.push('/community')}
+        />
+        <MenuItem
+          title={vi ? 'Công thức của tôi' : 'My recipes'}
+          subtitle={
+            vi
+              ? 'Tạo, chỉnh sửa và gửi duyệt công thức'
+              : 'Create, edit and submit recipes'
+          }
+          onPress={() => router.push('/recipes')}
         />
         <MenuItem
           title={vi ? 'Báo cáo của tôi' : 'My reports'}
@@ -186,6 +202,13 @@ export function ProfileScreen() {
       </MenuSection>
       <MenuSection title={t('profile.contentSection')}>
         <MenuItem
+          title={vi ? 'Lịch sử đã xem' : 'View history'}
+          subtitle={
+            vi ? 'Xem lại nội dung gần đây' : 'Revisit recently viewed content'
+          }
+          onPress={() => router.push('/view-history')}
+        />
+        <MenuItem
           title={t('profile.saved')}
           subtitle={t('profile.savedSubtitle')}
           onPress={() => router.push('/(discover)/saved')}
@@ -207,15 +230,35 @@ export function ProfileScreen() {
       </MenuSection>
       <MenuSection title={t('profile.settingsSection')}>
         {data.user.role === 'admin' ? (
-          <MenuItem
-            title={vi ? 'Kiểm duyệt' : 'Moderation'}
-            subtitle={
-              vi
-                ? 'Duyệt nội dung, báo cáo và hồ sơ xử lý'
-                : 'Review content, reports and moderation cases'
-            }
-            onPress={() => router.push('/moderation')}
-          />
+          <>
+            <MenuItem
+              title={vi ? 'Quản trị hệ thống' : 'Administration'}
+              subtitle={
+                vi
+                  ? 'Thống kê, tài khoản và audit log'
+                  : 'Metrics, accounts, and audit logs'
+              }
+              onPress={() => router.push('/admin')}
+            />
+            <MenuItem
+              title={vi ? 'Kiểm duyệt' : 'Moderation'}
+              subtitle={
+                vi
+                  ? 'Duyệt nội dung, báo cáo và hồ sơ xử lý'
+                  : 'Review content, reports and moderation cases'
+              }
+              onPress={() => router.push('/moderation')}
+            />
+            <MenuItem
+              title={vi ? 'Giám sát AI' : 'AI monitoring'}
+              subtitle={
+                vi
+                  ? 'Theo dõi lỗi, độ trễ và phản hồi'
+                  : 'Review failures, latency, and feedback'
+              }
+              onPress={() => router.push('/ai/monitoring')}
+            />
+          </>
         ) : null}
         <MenuItem
           title={t('profile.language')}

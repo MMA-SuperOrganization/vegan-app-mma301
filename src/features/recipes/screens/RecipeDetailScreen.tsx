@@ -1,5 +1,6 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
 import {
@@ -20,6 +21,9 @@ import { RecipeDetailTabs } from '../components/RecipeDetailTabs';
 import { RecipeHeroSection } from '../components/RecipeHeroSection';
 import { RecipeMacroCards } from '../components/RecipeMacroCards';
 import { useRecipeDetail } from '../hooks';
+import { engagementApi } from '@/features/engagement/engagementApi';
+import { RatingPanel } from '@/features/engagement/RatingPanel';
+import { DiscussionPanel } from '@/features/engagement/DiscussionPanel';
 
 export function RecipeDetailScreen() {
   const router = useRouter();
@@ -28,6 +32,12 @@ export function RecipeDetailScreen() {
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
+  useEffect(() => {
+    if (recipe.data?._id)
+      void engagementApi
+        .recordView('recipe', recipe.data._id)
+        .catch(() => undefined);
+  }, [recipe.data?._id]);
 
   if (recipe.isLoading) {
     return (
@@ -140,6 +150,12 @@ export function RecipeDetailScreen() {
       <ContentSaveButton
         content={{ ...data, type: 'recipe' }}
         initialSaved={data.isSaved}
+      />
+      <RatingPanel targetType="recipe" targetId={data._id} />
+      <DiscussionPanel
+        targetType="recipe"
+        targetId={data._id}
+        initialReaction={data.reacted}
       />
       <AppButton
         title={locale === 'vi' ? 'Báo cáo công thức' : 'Report recipe'}

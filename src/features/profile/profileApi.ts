@@ -5,6 +5,7 @@ import type {
   NutritionTargetsUpdate,
   ProfileUpdate,
   UserProfile,
+  PublicProfile,
 } from './types';
 import { translate } from '@/i18n';
 
@@ -26,6 +27,8 @@ interface ProfileSummaryDto {
 }
 
 export const profileApi = {
+  publicProfile: (userId: string) =>
+    unwrapApiRequest<PublicProfile>(() => apiClient.get(`/users/${userId}/public`)),
   getMe: async (): Promise<UserProfile> => {
     const summary = await unwrapApiRequest<ProfileSummaryDto>(() =>
       apiClient.get('/users/me')
@@ -69,11 +72,17 @@ export const profileApi = {
 
   async update(values: ProfileUpdate) {
     await unwrapApiRequest(() =>
-      apiClient.patch('/users/me', { displayName: values.displayName.trim() })
+      apiClient.patch('/users/me', {
+        displayName: values.displayName.trim(),
+        ...(values.avatarMediaId ? { avatarMediaId: values.avatarMediaId } : {}),
+      })
     );
     await unwrapApiRequest(() =>
       apiClient.put('/profiles/me', {
+        username: values.username?.trim().toLowerCase() || undefined,
         bio: values.bio?.trim() ?? '',
+        city: values.city?.trim() ?? '',
+        country: values.country?.trim() ?? '',
         dateOfBirth: values.dateOfBirth || null,
         ...(values.gender !== undefined ? { gender: values.gender } : {}),
         timezone: values.timezone?.trim() || 'Asia/Ho_Chi_Minh',
@@ -95,7 +104,12 @@ export const profileApi = {
   updateDietaryPreferences: (values: DietaryPreferencesUpdate) =>
     Promise.all([
       unwrapApiRequest(() =>
-        apiClient.put('/profiles/me', { dietType: values.dietType })
+        apiClient.put('/profiles/me', {
+          dietType: values.dietType,
+          preferredFoodItemIds: values.preferredFoodItemIds,
+          dislikedFoodItemIds: values.dislikedFoodItemIds,
+          excludedFoodItemIds: values.excludedFoodItemIds,
+        })
       ),
       unwrapApiRequest(() =>
         apiClient.put('/nutrition-profiles/me', {

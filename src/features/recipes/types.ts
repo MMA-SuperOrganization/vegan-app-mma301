@@ -16,6 +16,9 @@ export interface ContentCardData {
   totalMinutes?: number;
   ratingAverage?: number;
   ratingCount?: number;
+  reactionCount?: number;
+  commentCount?: number;
+  reacted?: string | null;
   allergenIds?: string[];
   nutritionPerServing?: NutritionFacts;
   nutritionPer100g?: NutritionFacts;
@@ -59,6 +62,13 @@ export interface FoodQuery {
 }
 
 export interface RecipeDetail extends ContentCardData {
+  categoryIds?: string[];
+  visibility?: 'public' | 'private' | 'unlisted';
+  coverMediaId?: string | null;
+  version?: number;
+  status?:
+    'draft' | 'pending_review' | 'published' | 'rejected' | 'hidden' | 'deleted';
+  rejectionReason?: string;
   summary?: string;
   servings?: number;
   prepMinutes?: number;
@@ -76,8 +86,30 @@ export interface RecipeDetail extends ContentCardData {
     order: number;
     instruction: string;
     timerSeconds?: number;
+    mediaId?: string | null;
   }>;
   isSaved?: boolean;
+}
+
+export interface RecipeAuthorInput {
+  title: string;
+  summary?: string;
+  coverMediaId?: string | null;
+  servings: number;
+  prepMinutes: number;
+  cookMinutes: number;
+  difficulty: RecipeDifficulty;
+  categoryIds?: string[];
+  tags?: string[];
+  ingredients: Array<{
+    foodItemId: string;
+    quantity: number;
+    unit: string;
+    order: number;
+    note?: string;
+  }>;
+  steps: Array<{ order: number; instruction: string; mediaId?: string | null }>;
+  visibility: 'public' | 'private' | 'unlisted';
 }
 
 export interface PaginationMeta {

@@ -79,12 +79,16 @@ export function MealPlanScreen() {
     actions.addMeal.isPending ||
     actions.updateMeal.isPending ||
     actions.removeMeal.isPending ||
-    actions.activate.isPending;
+    actions.activate.isPending ||
+    actions.setStatus.isPending ||
+    actions.clone.isPending;
   const saveError =
     actions.addMeal.isError ||
     actions.updateMeal.isError ||
     actions.removeMeal.isError ||
-    actions.activate.isError;
+    actions.activate.isError ||
+    actions.setStatus.isError ||
+    actions.clone.isError;
 
   const mealCounts = useMemo(
     () =>
@@ -250,6 +254,73 @@ export function MealPlanScreen() {
                   />
                 )
               ) : null}
+              {plan.status === 'active' ? (
+                <AppButton
+                  title={locale === 'vi' ? 'Đánh dấu hoàn thành' : 'Mark completed'}
+                  variant="outline"
+                  disabled={pending}
+                  loading={actions.setStatus.isPending}
+                  onPress={() =>
+                    Alert.alert(
+                      locale === 'vi'
+                        ? 'Hoàn thành thực đơn?'
+                        : 'Complete this plan?',
+                      locale === 'vi'
+                        ? 'Thực đơn sẽ chuyển sang chỉ đọc.'
+                        : 'The plan will become read-only.',
+                      [
+                        {
+                          text: locale === 'vi' ? 'Hủy' : 'Cancel',
+                          style: 'cancel',
+                        },
+                        {
+                          text: locale === 'vi' ? 'Hoàn thành' : 'Complete',
+                          onPress: () =>
+                            actions.setStatus.mutate({
+                              id: plan._id,
+                              status: 'completed',
+                            }),
+                        },
+                      ]
+                    )
+                  }
+                />
+              ) : null}
+              {['draft', 'active'].includes(plan.status) ? (
+                <AppButton
+                  title={locale === 'vi' ? 'Lưu trữ thực đơn' : 'Archive plan'}
+                  variant="ghost"
+                  disabled={pending}
+                  onPress={() =>
+                    actions.setStatus.mutate({ id: plan._id, status: 'archived' })
+                  }
+                />
+              ) : null}
+              <AppButton
+                title={
+                  locale === 'vi' ? 'Nhân bản sang tuần sau' : 'Clone to next week'
+                }
+                variant="outline"
+                disabled={pending}
+                loading={actions.clone.isPending}
+                onPress={() => {
+                  const targetWeek = shiftWeekSelection(
+                    plan.weekStartDate,
+                    plan.weekStartDate,
+                    1
+                  ).weekStartDate;
+                  actions.clone.mutate(
+                    { id: plan._id, targetWeek, title: plan.title },
+                    {
+                      onSuccess: (copy) =>
+                        router.replace({
+                          pathname: '/(tabs)/meal-plan',
+                          params: { planId: copy._id, date: copy.weekStartDate },
+                        }),
+                    }
+                  );
+                }}
+              />
             </View>
           ) : null}
           <WeekNavigator

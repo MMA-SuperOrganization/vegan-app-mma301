@@ -26,6 +26,7 @@ export function NutritionProfileScreen() {
   );
   const [carbs, setCarbs] = useState(nutrition?.carbTargetG?.toString() ?? '');
   const [fat, setFat] = useState(nutrition?.fatTargetG?.toString() ?? '');
+  const [fiber, setFiber] = useState(nutrition?.fiberTargetG?.toString() ?? '');
   const [validation, setValidation] = useState<string | null>(null);
 
   const submit = async () => {
@@ -35,19 +36,22 @@ export function NutritionProfileScreen() {
     const proteinTarget = parseNutritionTarget(protein, 0, 500);
     const carbTarget = parseNutritionTarget(carbs, 0, 1500);
     const fatTarget = parseNutritionTarget(fat, 0, 500);
+    const fiberTarget = parseNutritionTarget(fiber, 0, 100);
     const caloriesError = calorieTarget.valid
       ? null
       : t('profile.nutritionCaloriesRange');
     const proteinError = proteinTarget.valid ? null : t('profile.proteinRange');
     const carbsError = carbTarget.valid ? null : t('profile.carbsRange');
     const fatError = fatTarget.valid ? null : t('profile.fatRange');
+    const fiberError = fiberTarget.valid ? null : t('profile.fiberRange');
     setValidation(
       heightError ??
         weightError ??
         caloriesError ??
         proteinError ??
         carbsError ??
-        fatError
+        fatError ??
+        fiberError
     );
     if (
       heightError ||
@@ -55,7 +59,8 @@ export function NutritionProfileScreen() {
       caloriesError ||
       proteinError ||
       carbsError ||
-      fatError
+      fatError ||
+      fiberError
     )
       return;
     const heightCm = parseDecimal(height);
@@ -68,6 +73,7 @@ export function NutritionProfileScreen() {
       proteinTargetG: proteinTarget.value,
       carbTargetG: carbTarget.value,
       fatTargetG: fatTarget.value,
+      fiberTargetG: fiberTarget.value,
     });
   };
 
@@ -122,6 +128,12 @@ export function NutritionProfileScreen() {
           label={t('profile.dailyFat')}
           value={fat}
           onChangeText={setFat}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyFiber')}
+          value={fiber}
+          onChangeText={setFiber}
           keyboardType="decimal-pad"
         />
       </View>

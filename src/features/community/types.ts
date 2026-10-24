@@ -3,6 +3,16 @@ export interface CommunityPost {
   title: string;
   content: string;
   authorId: string;
+  mediaIds?: string[];
+  categoryIds?: string[];
+  tags?: string[];
+  recipeId?: string | null;
+  visibility?: 'public' | 'private';
+  media?: Array<{
+    _id?: string;
+    url?: string;
+    downloadUrl?: string;
+  }>;
   version: number;
   status:
     'draft' | 'pending_review' | 'published' | 'rejected' | 'hidden' | 'deleted';
@@ -20,9 +30,34 @@ export interface PostComment {
 }
 export interface CommunityVideo {
   _id: string;
+  authorId?: string;
   title: string;
   description?: string;
   summary?: string;
+  transcript?: string;
+  durationSeconds?: number;
+  videoMediaId?: string;
+  thumbnailMediaId?: string | null;
+  thumbnailUrl?: string;
+  categoryIds?: string[];
+  tags?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  recipeId?: string | null;
+  visibility?: 'public' | 'private' | 'unlisted';
+  progressSeconds?: number;
+  completed?: boolean;
+  progress?: {
+    progressSeconds: number;
+    completed: boolean;
+    lastProgressAt?: string | null;
+  } | null;
+  reactionCount?: number;
+  commentCount?: number;
+  reacted?: string | null;
+  version: number;
+  status:
+    'draft' | 'pending_review' | 'published' | 'rejected' | 'hidden' | 'deleted';
+  rejectionReason?: string;
   saved?: boolean;
   playback?: { downloadUrl?: string };
 }

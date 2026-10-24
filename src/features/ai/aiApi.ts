@@ -9,6 +9,9 @@ import type {
   PantryProposal,
   RecognizedIngredient,
   ConfirmedProposal,
+  VideoSummary,
+  AiRun,
+  AiMetrics,
 } from './types';
 
 export const aiApi = {
@@ -78,4 +81,16 @@ export const aiApi = {
     ),
   feedback: (runId: string, rating: 'helpful' | 'not_helpful') =>
     unwrapApiRequest(() => apiClient.put(`/ai/runs/${runId}/feedback`, { rating })),
+  summarizeVideo: (mediaId: string, transcript: string) =>
+    unwrapApiRequest<VideoSummary>(() =>
+      apiClient.post('/ai/video-summaries', { mediaId, transcript })
+    ),
+  adminRuns: () =>
+    collectPages((page) =>
+      unwrapApiPageRequest<AiRun>(() =>
+        apiClient.get('/admin/ai/runs', { params: { page, limit: 100 } })
+      )
+    ),
+  adminMetrics: () =>
+    unwrapApiRequest<AiMetrics>(() => apiClient.get('/admin/ai/metrics')),
 };

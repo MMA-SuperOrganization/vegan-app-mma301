@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import { communityApi } from './communityApi';
+import { mediaApi } from '@/features/media/mediaApi';
 import type {
   CommunityPost,
   PostComment,
@@ -12,6 +13,14 @@ export function useCommunityPosts(mine: boolean) {
   return useQuery({
     queryKey: ['account', userId, 'community', 'posts', mine],
     queryFn: () => communityApi.posts(mine),
+    enabled: Boolean(userId),
+  });
+}
+export function useCommunityVideos(mine: boolean) {
+  const userId = useAuthStore((state) => state.user?.id);
+  return useQuery({
+    queryKey: ['account', userId, 'community', 'videos', mine],
+    queryFn: () => communityApi.videos(mine),
     enabled: Boolean(userId),
   });
 }
@@ -27,6 +36,11 @@ export function useCommunityPost(id?: string) {
   });
   return {
     post,
+    media: useQuery({
+      queryKey: [...root, 'post', id, 'media', post.data?.mediaIds],
+      queryFn: () => Promise.all((post.data?.mediaIds || []).map(mediaApi.asset)),
+      enabled: Boolean(userId && id && post.data?.mediaIds?.length),
+    }),
     comments: useQuery({
       queryKey: [...root, 'comments', id],
       queryFn: () => communityApi.comments(id!),
@@ -36,15 +50,41 @@ export function useCommunityPost(id?: string) {
       mutationFn: ({
         title,
         content,
+        mediaIds,
+        categoryIds,
+        tags,
+        recipeId,
+        visibility,
         previous,
       }: {
         title: string;
         content: string;
+        mediaIds?: string[];
+        categoryIds?: string[];
+        tags?: string[];
+        recipeId?: string | null;
+        visibility?: 'public' | 'private';
         previous?: CommunityPost;
       }) =>
         previous
-          ? communityApi.update(previous._id, title, content, previous.version)
-          : communityApi.create(title, content),
+          ? communityApi.update(previous._id, previous.version, {
+              title,
+              content,
+              mediaIds,
+              categoryIds,
+              tags,
+              recipeId,
+              visibility,
+            })
+          : communityApi.create({
+              title,
+              content,
+              mediaIds,
+              categoryIds,
+              tags,
+              recipeId,
+              visibility,
+            }),
       onSuccess: refresh,
     }),
     submit: useMutation({
@@ -54,7 +94,13 @@ export function useCommunityPost(id?: string) {
     }),
     remove: useMutation({ mutationFn: communityApi.remove, onSuccess: refresh }),
     comment: useMutation({
-      mutationFn: (content: string) => communityApi.comment(id!, content),
+      mutationFn: ({
+        content,
+        parentCommentId,
+      }: {
+        content: string;
+        parentCommentId?: string;
+      }) => communityApi.comment(id!, content, parentCommentId),
       onSuccess: refresh,
     }),
     editComment: useMutation({
@@ -72,7 +118,13 @@ export function useCommunityPost(id?: string) {
       onSuccess: refresh,
     }),
     react: useMutation({
-      mutationFn: (remove: boolean) => communityApi.react(id!, remove),
+      mutationFn: ({
+        remove,
+        type,
+      }: {
+        remove: boolean;
+        type: 'like' | 'love' | 'helpful';
+      }) => communityApi.react(id!, remove, type),
       onSuccess: refresh,
     }),
   };

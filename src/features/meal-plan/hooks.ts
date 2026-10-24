@@ -85,5 +85,23 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
     mutationFn: mealPlanApi.activate,
     onSuccess: storePlan,
   });
-  return { addMeal, updateMeal, removeMeal, activate };
+  const setStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: 'completed' | 'archived' }) =>
+      mealPlanApi.setStatus(id, status),
+    onSuccess: storePlan,
+  });
+  const clone = useMutation({
+    mutationFn: ({
+      id,
+      targetWeek,
+      title,
+    }: {
+      id: string;
+      targetWeek: string;
+      title?: string;
+    }) => mealPlanApi.clone(id, targetWeek, title),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) }),
+  });
+  return { addMeal, updateMeal, removeMeal, activate, setStatus, clone };
 }

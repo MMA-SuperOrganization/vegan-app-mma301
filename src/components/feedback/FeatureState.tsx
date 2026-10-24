@@ -51,6 +51,11 @@ export function FeatureState({
       'Chọn ảnh JPEG, PNG hoặc WebP.',
       'Choose a JPEG, PNG or WebP image.',
     ],
+    UNSUPPORTED_VIDEO: ['Chọn video MP4 hoặc WebM.', 'Choose an MP4 or WebM video.'],
+    AI_VIDEO_UNSUPPORTED: [
+      'Nhà cung cấp AI cần bản lời thoại để tóm tắt video.',
+      'The AI provider requires a transcript to summarize this video.',
+    ],
     UPLOAD_FAILED: [
       'Tải ảnh thất bại. Vui lòng thử lại.',
       'Image upload failed. Please retry.',

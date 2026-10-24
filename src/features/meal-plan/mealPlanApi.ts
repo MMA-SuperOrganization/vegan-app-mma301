@@ -1,7 +1,12 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { normalizeMealPlan } from './mealPlanState';
 import { collectPages } from '@/services/api/collectPages';
-import type { AddMealInput, MealPlan, UpdateMealInput } from './types';
+import type {
+  AddMealInput,
+  MealPlan,
+  MealPlanStatus,
+  UpdateMealInput,
+} from './types';
 
 const normalize = (plan: MealPlan) => normalizeMealPlan(plan);
 
@@ -37,5 +42,19 @@ export const mealPlanApi = {
   removeMeal: (planId: string, mealId: string) =>
     unwrapApiRequest<MealPlan>(() =>
       apiClient.delete(`/meal-plans/${planId}/meals/${mealId}`)
+    ).then(normalize),
+  setStatus: (
+    id: string,
+    status: Extract<MealPlanStatus, 'completed' | 'archived'>
+  ) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.patch(`/meal-plans/${id}`, { status })
+    ).then(normalize),
+  clone: (id: string, weekStartDate: string, title?: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post(`/meal-plans/${id}/clone`, {
+        weekStartDate,
+        ...(title ? { title } : {}),
+      })
     ).then(normalize),
 };

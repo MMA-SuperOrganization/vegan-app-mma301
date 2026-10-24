@@ -14,6 +14,7 @@ import type {
   FoodItem,
   FoodQuery,
   SearchSuggestion,
+  RecipeAuthorInput,
 } from './types';
 
 const compactParams = (params: Record<string, unknown>) =>
@@ -27,6 +28,20 @@ const pageRequest = <T>(path: string, params: Record<string, unknown>) =>
   );
 
 export const recipeApi = {
+  mine: () => pageRequest<RecipeDetail>('/recipes/mine', { page: 1, limit: 100 }),
+  create: (input: RecipeAuthorInput) =>
+    unwrapApiRequest<RecipeDetail>(() => apiClient.post('/recipes', input)),
+  update: (id: string, version: number, input: RecipeAuthorInput) =>
+    unwrapApiRequest<RecipeDetail>(() =>
+      apiClient.patch(`/recipes/${id}`, { ...input, version })
+    ),
+  submit: (recipe: RecipeDetail) =>
+    unwrapApiRequest<RecipeDetail>(() =>
+      apiClient.post(`/recipes/${recipe._id}/submit`, {
+        version: recipe.version ?? 0,
+      })
+    ),
+  remove: (id: string) => unwrapApiRequest(() => apiClient.delete(`/recipes/${id}`)),
   home: () =>
     unwrapApiRequest<HomeFeed>(() =>
       apiClient.get('/home', { params: { limit: 6 } })

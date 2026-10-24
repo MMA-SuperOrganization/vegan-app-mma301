@@ -90,3 +90,26 @@ export function useIngredientRecognition() {
     }),
   };
 }
+
+export function useVideoSummary() {
+  return useMutation({
+    mutationFn: ({ mediaId, transcript }: { mediaId: string; transcript: string }) =>
+      aiApi.summarizeVideo(mediaId, transcript),
+  });
+}
+
+export function useAiMonitoring() {
+  const userId = useAuthStore((state) => state.user?.id);
+  return {
+    runs: useQuery({
+      queryKey: ['account', userId, 'admin', 'ai-runs'],
+      queryFn: aiApi.adminRuns,
+      enabled: Boolean(userId),
+    }),
+    metrics: useQuery({
+      queryKey: ['account', userId, 'admin', 'ai-metrics'],
+      queryFn: aiApi.adminMetrics,
+      enabled: Boolean(userId),
+    }),
+  };
+}

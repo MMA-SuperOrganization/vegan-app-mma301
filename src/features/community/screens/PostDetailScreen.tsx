@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
@@ -13,6 +13,7 @@ import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
+import { engagementApi } from '@/features/engagement/engagementApi';
 import { postStatusLabel } from '../status';
 import type { PostComment } from '../types';
 
@@ -23,8 +24,13 @@ export function PostDetailScreen() {
   const userId = useAuthStore((state) => state.user?.id);
   const actions = useCommunityPost(id);
   const post = actions.post.data;
+  useEffect(() => {
+    if (post?._id && post.status === 'published')
+      void engagementApi.recordView('post', post._id).catch(() => undefined);
+  }, [post?._id, post?.status]);
   const [commentText, setCommentText] = useState('');
   const [editingComment, setEditingComment] = useState<PostComment | null>(null);
+  const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
   const mine = post?.authorId === userId;
@@ -36,7 +42,7 @@ export function PostDetailScreen() {
     actions.editComment.isPending ||
     actions.removeComment.isPending ||
     actions.react.isPending;
-  const liked = Boolean(post?.reacted);
+  const reaction = post?.reacted;
   return (
     <ScreenWrapper
       scrollable
@@ -57,10 +63,28 @@ export function PostDetailScreen() {
       {post ? (
         <>
           <AppText variant="heading2">{post.title}</AppText>
+          <AppButton
+            title={vi ? 'Xem hồ sơ tác giả' : 'View author profile'}
+            variant="ghost"
+            onPress={() =>
+              router.push({ pathname: '/users/[id]', params: { id: post.authorId } })
+            }
+          />
           <AppText>{postStatusLabel(post.status, vi)}</AppText>
           <AppText selectable>{post.content}</AppText>
+          {actions.media.data?.map((asset) =>
+            asset.downloadUrl ? (
+              <Image
+                key={asset._id}
+                source={{ uri: asset.downloadUrl }}
+                style={{ width: '100%', height: 240, borderRadius: radius.lg }}
+                resizeMode="cover"
+              />
+            ) : null
+          )}
+          <FeatureState error={actions.media.error} />
           {post.rejectionReason ? <AppText>{post.rejectionReason}</AppText> : null}
-          {mine && ['draft', 'rejected'].includes(post.status) ? (
+          {mine && ['draft', 'rejected', 'published'].includes(post.status) ? (
             <>
               <AppButton
                 title={vi ? 'Sửa bài' : 'Edit post'}
@@ -69,12 +93,14 @@ export function PostDetailScreen() {
                   router.push({ pathname: '/community/editor', params: { id } })
                 }
               />
-              <AppButton
-                title={vi ? 'Gửi duyệt' : 'Submit for review'}
-                loading={actions.submit.isPending}
-                disabled={busy}
-                onPress={() => actions.submit.mutate(post)}
-              />
+              {['draft', 'rejected'].includes(post.status) ? (
+                <AppButton
+                  title={vi ? 'Gửi duyệt' : 'Submit for review'}
+                  loading={actions.submit.isPending}
+                  disabled={busy}
+                  onPress={() => actions.submit.mutate(post)}
+                />
+              ) : null}
             </>
           ) : null}
           {mine ? (
@@ -107,12 +133,34 @@ export function PostDetailScreen() {
           ) : null}
           {published ? (
             <>
-              <AppButton
-                title={liked ? (vi ? 'Bỏ thích' : 'Unlike') : vi ? 'Thích' : 'Like'}
-                variant="outline"
-                disabled={busy}
-                onPress={() => actions.react.mutate(liked)}
-              />
+              <View
+                style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}
+              >
+                {(['like', 'love', 'helpful'] as const).map((type) => (
+                  <AppButton
+                    key={type}
+                    title={
+                      type === 'like'
+                        ? vi
+                          ? 'Thích'
+                          : 'Like'
+                        : type === 'love'
+                          ? vi
+                            ? 'Yêu thích'
+                            : 'Love'
+                          : vi
+                            ? 'Hữu ích'
+                            : 'Helpful'
+                    }
+                    fullWidth={false}
+                    variant={reaction === type ? 'primary' : 'outline'}
+                    disabled={busy}
+                    onPress={() =>
+                      actions.react.mutate({ remove: reaction === type, type })
+                    }
+                  />
+                ))}
+              </View>
               <AppButton
                 title={vi ? 'Báo cáo bài viết' : 'Report post'}
                 variant="ghost"
@@ -143,6 +191,18 @@ export function PostDetailScreen() {
                   }}
                 >
                   <AppText>{comment.content}</AppText>
+                  {!comment.parentCommentId ? (
+                    <AppButton
+                      title={vi ? 'Trả lời' : 'Reply'}
+                      variant="ghost"
+                      disabled={busy}
+                      onPress={() => {
+                        setReplyingTo(comment);
+                        setEditingComment(null);
+                        setCommentText('');
+                      }}
+                    />
+                  ) : null}
                   {comment.authorId === userId ? (
                     <>
                       <AppButton
@@ -151,6 +211,7 @@ export function PostDetailScreen() {
                         disabled={busy}
                         onPress={() => {
                           setEditingComment(comment);
+                          setReplyingTo(null);
                           setCommentText(comment.content);
                         }}
                       />
@@ -201,9 +262,11 @@ export function PostDetailScreen() {
                     ? vi
                       ? 'Sửa bình luận'
                       : 'Edit comment'
-                    : vi
-                      ? 'Viết bình luận'
-                      : 'Write a comment'
+                    : replyingTo
+                      ? `${vi ? 'Trả lời' : 'Reply'}: ${replyingTo.content}`
+                      : vi
+                        ? 'Viết bình luận'
+                        : 'Write a comment'
                 }
                 value={commentText}
                 onChangeText={setCommentText}
@@ -218,6 +281,7 @@ export function PostDetailScreen() {
                   const done = () => {
                     setCommentText('');
                     setEditingComment(null);
+                    setReplyingTo(null);
                   };
                   if (editingComment)
                     actions.editComment.mutate(
@@ -225,15 +289,22 @@ export function PostDetailScreen() {
                       { onSuccess: done }
                     );
                   else
-                    actions.comment.mutate(commentText.trim(), { onSuccess: done });
+                    actions.comment.mutate(
+                      {
+                        content: commentText.trim(),
+                        parentCommentId: replyingTo?._id,
+                      },
+                      { onSuccess: done }
+                    );
                 }}
               />
-              {editingComment ? (
+              {editingComment || replyingTo ? (
                 <AppButton
                   title={vi ? 'Hủy sửa' : 'Cancel editing'}
                   variant="ghost"
                   onPress={() => {
                     setEditingComment(null);
+                    setReplyingTo(null);
                     setCommentText('');
                   }}
                 />

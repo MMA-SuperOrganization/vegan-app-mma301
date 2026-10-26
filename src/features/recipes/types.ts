@@ -67,7 +67,13 @@ export interface RecipeDetail extends ContentCardData {
   coverMediaId?: string | null;
   version?: number;
   status?:
-    'draft' | 'pending_review' | 'published' | 'rejected' | 'hidden' | 'deleted';
+    | 'draft'
+    | 'pending_review'
+    | 'published'
+    | 'rejected'
+    | 'archived'
+    | 'hidden'
+    | 'deleted';
   rejectionReason?: string;
   summary?: string;
   servings?: number;

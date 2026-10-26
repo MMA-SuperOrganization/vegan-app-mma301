@@ -41,6 +41,12 @@ export const recipeApi = {
         version: recipe.version ?? 0,
       })
     ),
+  archive: (recipe: RecipeDetail) =>
+    unwrapApiRequest<RecipeDetail>(() =>
+      apiClient.post(`/recipes/${recipe._id}/archive`, {
+        version: recipe.version ?? 0,
+      })
+    ),
   remove: (id: string) => unwrapApiRequest(() => apiClient.delete(`/recipes/${id}`)),
   home: () =>
     unwrapApiRequest<HomeFeed>(() =>

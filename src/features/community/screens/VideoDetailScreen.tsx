@@ -120,7 +120,10 @@ export function VideoDetailScreen() {
             content={{ ...video.data, type: 'video' }}
             initialSaved={video.data.saved}
           />
-          {mine && ['draft', 'rejected', 'published'].includes(video.data.status) ? (
+          {mine &&
+          ['draft', 'rejected', 'published', 'archived'].includes(
+            video.data.status
+          ) ? (
             <AppButton
               title={vi ? 'Chỉnh sửa video' : 'Edit video'}
               variant="outline"

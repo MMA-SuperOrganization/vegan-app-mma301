@@ -40,6 +40,29 @@ export interface MasterRecord {
   isVegetarian?: boolean;
 }
 
+const collectMasterRecords = async (
+  path: '/categories' | '/allergens' | '/food-items'
+) => {
+  const [active, inactive] = await Promise.all(
+    (['active', 'inactive'] as const).map((status) =>
+      collectPages((page) =>
+        unwrapApiPageRequest<MasterRecord>(() =>
+          apiClient.get(path, { params: { page, limit: 100, status } })
+        )
+      )
+    )
+  );
+  return {
+    data: [...active.data, ...inactive.data],
+    meta: {
+      page: 1,
+      limit: active.data.length + inactive.data.length || 1,
+      total: active.data.length + inactive.data.length,
+      totalPages: 1,
+    },
+  };
+};
+
 export const adminApi = {
   summary: () =>
     unwrapApiRequest<AdminSummary>(() => apiClient.get('/admin/dashboard/summary')),
@@ -69,6 +92,16 @@ export const adminApi = {
             reason: 'Administrative action from VEGETA mobile app',
           })
     ),
+  deleteUser: (user: AdminUser) =>
+    unwrapApiRequest<AdminUser>(() =>
+      apiClient.delete(`/admin/users/${user._id}`, {
+        data: { reason: 'Administrative action from VEGETA mobile app' },
+      })
+    ),
+  restoreUser: (user: AdminUser) =>
+    unwrapApiRequest<AdminUser>(() =>
+      apiClient.post(`/admin/users/${user._id}/restore`, {})
+    ),
   changeRole: (user: AdminUser) =>
     unwrapApiRequest<AdminUser>(() =>
       apiClient.patch(`/admin/users/${user._id}/role`, {
@@ -83,24 +116,9 @@ export const adminApi = {
     unwrapApiRequest<Record<string, unknown>>(() =>
       apiClient.get('/admin/dashboard/user-trends')
     ),
-  categories: () =>
-    collectPages((page) =>
-      unwrapApiPageRequest<MasterRecord>(() =>
-        apiClient.get('/categories', { params: { page, limit: 100 } })
-      )
-    ),
-  allergens: () =>
-    collectPages((page) =>
-      unwrapApiPageRequest<MasterRecord>(() =>
-        apiClient.get('/allergens', { params: { page, limit: 100 } })
-      )
-    ),
-  foods: () =>
-    collectPages((page) =>
-      unwrapApiPageRequest<MasterRecord>(() =>
-        apiClient.get('/food-items', { params: { page, limit: 100 } })
-      )
-    ),
+  categories: () => collectMasterRecords('/categories'),
+  allergens: () => collectMasterRecords('/allergens'),
+  foods: () => collectMasterRecords('/food-items'),
   saveCategory: (record: Partial<MasterRecord> & { name: string }) =>
     unwrapApiRequest<MasterRecord>(() =>
       record._id
@@ -128,4 +146,12 @@ export const adminApi = {
     }),
   removeMaster: (type: 'categories' | 'allergens' | 'food-items', id: string) =>
     unwrapApiRequest(() => apiClient.delete(`/${type}/${id}`)),
+  setMasterStatus: (
+    type: 'categories' | 'allergens' | 'food-items',
+    record: MasterRecord,
+    status: 'active' | 'inactive'
+  ) =>
+    unwrapApiRequest<MasterRecord>(() =>
+      apiClient.patch(`/${type}/${record._id}`, { status })
+    ),
 };

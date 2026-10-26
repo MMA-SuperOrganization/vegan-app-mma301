@@ -23,6 +23,10 @@ export function MyRecipesScreen() {
     mutationFn: recipeApi.remove,
     onSuccess: () => client.invalidateQueries({ queryKey: ['account', userId] }),
   });
+  const archive = useMutation({
+    mutationFn: recipeApi.archive,
+    onSuccess: () => client.invalidateQueries({ queryKey: ['account', userId] }),
+  });
   return (
     <ScreenWrapper
       scrollable
@@ -72,6 +76,26 @@ export function MyRecipesScreen() {
               })
             }
           />
+          {['draft', 'rejected', 'published'].includes(recipe.status || '') ? (
+            <AppButton
+              title={vi ? 'Lưu trữ công thức' : 'Archive recipe'}
+              variant="outline"
+              disabled={archive.isPending}
+              onPress={() =>
+                Alert.alert(
+                  vi ? 'Lưu trữ công thức?' : 'Archive recipe?',
+                  recipe.title,
+                  [
+                    { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                    {
+                      text: vi ? 'Lưu trữ' : 'Archive',
+                      onPress: () => archive.mutate(recipe),
+                    },
+                  ]
+                )
+              }
+            />
+          ) : null}
           <AppButton
             title={vi ? 'Xóa công thức' : 'Delete recipe'}
             variant="ghost"

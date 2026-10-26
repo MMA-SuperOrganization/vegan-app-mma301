@@ -61,14 +61,18 @@ export function MasterDataPanel() {
       await refresh();
     },
   });
-  const remove = useMutation({
+  const masterStatus = useMutation({
     mutationFn: ({
       type,
       id,
+      status,
+      record,
     }: {
-      type: Parameters<typeof adminApi.removeMaster>[0];
+      type: Parameters<typeof adminApi.setMasterStatus>[0];
       id: string;
-    }) => adminApi.removeMaster(type, id),
+      status: 'active' | 'inactive';
+      record: MasterRecord;
+    }) => adminApi.setMasterStatus(type, { ...record, _id: id }, status),
     onSuccess: refresh,
   });
   const card = {
@@ -91,14 +95,30 @@ export function MasterDataPanel() {
             title={vi ? 'Sửa' : 'Edit'}
             variant="outline"
             fullWidth={false}
+            disabled={record.status === 'inactive'}
             onPress={() => edit(record)}
           />
           <AppButton
-            title={vi ? 'Ngưng dùng' : 'Deactivate'}
+            title={
+              record.status === 'inactive'
+                ? vi
+                  ? 'Khôi phục'
+                  : 'Restore'
+                : vi
+                  ? 'Ngưng dùng'
+                  : 'Deactivate'
+            }
             variant="ghost"
             fullWidth={false}
-            disabled={remove.isPending}
-            onPress={() => remove.mutate({ type, id: record._id })}
+            disabled={masterStatus.isPending}
+            onPress={() =>
+              masterStatus.mutate({
+                type,
+                id: record._id,
+                record,
+                status: record.status === 'inactive' ? 'active' : 'inactive',
+              })
+            }
           />
         </View>
       </View>
@@ -115,7 +135,7 @@ export function MasterDataPanel() {
           categorySave.error ||
           allergenSave.error ||
           foodSave.error ||
-          remove.error
+          masterStatus.error
         }
       />
       <AppText variant="heading3">{vi ? 'Danh mục' : 'Categories'}</AppText>

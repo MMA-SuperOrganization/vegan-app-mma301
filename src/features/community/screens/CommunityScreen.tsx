@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
@@ -7,6 +8,7 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPosts, useCommunityVideos } from '../hooks';
 import { postStatusLabel } from '../status';
+import { communityApi } from '../communityApi';
 
 export function CommunityScreen() {
   const router = useRouter();
@@ -15,6 +17,16 @@ export function CommunityScreen() {
   const [contentType, setContentType] = useState<'posts' | 'videos'>('posts');
   const posts = useCommunityPosts(mine);
   const videos = useCommunityVideos(mine);
+  const client = useQueryClient();
+  const refresh = () => client.invalidateQueries({ queryKey: ['account'] });
+  const archivePost = useMutation({
+    mutationFn: communityApi.archivePost,
+    onSuccess: refresh,
+  });
+  const archiveVideo = useMutation({
+    mutationFn: communityApi.archiveVideo,
+    onSuccess: refresh,
+  });
   return (
     <ScreenWrapper
       scrollable
@@ -108,6 +120,26 @@ export function CommunityScreen() {
                   })
                 }
               />
+              {mine && ['draft', 'rejected', 'published'].includes(post.status) ? (
+                <AppButton
+                  title={vi ? 'Lưu trữ bài viết' : 'Archive post'}
+                  variant="ghost"
+                  disabled={archivePost.isPending}
+                  onPress={() =>
+                    Alert.alert(
+                      vi ? 'Lưu trữ bài viết?' : 'Archive post?',
+                      post.title,
+                      [
+                        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                        {
+                          text: vi ? 'Lưu trữ' : 'Archive',
+                          onPress: () => archivePost.mutate(post),
+                        },
+                      ]
+                    )
+                  }
+                />
+              ) : null}
             </View>
           ))
         : videos.data?.data.map((video) => (
@@ -133,6 +165,26 @@ export function CommunityScreen() {
                   })
                 }
               />
+              {mine && ['draft', 'rejected', 'published'].includes(video.status) ? (
+                <AppButton
+                  title={vi ? 'Lưu trữ video' : 'Archive video'}
+                  variant="ghost"
+                  disabled={archiveVideo.isPending}
+                  onPress={() =>
+                    Alert.alert(
+                      vi ? 'Lưu trữ video?' : 'Archive video?',
+                      video.title,
+                      [
+                        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                        {
+                          text: vi ? 'Lưu trữ' : 'Archive',
+                          onPress: () => archiveVideo.mutate(video),
+                        },
+                      ]
+                    )
+                  }
+                />
+              ) : null}
             </View>
           ))}
     </ScreenWrapper>

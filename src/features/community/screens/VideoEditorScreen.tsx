@@ -59,7 +59,10 @@ export function VideoEditorScreen() {
     setVisibility(video.data.visibility || 'public');
   }, [video.data]);
   const editable =
-    !id || ['draft', 'rejected', 'published'].includes(video.data?.status || '');
+    !id ||
+    ['draft', 'rejected', 'published', 'archived'].includes(
+      video.data?.status || ''
+    );
   const save = useMutation({
     mutationFn: async () => {
       let mediaId = video.data?.videoMediaId;

@@ -93,7 +93,10 @@ export function RecipeEditorScreen() {
     setVisibility(value.visibility || 'public');
   }, [recipe.data]);
   const editable =
-    !id || ['draft', 'rejected', 'published'].includes(recipe.data?.status || '');
+    !id ||
+    ['draft', 'rejected', 'published', 'archived'].includes(
+      recipe.data?.status || ''
+    );
   const save = useMutation({
     mutationFn: async ({ submit }: { submit: boolean }) => {
       const coverMediaId = cover

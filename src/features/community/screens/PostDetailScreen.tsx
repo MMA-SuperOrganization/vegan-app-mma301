@@ -84,7 +84,8 @@ export function PostDetailScreen() {
           )}
           <FeatureState error={actions.media.error} />
           {post.rejectionReason ? <AppText>{post.rejectionReason}</AppText> : null}
-          {mine && ['draft', 'rejected', 'published'].includes(post.status) ? (
+          {mine &&
+          ['draft', 'rejected', 'published', 'archived'].includes(post.status) ? (
             <>
               <AppButton
                 title={vi ? 'Sửa bài' : 'Edit post'}

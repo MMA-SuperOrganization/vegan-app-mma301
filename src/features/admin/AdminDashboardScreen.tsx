@@ -53,6 +53,14 @@ export function AdminDashboardScreen() {
     mutationFn: adminApi.changeRole,
     onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
   });
+  const removeUser = useMutation({
+    mutationFn: adminApi.deleteUser,
+    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+  });
+  const restoreUser = useMutation({
+    mutationFn: adminApi.restoreUser,
+    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+  });
   const changeStatus = (user: AdminUser) => {
     const activate = user.status === 'suspended';
     Alert.alert(
@@ -130,7 +138,7 @@ export function AdminDashboardScreen() {
       />
       <FeatureState
         loading={users.isLoading}
-        error={users.error || status.error}
+        error={users.error || status.error || removeUser.error || restoreUser.error}
         retry={() => void users.refetch()}
       />
       {users.data?.data.map((user) => (
@@ -178,8 +186,36 @@ export function AdminDashboardScreen() {
                 variant="ghost"
                 onPress={() => setSelectedUserId(user._id)}
               />
+              <AppButton
+                title={vi ? 'Xóa tài khoản' : 'Delete account'}
+                variant="ghost"
+                disabled={removeUser.isPending || status.isPending || role.isPending}
+                onPress={() =>
+                  Alert.alert(
+                    vi ? 'Xóa tài khoản?' : 'Delete account?',
+                    vi
+                      ? 'Tài khoản sẽ bị vô hiệu hóa và có thể khôi phục bởi quản trị viên.'
+                      : 'The account will be disabled and can be restored by an administrator.',
+                    [
+                      { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                      {
+                        text: vi ? 'Xóa' : 'Delete',
+                        style: 'destructive',
+                        onPress: () => removeUser.mutate(user),
+                      },
+                    ]
+                  )
+                }
+              />
             </>
-          ) : null}
+          ) : (
+            <AppButton
+              title={vi ? 'Khôi phục tài khoản' : 'Restore account'}
+              variant="outline"
+              disabled={restoreUser.isPending}
+              onPress={() => restoreUser.mutate(user)}
+            />
+          )}
         </View>
       ))}
       {selectedUserId ? (

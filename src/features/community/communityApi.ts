@@ -63,6 +63,10 @@ export const communityApi = {
     ),
   removeVideo: (id: string) =>
     unwrapApiRequest(() => apiClient.delete(`/videos/${id}`)),
+  archiveVideo: (video: CommunityVideo) =>
+    unwrapApiRequest<CommunityVideo>(() =>
+      apiClient.post(`/videos/${video._id}/archive`, { version: video.version })
+    ),
   relatedVideos: (id: string) =>
     unwrapApiPageRequest<CommunityVideo>(() =>
       apiClient.get(`/videos/${id}/related`, { params: { page: 1, limit: 10 } })
@@ -122,6 +126,10 @@ export const communityApi = {
       apiClient.post(`/posts/${id}/submit`, { version })
     ),
   remove: (id: string) => unwrapApiRequest(() => apiClient.delete(`/posts/${id}`)),
+  archivePost: (post: CommunityPost) =>
+    unwrapApiRequest<CommunityPost>(() =>
+      apiClient.post(`/posts/${post._id}/archive`, { version: post.version })
+    ),
   comments: async (targetId: string) => {
     const roots = await collectPages((page) =>
       unwrapApiPageRequest<PostComment>(() =>

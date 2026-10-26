@@ -46,7 +46,9 @@ export function PostEditorScreen() {
   }, [actions.post.data]);
   const editable =
     !id ||
-    ['draft', 'rejected', 'published'].includes(actions.post.data?.status || '');
+    ['draft', 'rejected', 'published', 'archived'].includes(
+      actions.post.data?.status || ''
+    );
   const chooseImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],

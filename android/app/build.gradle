@@ -93,15 +93,10 @@ android {
 
     namespace 'com.ngocthang.veganapp'
 
-    // A short local staging path avoids Ninja's Windows path limit in deep checkouts.
-    // Callers can override it with -Pvegeta.cmakeStagingDirectory=... . On Windows,
-    // default to a checkout-specific directory at the current drive root; keeping
-    // this path very short is required for long React Native codegen target names.
+    // Optional per-machine override for Windows checkouts that exceed Ninja's path limit.
+    // Configure vegeta.cmakeStagingDirectory in ~/.gradle/gradle.properties; do not
+    // commit a machine-specific path to this repository.
     def cmakeStagingDirectory = findProperty('vegeta.cmakeStagingDirectory')
-    if (!cmakeStagingDirectory && System.getProperty('os.name').toLowerCase().contains('windows')) {
-        def checkoutId = Integer.toUnsignedString(projectRoot.hashCode(), 16)
-        cmakeStagingDirectory = new File(rootDir.toPath().getRoot().toFile(), ".vc/${checkoutId}").absolutePath
-    }
     if (cmakeStagingDirectory) {
         externalNativeBuild {
             cmake {

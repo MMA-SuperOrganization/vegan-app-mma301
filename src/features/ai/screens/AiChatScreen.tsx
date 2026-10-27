@@ -12,6 +12,7 @@ import {
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { AiMarkdownMessage } from '../components/AiMarkdownMessage';
 import { useAiChat } from '../hooks';
 
 export function AiChatScreen() {
@@ -96,7 +97,11 @@ export function AiChatScreen() {
               <AppText variant="bodyStrong">
                 {message.role === 'user' ? (vi ? 'Bạn' : 'You') : 'AI'}
               </AppText>
-              <AppText selectable>{message.content}</AppText>
+              {message.role === 'assistant' ? (
+                <AiMarkdownMessage content={message.content} />
+              ) : (
+                <AppText selectable>{message.content}</AppText>
+              )}
               {message.role === 'assistant' && (message.aiRunId || message.runId) ? (
                 <View style={styles.actions}>
                   {[true, false].map((helpful) => (

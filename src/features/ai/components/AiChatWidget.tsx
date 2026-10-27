@@ -18,6 +18,7 @@ import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { colors, coreTokens, radius, shadows, spacing } from '@/theme';
 import { useAiChat } from '../hooks';
+import { AiMarkdownMessage } from './AiMarkdownMessage';
 
 const WIDGET_SIZE = 64;
 const SUGGESTIONS = {
@@ -280,12 +281,16 @@ export function AiChatWidget() {
                         Mầm AI
                       </AppText>
                     ) : null}
-                    <AppText
-                      selectable
-                      color={fromUser ? colors.text.inverse : colors.text.primary}
-                    >
-                      {message.content}
-                    </AppText>
+                    {fromUser ? (
+                      <AppText selectable color={colors.text.inverse}>
+                        {message.content}
+                      </AppText>
+                    ) : (
+                      <AiMarkdownMessage
+                        content={message.content}
+                        onOpenContent={closePanel}
+                      />
+                    )}
                   </View>
                 </View>
               );

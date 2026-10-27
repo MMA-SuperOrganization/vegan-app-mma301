@@ -90,3 +90,27 @@ test('setup preserves an existing custom keystore and reports the conflict', () 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('Windows native builds keep vector-icon codegen paths short', () => {
+  const appGradle = readFileSync(
+    new URL('../android/app/build.gradle', import.meta.url),
+    'utf8'
+  );
+  const lock = JSON.parse(
+    readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8')
+  );
+
+  assert.match(appGradle, /\.vc\/\$\{checkoutId\}/);
+  assert.equal(
+    lock.packages[''].dependencies[
+      '@react-native-vector-icons/material-design-icons'
+    ],
+    '13.1.5'
+  );
+  assert.equal(
+    lock.packages[
+      'node_modules/@ronradtke/react-native-markdown-display/node_modules/@react-native-vector-icons/material-design-icons'
+    ],
+    undefined
+  );
+});

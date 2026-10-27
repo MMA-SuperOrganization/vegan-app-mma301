@@ -91,20 +91,17 @@ test('setup preserves an existing custom keystore and reports the conflict', () 
   }
 });
 
-test('Windows native builds support an optional local short staging path', () => {
-  const appGradle = readFileSync(
-    new URL('../android/app/build.gradle', import.meta.url),
+test('Android excludes the empty vector-icon native codegen target', () => {
+  const reactNativeConfig = readFileSync(
+    new URL('../react-native.config.js', import.meta.url),
     'utf8'
   );
   const lock = JSON.parse(
     readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8')
   );
 
-  assert.match(
-    appGradle,
-    /findProperty\('vegeta\.cmakeStagingDirectory'\)/
-  );
-  assert.doesNotMatch(appGradle, /\.vc\/\$\{checkoutId\}/);
+  assert.match(reactNativeConfig, /material-design-icons/);
+  assert.match(reactNativeConfig, /platforms:\s*\{\s*android:\s*null\s*\}/);
   assert.equal(
     lock.packages[''].dependencies[
       '@react-native-vector-icons/material-design-icons'

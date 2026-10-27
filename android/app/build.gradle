@@ -93,17 +93,6 @@ android {
 
     namespace 'com.ngocthang.veganapp'
 
-    // Optional per-machine override for Windows checkouts that exceed Ninja's path limit.
-    // Configure vegeta.cmakeStagingDirectory in ~/.gradle/gradle.properties; do not
-    // commit a machine-specific path to this repository.
-    def cmakeStagingDirectory = findProperty('vegeta.cmakeStagingDirectory')
-    if (cmakeStagingDirectory) {
-        externalNativeBuild {
-            cmake {
-                buildStagingDirectory file(cmakeStagingDirectory)
-            }
-        }
-    }
     defaultConfig {
         applicationId 'com.ngocthang.veganapp'
         minSdkVersion rootProject.ext.minSdkVersion

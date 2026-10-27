@@ -10,6 +10,7 @@ import { useProfileStore } from '@/features/profile';
 import { useI18nStore, useTranslation } from '@/i18n';
 import { colors, typography, useDesignFonts } from '@/theme';
 import { PushNotificationBridge } from '@/features/reminders/PushNotificationBridge';
+import { AiChatWidget } from '@/features/ai/components/AiChatWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
@@ -126,6 +127,7 @@ export default function RootLayout() {
         <PushNotificationBridge />
         <StatusBar style="dark" />
         {content}
+        <AiChatWidget />
       </QueryClientProvider>
     </SafeAreaProvider>
   );

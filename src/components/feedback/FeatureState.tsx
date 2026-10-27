@@ -32,8 +32,20 @@ export function FeatureState({
       'AI is currently unavailable. Please try again later.',
     ],
     AI_PROVIDER_ERROR: [
-      'Chưa thể tạo kết quả AI. Vui lòng thử lại.',
-      'AI could not complete the request. Please retry.',
+      'Máy chủ hiện chưa kết nối được với dịch vụ AI. Vui lòng thử lại sau hoặc liên hệ quản trị viên.',
+      'The server cannot currently connect to the AI service. Try again later or contact an administrator.',
+    ],
+    AI_AUTHENTICATION_ERROR: [
+      'Dịch vụ AI chưa được cấu hình xác thực hợp lệ. Vui lòng liên hệ quản trị viên.',
+      'The AI service does not have valid authentication. Contact an administrator.',
+    ],
+    AI_RATE_LIMITED: [
+      'Dịch vụ AI đang quá tải. Vui lòng chờ một lúc rồi thử lại.',
+      'The AI service is busy. Wait a moment and try again.',
+    ],
+    AI_TIMEOUT: [
+      'Dịch vụ AI phản hồi quá lâu. Vui lòng thử lại.',
+      'The AI service took too long to respond. Please retry.',
     ],
     AI_INVALID_OUTPUT: [
       'Kết quả AI chưa hợp lệ. Vui lòng tạo đề xuất mới.',

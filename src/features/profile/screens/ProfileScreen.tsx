@@ -229,6 +229,15 @@ export function ProfileScreen() {
         />
       </MenuSection>
       <MenuSection title={t('profile.settingsSection')}>
+        <MenuItem
+          title={vi ? 'Lịch sử trò chuyện AI' : 'AI chat history'}
+          subtitle={
+            vi
+              ? 'Xem lại và tiếp tục các cuộc trò chuyện'
+              : 'Review and continue previous conversations'
+          }
+          onPress={() => router.push('/ai/history')}
+        />
         {data.user.role === 'admin' ? (
           <>
             <MenuItem

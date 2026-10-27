@@ -1,6 +1,6 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
@@ -36,7 +36,7 @@ const nutrientRows: Array<{
 ];
 
 export function FoodDetailScreen() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const food = useFoodDetail(id);
@@ -108,7 +108,7 @@ export function FoodDetailScreen() {
       </InfoBlock>
       <RecipesWithIngredient foodItemId={data._id} name={data.name} />
       <InfoBlock title={t('food.nutritionPer100g')}>
-        {data.nutritionPer100g ? (
+        {data.nutritionPer100g && data.nutritionDataQuality !== 'unavailable' ? (
           nutrientRows.map((row) => (
             <View key={row.key} style={styles.nutrientRow}>
               <AppText color={colors.text.secondary}>{t(row.label)}</AppText>
@@ -121,6 +121,21 @@ export function FoodDetailScreen() {
           <AppText color={colors.text.secondary}>{t('recipe.noNutrition')}</AppText>
         )}
       </InfoBlock>
+      {data.sourceAttribution ? (
+        <InfoBlock title={locale === 'vi' ? 'Nguồn dữ liệu' : 'Data source'}>
+          <AppText color={colors.text.secondary}>
+            {data.sourceAttribution.provider} · {data.sourceAttribution.license}
+          </AppText>
+          {data.sourceAttribution.url ? (
+            <AppButton
+              title={locale === 'vi' ? 'Xem nguồn' : 'View source'}
+              variant="ghost"
+              fullWidth={false}
+              onPress={() => void Linking.openURL(data.sourceAttribution!.url!)}
+            />
+          ) : null}
+        </InfoBlock>
+      ) : null}
       <InfoBlock title={t('recipe.allergens')}>
         {allergens.isLoading ? (
           <LoadingSpinner text={t('food.loadingAllergens')} />

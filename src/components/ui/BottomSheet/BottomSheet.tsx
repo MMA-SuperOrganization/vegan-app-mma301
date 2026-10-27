@@ -8,6 +8,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from '@/i18n';
@@ -22,6 +23,12 @@ export interface BottomSheetProps {
   children: ReactNode;
   /** Fills most of the screen height, for scrollable lists. */
   tall?: boolean;
+  /** Optional action area next to the title, useful for sheet-specific controls. */
+  headerAction?: ReactNode;
+  /** Forms keep the shared close action; immersive panels can provide one in the header. */
+  showFooterClose?: boolean;
+  /** Allows content-heavy panels to opt into a taller viewport without changing all sheets. */
+  height?: ViewStyle['height'];
 }
 
 /** Shared modal sheet shell for pickers, forms and confirmations. */
@@ -31,6 +38,9 @@ export function BottomSheet({
   onClose,
   children,
   tall = false,
+  headerAction,
+  showFooterClose = true,
+  height,
 }: BottomSheetProps) {
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -93,6 +103,7 @@ export function BottomSheet({
             style={[
               styles.sheetMotion,
               tall && styles.tall,
+              height !== undefined && { height },
               { transform: [{ translateY }] },
             ]}
           >
@@ -104,9 +115,20 @@ export function BottomSheet({
                 <View style={styles.dragArea} {...panResponder.panHandlers}>
                   <View style={styles.dragHandle} />
                 </View>
-                <AppText variant="heading3">{title}</AppText>
+                <View style={styles.header}>
+                  <AppText variant="heading3" style={styles.title}>
+                    {title}
+                  </AppText>
+                  {headerAction}
+                </View>
                 {children}
-                <Button title={t('common.close')} variant="ghost" onPress={onClose} />
+                {showFooterClose ? (
+                  <Button
+                    title={t('common.close')}
+                    variant="ghost"
+                    onPress={onClose}
+                  />
+                ) : null}
               </Pressable>
             </SafeAreaView>
           </Animated.View>
@@ -137,6 +159,14 @@ const styles = StyleSheet.create({
   // Only a tall sheet has a fixed height to fill; `flex: 1` in an auto-height
   // sheet collapses the body to zero height on native (web is unaffected).
   body: { gap: spacing.lg },
+  header: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  title: { flex: 1 },
   dragArea: {
     minHeight: 28,
     alignItems: 'center',

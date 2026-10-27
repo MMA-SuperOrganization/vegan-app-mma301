@@ -5,6 +5,76 @@ import { useTranslation } from '@/i18n';
 import { View } from 'react-native';
 import { colors, spacing } from '@/theme';
 
+const featureErrorMessages: Record<string, [string, string]> = {
+  PUSH_CONFIGURATION_REQUIRED: [
+    'Bản Android này chưa được cấu hình nhận thông báo. Vui lòng liên hệ hỗ trợ để cập nhật ứng dụng.',
+    'Push notifications are not configured in this Android build. Contact support for an app update.',
+  ],
+  AI_DISABLED: [
+    'Dịch vụ AI chưa được bật trên máy chủ.',
+    'AI is not enabled on the server.',
+  ],
+  AI_UNAVAILABLE: [
+    'Dịch vụ AI hiện chưa sẵn sàng. Vui lòng thử lại sau.',
+    'AI is currently unavailable. Please try again later.',
+  ],
+  AI_PROVIDER_ERROR: [
+    'Máy chủ hiện chưa kết nối được với dịch vụ AI. Vui lòng thử lại sau hoặc liên hệ quản trị viên.',
+    'The server cannot currently connect to the AI service. Try again later or contact an administrator.',
+  ],
+  AI_AUTHENTICATION_ERROR: [
+    'Kết nối Kimi chưa được xác thực. Quản trị viên cần cập nhật API key.',
+    'The Kimi connection is not authenticated. An administrator needs to update the API key.',
+  ],
+  AI_RATE_LIMITED: [
+    'Dịch vụ AI đang quá tải. Vui lòng chờ một lúc rồi thử lại.',
+    'The AI service is busy. Wait a moment and try again.',
+  ],
+  AI_TIMEOUT: [
+    'Dịch vụ AI phản hồi quá lâu. Vui lòng thử lại.',
+    'The AI service took too long to respond. Please retry.',
+  ],
+  AI_INVALID_OUTPUT: [
+    'Kết quả AI chưa hợp lệ. Vui lòng tạo đề xuất mới.',
+    'AI returned an invalid result. Please generate a new proposal.',
+  ],
+  CAMERA_PERMISSION_REQUIRED: [
+    'Cần cấp quyền máy ảnh để chụp nguyên liệu.',
+    'Allow camera access to photograph ingredients.',
+  ],
+  NOTIFICATION_PERMISSION_REQUIRED: [
+    'Cần cấp quyền thông báo trong cài đặt thiết bị.',
+    'Allow notifications in your device settings.',
+  ],
+  UNSUPPORTED_IMAGE: [
+    'Chọn ảnh JPEG, PNG hoặc WebP.',
+    'Choose a JPEG, PNG or WebP image.',
+  ],
+  UNSUPPORTED_VIDEO: ['Chọn video MP4 hoặc WebM.', 'Choose an MP4 or WebM video.'],
+  AI_VIDEO_UNSUPPORTED: [
+    'Nhà cung cấp AI cần bản lời thoại để tóm tắt video.',
+    'The AI provider requires a transcript to summarize this video.',
+  ],
+  UPLOAD_FAILED: [
+    'Tải ảnh thất bại. Vui lòng thử lại.',
+    'Image upload failed. Please retry.',
+  ],
+  FCM_TOKEN_CONFLICT: [
+    'Thiết bị đang đăng ký với tài khoản khác. Hãy tắt push ở tài khoản đó trước.',
+    'This device is registered to another account. Unregister push from that account first.',
+  ],
+};
+
+export function getFeatureErrorMessage(error: unknown, locale: 'vi' | 'en') {
+  const code =
+    (error as { code?: string; message?: string })?.code ||
+    (error instanceof Error ? error.message : '');
+  return (
+    featureErrorMessages[code]?.[locale === 'vi' ? 0 : 1] ||
+    getUserErrorMessage(error)
+  );
+}
+
 export function FeatureState({
   loading,
   error,
@@ -15,74 +85,12 @@ export function FeatureState({
   retry?: () => void;
 }) {
   const { t, locale } = useTranslation();
-  const code =
-    (error as { code?: string; message?: string })?.code ||
-    (error instanceof Error ? error.message : '');
-  const messages: Record<string, [string, string]> = {
-    PUSH_CONFIGURATION_REQUIRED: [
-      'Bản Android này chưa được cấu hình nhận thông báo. Vui lòng liên hệ hỗ trợ để cập nhật ứng dụng.',
-      'Push notifications are not configured in this Android build. Contact support for an app update.',
-    ],
-    AI_DISABLED: [
-      'Dịch vụ AI chưa được bật trên máy chủ.',
-      'AI is not enabled on the server.',
-    ],
-    AI_UNAVAILABLE: [
-      'Dịch vụ AI hiện chưa sẵn sàng. Vui lòng thử lại sau.',
-      'AI is currently unavailable. Please try again later.',
-    ],
-    AI_PROVIDER_ERROR: [
-      'Máy chủ hiện chưa kết nối được với dịch vụ AI. Vui lòng thử lại sau hoặc liên hệ quản trị viên.',
-      'The server cannot currently connect to the AI service. Try again later or contact an administrator.',
-    ],
-    AI_AUTHENTICATION_ERROR: [
-      'Dịch vụ AI chưa được cấu hình xác thực hợp lệ. Vui lòng liên hệ quản trị viên.',
-      'The AI service does not have valid authentication. Contact an administrator.',
-    ],
-    AI_RATE_LIMITED: [
-      'Dịch vụ AI đang quá tải. Vui lòng chờ một lúc rồi thử lại.',
-      'The AI service is busy. Wait a moment and try again.',
-    ],
-    AI_TIMEOUT: [
-      'Dịch vụ AI phản hồi quá lâu. Vui lòng thử lại.',
-      'The AI service took too long to respond. Please retry.',
-    ],
-    AI_INVALID_OUTPUT: [
-      'Kết quả AI chưa hợp lệ. Vui lòng tạo đề xuất mới.',
-      'AI returned an invalid result. Please generate a new proposal.',
-    ],
-    CAMERA_PERMISSION_REQUIRED: [
-      'Cần cấp quyền máy ảnh để chụp nguyên liệu.',
-      'Allow camera access to photograph ingredients.',
-    ],
-    NOTIFICATION_PERMISSION_REQUIRED: [
-      'Cần cấp quyền thông báo trong cài đặt thiết bị.',
-      'Allow notifications in your device settings.',
-    ],
-    UNSUPPORTED_IMAGE: [
-      'Chọn ảnh JPEG, PNG hoặc WebP.',
-      'Choose a JPEG, PNG or WebP image.',
-    ],
-    UNSUPPORTED_VIDEO: ['Chọn video MP4 hoặc WebM.', 'Choose an MP4 or WebM video.'],
-    AI_VIDEO_UNSUPPORTED: [
-      'Nhà cung cấp AI cần bản lời thoại để tóm tắt video.',
-      'The AI provider requires a transcript to summarize this video.',
-    ],
-    UPLOAD_FAILED: [
-      'Tải ảnh thất bại. Vui lòng thử lại.',
-      'Image upload failed. Please retry.',
-    ],
-    FCM_TOKEN_CONFLICT: [
-      'Thiết bị đang đăng ký với tài khoản khác. Hãy tắt push ở tài khoản đó trước.',
-      'This device is registered to another account. Unregister push from that account first.',
-    ],
-  };
   if (loading) return <LoadingSpinner text={t('common.loading')} />;
   if (!error) return null;
   return (
     <View style={{ gap: spacing.sm }} accessibilityRole="alert">
       <AppText color={colors.status.danger}>
-        {messages[code]?.[locale === 'vi' ? 0 : 1] || getUserErrorMessage(error)}
+        {getFeatureErrorMessage(error, locale)}
       </AppText>
       {retry ? (
         <AppButton title={t('common.retry')} variant="outline" onPress={retry} />

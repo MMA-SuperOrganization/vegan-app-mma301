@@ -9,21 +9,29 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSegments } from 'expo-router';
 
+import { AppIcon, AppInput, AppText, BottomSheet, Toggle } from '@/components';
 import {
-  AppButton,
-  AppIcon,
-  AppInput,
-  AppText,
-  BottomSheet,
-  Toggle,
-} from '@/components';
-import { FeatureState } from '@/components/feedback/FeatureState';
+  FeatureState,
+  getFeatureErrorMessage,
+} from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { colors, coreTokens, radius, shadows, spacing } from '@/theme';
 import { useAiChat } from '../hooks';
 
 const WIDGET_SIZE = 64;
+const SUGGESTIONS = {
+  vi: [
+    'Gợi ý bữa tối giàu đạm',
+    'Tôi nên ăn gì sau khi tập?',
+    'Lên thực đơn chay 3 ngày',
+  ],
+  en: [
+    'Suggest a high-protein dinner',
+    'What should I eat after a workout?',
+    'Plan three days of vegan meals',
+  ],
+};
 
 export function AiChatWidget() {
   const insets = useSafeAreaInsets();
@@ -88,10 +96,7 @@ export function AiChatWidget() {
         targetConversationId,
       });
       setContent('');
-    } catch (error) {
-      if ((error as { code?: string })?.code?.startsWith('AI_')) {
-        setContent('');
-      }
+    } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
   };
@@ -108,6 +113,8 @@ export function AiChatWidget() {
   };
 
   const queryError = chat.conversations.error || chat.messages.error;
+  const actionError = chat.create.error || chat.send.error;
+  const actionErrorCode = (actionError as { code?: string } | null)?.code;
   const loadingChat =
     chat.conversations.isLoading ||
     (Boolean(conversationId) && chat.messages.isLoading);
@@ -123,6 +130,47 @@ export function AiChatWidget() {
       // React Query exposes the failure through FeatureState in the panel.
     }
   };
+
+  const updateContent = (value: string) => {
+    if (chat.send.error) chat.send.reset();
+    setContent(value);
+  };
+
+  const chooseSuggestion = (suggestion: string) => {
+    chat.send.reset();
+    setContent(suggestion);
+  };
+
+  const headerActions = (
+    <View style={styles.headerActions}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={vi ? 'Bắt đầu trò chuyện mới' : 'Start a new chat'}
+        disabled={busy}
+        onPress={() => void startNewConversation()}
+        style={({ pressed }) => [
+          styles.newChatButton,
+          pressed && styles.controlPressed,
+          busy && styles.controlDisabled,
+        ]}
+      >
+        <AppIcon name="spark" size={18} color={colors.primary[700]} decorative />
+        <AppText variant="bodyStrong">{vi ? 'Mới' : 'New'}</AppText>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={vi ? 'Đóng trợ lý AI' : 'Close AI assistant'}
+        onPress={closePanel}
+        hitSlop={8}
+        style={({ pressed }) => [
+          styles.closeButton,
+          pressed && styles.controlPressed,
+        ]}
+      >
+        <AppIcon name="close" size={20} color={colors.primary[700]} decorative />
+      </Pressable>
+    </View>
+  );
 
   return (
     <>
@@ -152,29 +200,16 @@ export function AiChatWidget() {
         title={vi ? 'Trợ lý AI' : 'AI assistant'}
         onClose={closePanel}
         tall
+        height="92%"
+        headerAction={headerActions}
+        showFooterClose={false}
       >
         <View style={styles.chatPanel}>
-          <View style={styles.toolbar}>
-            <AppText color={colors.text.secondary} style={styles.disclaimer}>
-              {vi
-                ? 'AI có thể nhầm. Hãy kiểm tra thông tin quan trọng.'
-                : 'AI can make mistakes. Check important information.'}
-            </AppText>
-            <AppButton
-              title={vi ? 'Cuộc trò chuyện mới' : 'New chat'}
-              variant="ghost"
-              fullWidth={false}
-              disabled={busy}
-              onPress={() => void startNewConversation()}
-            />
-          </View>
-
           <FeatureState
             loading={loadingChat}
             error={queryError}
             retry={queryError ? retryChatQueries : undefined}
           />
-          <FeatureState error={chat.create.error || chat.send.error} />
 
           <ScrollView
             ref={scrollRef}
@@ -185,10 +220,12 @@ export function AiChatWidget() {
               scrollRef.current?.scrollToEnd({ animated: true })
             }
           >
-            {!chat.conversations.isLoading && messages.length === 0 ? (
+            {!loadingChat && messages.length === 0 && !actionError ? (
               <View style={styles.welcome}>
-                <AppIcon name="mam-companion" size={84} decorative />
-                <AppText variant="heading4" style={styles.centerText}>
+                <View style={styles.mascotHalo}>
+                  <AppIcon name="mam-companion" size={76} decorative />
+                </View>
+                <AppText variant="heading3" style={styles.centerText}>
                   {vi ? 'Bạn muốn hỏi gì hôm nay?' : 'What can I help with?'}
                 </AppText>
                 <AppText color={colors.text.secondary} style={styles.centerText}>
@@ -196,62 +233,167 @@ export function AiChatWidget() {
                     ? 'Hỏi về dinh dưỡng, món chay hoặc cách lên thực đơn.'
                     : 'Ask about nutrition, vegan dishes, or meal planning.'}
                 </AppText>
+                <View style={styles.suggestions}>
+                  {SUGGESTIONS[vi ? 'vi' : 'en'].map((suggestion) => (
+                    <Pressable
+                      key={suggestion}
+                      accessibilityRole="button"
+                      onPress={() => chooseSuggestion(suggestion)}
+                      style={({ pressed }) => [
+                        styles.suggestion,
+                        pressed && styles.controlPressed,
+                      ]}
+                    >
+                      <AppIcon
+                        name="spark"
+                        size={16}
+                        color={colors.primary[700]}
+                        decorative
+                      />
+                      <AppText style={styles.suggestionText}>{suggestion}</AppText>
+                    </Pressable>
+                  ))}
+                </View>
               </View>
             ) : null}
 
-            {messages.map((message) => (
-              <View
-                key={message._id}
-                style={[
-                  styles.message,
-                  message.role === 'user' ? styles.userMessage : styles.aiMessage,
-                ]}
-              >
-                <AppText variant="bodyStrong">
-                  {message.role === 'user' ? (vi ? 'Bạn' : 'You') : 'AI'}
-                </AppText>
-                <AppText selectable>{message.content}</AppText>
-              </View>
-            ))}
+            {messages.map((message) => {
+              const fromUser = message.role === 'user';
+              return (
+                <View
+                  key={message._id}
+                  style={[styles.messageRow, fromUser && styles.userMessageRow]}
+                >
+                  {!fromUser ? (
+                    <View style={styles.aiAvatar}>
+                      <AppIcon name="mam-companion" size={30} decorative />
+                    </View>
+                  ) : null}
+                  <View
+                    style={[
+                      styles.message,
+                      fromUser ? styles.userMessage : styles.aiMessage,
+                    ]}
+                  >
+                    {!fromUser ? (
+                      <AppText variant="heading6" color={colors.primary[700]}>
+                        Mầm AI
+                      </AppText>
+                    ) : null}
+                    <AppText
+                      selectable
+                      color={fromUser ? colors.text.inverse : colors.text.primary}
+                    >
+                      {message.content}
+                    </AppText>
+                  </View>
+                </View>
+              );
+            })}
 
             {busy ? (
-              <View style={[styles.message, styles.aiMessage, styles.pending]}>
-                <ActivityIndicator color={colors.primary[700]} />
-                <AppText color={colors.text.secondary}>
-                  {vi ? 'AI đang trả lời…' : 'AI is responding…'}
-                </AppText>
+              <View style={styles.messageRow}>
+                <View style={styles.aiAvatar}>
+                  <AppIcon name="mam-companion" size={30} decorative />
+                </View>
+                <View style={[styles.message, styles.aiMessage, styles.pending]}>
+                  <ActivityIndicator size="small" color={colors.primary[700]} />
+                  <AppText color={colors.text.secondary}>
+                    {vi ? 'Mầm đang suy nghĩ…' : 'Mầm is thinking…'}
+                  </AppText>
+                </View>
+              </View>
+            ) : null}
+
+            {actionError ? (
+              <View style={styles.errorNotice} accessibilityRole="alert">
+                <View style={styles.errorIcon}>
+                  <AppText variant="bodyStrong" color={colors.status.danger}>
+                    !
+                  </AppText>
+                </View>
+                <View style={styles.errorCopy}>
+                  <AppText variant="bodyStrong" color={colors.status.danger}>
+                    {actionErrorCode === 'AI_AUTHENTICATION_ERROR'
+                      ? vi
+                        ? 'AI chưa thể kết nối'
+                        : 'AI cannot connect yet'
+                      : vi
+                        ? 'Chưa gửi được câu hỏi'
+                        : 'Your question was not sent'}
+                  </AppText>
+                  <AppText color={colors.text.secondary} style={styles.errorMessage}>
+                    {getFeatureErrorMessage(actionError, vi ? 'vi' : 'en')}
+                  </AppText>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={vi ? 'Ẩn thông báo lỗi' : 'Dismiss error'}
+                  onPress={() => {
+                    chat.create.reset();
+                    chat.send.reset();
+                  }}
+                  hitSlop={8}
+                >
+                  <AppIcon
+                    name="close"
+                    size={18}
+                    color={colors.status.danger}
+                    decorative
+                  />
+                </Pressable>
               </View>
             ) : null}
           </ScrollView>
 
-          <Toggle
-            label={
-              vi
-                ? 'Dùng hồ sơ dinh dưỡng cho câu trả lời này'
-                : 'Use my nutrition profile for this answer'
-            }
-            value={useProfile}
-            onValueChange={setUseProfile}
-            disabled={busy}
-          />
-          <View style={styles.composer}>
-            <AppInput
-              value={content}
-              onChangeText={setContent}
-              placeholder={vi ? 'Nhập câu hỏi của bạn…' : 'Type your question…'}
-              multiline
-              maxLength={4000}
-              editable={!busy}
-              returnKeyType="send"
-              style={styles.input}
+          <View style={styles.composerArea}>
+            <Toggle
+              label={
+                vi
+                  ? 'Cá nhân hóa theo hồ sơ dinh dưỡng'
+                  : 'Personalize with my nutrition profile'
+              }
+              value={useProfile}
+              onValueChange={setUseProfile}
+              disabled={busy}
             />
-            <AppButton
-              title={vi ? 'Gửi' : 'Send'}
-              loading={chat.send.isPending}
-              disabled={busy || !content.trim()}
-              fullWidth={false}
-              onPress={() => void submitQuestion()}
-            />
+            <View style={styles.composer}>
+              <AppInput
+                value={content}
+                onChangeText={updateContent}
+                placeholder={vi ? 'Nhắn cho Mầm AI…' : 'Message Mầm AI…'}
+                multiline
+                maxLength={4000}
+                editable={!busy}
+                returnKeyType="send"
+                blurOnSubmit={false}
+                style={styles.input}
+                inputStyle={styles.inputText}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={vi ? 'Gửi câu hỏi' : 'Send question'}
+                accessibilityState={{ disabled: busy || !content.trim(), busy }}
+                disabled={busy || !content.trim()}
+                onPress={() => void submitQuestion()}
+                style={({ pressed }) => [
+                  styles.sendButton,
+                  (busy || !content.trim()) && styles.sendButtonDisabled,
+                  pressed && styles.sendButtonPressed,
+                ]}
+              >
+                {chat.send.isPending ? (
+                  <ActivityIndicator size="small" color={colors.text.inverse} />
+                ) : (
+                  <AppText style={styles.sendIcon}>↑</AppText>
+                )}
+              </Pressable>
+            </View>
+            <AppText color={colors.text.secondary} style={styles.disclaimer}>
+              {vi
+                ? 'AI có thể nhầm. Hãy kiểm tra thông tin quan trọng.'
+                : 'AI can make mistakes. Check important information.'}
+            </AppText>
           </View>
         </View>
       </BottomSheet>
@@ -290,42 +432,146 @@ const styles = StyleSheet.create({
     borderColor: colors.background.surface,
   },
   aiBadgeText: { color: colors.text.inverse, fontSize: 10, fontWeight: '700' },
-  chatPanel: { flex: 1, minHeight: 0, gap: spacing.md },
-  toolbar: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  disclaimer: { flex: 1, fontSize: 12 },
+  newChatButton: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[50],
+  },
+  closeButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
+  },
+  controlPressed: { opacity: 0.72 },
+  controlDisabled: { opacity: 0.45 },
+  chatPanel: { flex: 1, minHeight: 0, gap: spacing.sm },
   messages: { flex: 1, minHeight: 0 },
-  messagesContent: { flexGrow: 1, gap: spacing.md, paddingVertical: spacing.sm },
+  messagesContent: {
+    flexGrow: 1,
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+  },
   welcome: {
     flex: 1,
-    minHeight: 260,
+    minHeight: 360,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.md,
+  },
+  mascotHalo: {
+    width: 92,
+    height: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[50],
+    marginBottom: spacing.xs,
   },
   centerText: { textAlign: 'center' },
-  message: {
-    maxWidth: '88%',
-    padding: spacing.md,
+  suggestions: {
+    width: '100%',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  suggestion: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+  },
+  suggestionText: { flex: 1 },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  userMessageRow: { justifyContent: 'flex-end' },
+  aiAvatar: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[50],
+  },
+  message: {
+    maxWidth: '82%',
+    padding: spacing.md,
+    borderRadius: radius.xl,
     gap: spacing.xs,
   },
   userMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: colors.background.selected,
+    backgroundColor: colors.primary[700],
     borderBottomRightRadius: spacing.xs,
   },
   aiMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.background.muted,
+    backgroundColor: colors.primary[50],
     borderBottomLeftRadius: spacing.xs,
   },
   pending: { flexDirection: 'row', alignItems: 'center' },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
+  errorNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.status.danger,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+  },
+  errorIcon: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
+  },
+  errorCopy: { flex: 1, gap: spacing.xs },
+  errorMessage: { fontSize: 12 },
+  composerArea: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.default,
+  },
+  composer: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   input: { flex: 1 },
+  inputText: { maxHeight: 96 },
+  sendButton: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[700],
+  },
+  sendButtonDisabled: { backgroundColor: colors.background.muted },
+  sendButtonPressed: { transform: [{ scale: 0.95 }] },
+  sendIcon: {
+    color: colors.text.inverse,
+    fontSize: 26,
+    lineHeight: 28,
+    fontWeight: '700',
+  },
+  disclaimer: { textAlign: 'center', fontSize: 10 },
 });

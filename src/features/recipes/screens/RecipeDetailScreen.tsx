@@ -1,10 +1,11 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { useEffect } from 'react';
+import { Linking, StyleSheet } from 'react-native';
 
 import {
   AppButton,
   AppText,
-  CustomHeader,
   EmptyState,
   LoadingSpinner,
   ScreenWrapper,
@@ -15,26 +16,35 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, spacing } from '@/theme';
 
 import { ContentSaveButton } from '../components/ContentSaveButton';
+import { DiscoveryDetailHeader } from '../components/DiscoveryDetailHeader';
 import { RecipeDetailTabs } from '../components/RecipeDetailTabs';
 import { RecipeHeroSection } from '../components/RecipeHeroSection';
 import { RecipeMacroCards } from '../components/RecipeMacroCards';
 import { useRecipeDetail } from '../hooks';
+import { engagementApi } from '@/features/engagement/engagementApi';
+import { RatingPanel } from '@/features/engagement/RatingPanel';
+import { DiscussionPanel } from '@/features/engagement/DiscussionPanel';
 
 export function RecipeDetailScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
+  useEffect(() => {
+    if (recipe.data?._id)
+      void engagementApi
+        .recordView('recipe', recipe.data._id)
+        .catch(() => undefined);
+  }, [recipe.data?._id]);
 
   if (recipe.isLoading) {
     return (
       <ScreenWrapper
         header={
-          <CustomHeader
+          <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
-            showBack
             backFallbackHref="/(discover)/explore"
           />
         }
@@ -49,9 +59,8 @@ export function RecipeDetailScreen() {
     return (
       <ScreenWrapper
         header={
-          <CustomHeader
+          <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
-            showBack
             backFallbackHref="/(discover)/explore"
           />
         }
@@ -59,7 +68,7 @@ export function RecipeDetailScreen() {
       >
         <EmptyState
           title={t('recipe.openError')}
-          description={recipe.error?.message}
+          description={recipe.error ? getUserErrorMessage(recipe.error) : undefined}
           actionLabel={t('common.retry')}
           onAction={() => void recipe.refetch()}
         />
@@ -68,7 +77,10 @@ export function RecipeDetailScreen() {
   }
 
   const data = recipe.data;
-  const nutrition = data.nutritionPerServing;
+  const nutrition =
+    data.nutritionDataQuality === 'unavailable'
+      ? undefined
+      : data.nutritionPerServing;
   const allergenText =
     data.allergenIds === undefined
       ? t('recipe.allergensUnknown')
@@ -88,9 +100,8 @@ export function RecipeDetailScreen() {
   return (
     <ScreenWrapper
       header={
-        <CustomHeader
+        <DiscoveryDetailHeader
           title={data.title ?? t('recipe.detailTitle')}
-          showBack
           backFallbackHref="/(discover)/explore"
         />
       }
@@ -119,12 +130,37 @@ export function RecipeDetailScreen() {
         servings={data.servings}
         ingredients={data.ingredients}
         steps={data.steps}
+        onOpenIngredient={(foodItemId) =>
+          router.push({
+            pathname: '/(discover)/food/[id]',
+            params: { id: foodItemId },
+          })
+        }
       />
 
       <Surface bordered padding="lg" radius="lg" style={styles.block}>
         <AppText variant="heading4">{t('recipe.allergens')}</AppText>
         <AppText color={colors.text.secondary}>{allergenText}</AppText>
       </Surface>
+
+      {data.sourceAttribution ? (
+        <Surface bordered padding="lg" radius="lg" style={styles.block}>
+          <AppText variant="heading4">
+            {locale === 'vi' ? 'Nguồn công thức' : 'Recipe source'}
+          </AppText>
+          <AppText color={colors.text.secondary}>
+            {data.sourceAttribution.provider} · {data.sourceAttribution.license}
+          </AppText>
+          {data.sourceAttribution.url ? (
+            <AppButton
+              title={locale === 'vi' ? 'Xem nguồn' : 'View source'}
+              variant="ghost"
+              fullWidth={false}
+              onPress={() => void Linking.openURL(data.sourceAttribution!.url!)}
+            />
+          ) : null}
+        </Surface>
+      ) : null}
 
       <AppButton
         title={t('recipe.startCooking')}
@@ -136,6 +172,22 @@ export function RecipeDetailScreen() {
       <ContentSaveButton
         content={{ ...data, type: 'recipe' }}
         initialSaved={data.isSaved}
+      />
+      <RatingPanel targetType="recipe" targetId={data._id} />
+      <DiscussionPanel
+        targetType="recipe"
+        targetId={data._id}
+        initialReaction={data.reacted}
+      />
+      <AppButton
+        title={locale === 'vi' ? 'Báo cáo công thức' : 'Report recipe'}
+        variant="ghost"
+        onPress={() =>
+          router.push({
+            pathname: '/community/report',
+            params: { targetType: 'recipe', targetId: data._id },
+          })
+        }
       />
     </ScreenWrapper>
   );

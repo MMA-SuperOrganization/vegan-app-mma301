@@ -1,15 +1,31 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { normalizeMealPlan } from './mealPlanState';
-import type { AddMealInput, MealPlan, UpdateMealInput } from './types';
+import { collectPages } from '@/services/api/collectPages';
+import type {
+  AddMealInput,
+  MealPlan,
+  MealPlanStatus,
+  UpdateMealInput,
+} from './types';
 
 const normalize = (plan: MealPlan) => normalizeMealPlan(plan);
 
 export const mealPlanApi = {
+  activate: (id: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post('/meal-plans/' + id + '/activate', {})
+    ).then(normalize),
+  detail: (id: string) =>
+    unwrapApiRequest<MealPlan>(() => apiClient.get('/meal-plans/' + id)).then(
+      normalize
+    ),
   listWeek: (weekStartDate: string) =>
-    unwrapApiPageRequest<MealPlan>(() =>
-      apiClient.get('/meal-plans', {
-        params: { page: 1, limit: 10, weekStartDate },
-      })
+    collectPages((page) =>
+      unwrapApiPageRequest<MealPlan>(() =>
+        apiClient.get('/meal-plans', {
+          params: { page, limit: 100, weekStartDate },
+        })
+      )
     ).then((page) => ({ ...page, data: page.data.map(normalize) })),
   create: (weekStartDate: string) =>
     unwrapApiRequest<MealPlan>(() =>
@@ -26,5 +42,19 @@ export const mealPlanApi = {
   removeMeal: (planId: string, mealId: string) =>
     unwrapApiRequest<MealPlan>(() =>
       apiClient.delete(`/meal-plans/${planId}/meals/${mealId}`)
+    ).then(normalize),
+  setStatus: (
+    id: string,
+    status: Extract<MealPlanStatus, 'completed' | 'archived'>
+  ) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.patch(`/meal-plans/${id}`, { status })
+    ).then(normalize),
+  clone: (id: string, weekStartDate: string, title?: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post(`/meal-plans/${id}/clone`, {
+        weekStartDate,
+        ...(title ? { title } : {}),
+      })
     ).then(normalize),
 };

@@ -53,7 +53,7 @@ export function toAppErrorDetails(
 }
 
 export function logAppError(details: AppErrorDetails) {
-  // Only log normalized fields. Credentials and session tokens never enter this object.
+  // Keep diagnostics in terminal/debug output; the UI uses a separate safe message.
   // console.error opens Expo's runtime error overlay, so diagnostics use a normal log.
   console.log('[VEGETA_ERROR]', {
     operation: details.operation,

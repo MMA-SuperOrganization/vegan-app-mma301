@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { create } from 'zustand';
 import { translate } from '@/i18n';
 import { useAuthStore } from '@/features/auth';
@@ -60,8 +61,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       if (get().userId === userId) {
         set({
           status: 'error',
-          error:
-            error instanceof Error ? error.message : translate('profile.error.load'),
+          error: getUserErrorMessage(error, translate('profile.error.load')),
         });
       }
       return false;
@@ -80,8 +80,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (error) {
       set({
         isSaving: false,
-        error:
-          error instanceof Error ? error.message : translate('profile.error.save'),
+        error: getUserErrorMessage(error, translate('profile.error.save')),
       });
       return false;
     }
@@ -119,8 +118,7 @@ async function saveAndReload(
   } catch (error) {
     set({
       isSaving: false,
-      error:
-        error instanceof Error ? error.message : translate('profile.error.save'),
+      error: getUserErrorMessage(error, translate('profile.error.save')),
     });
     return false;
   }

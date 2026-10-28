@@ -19,6 +19,7 @@ export * from './ProgressBar';
 export * from './TimezonePickerField';
 export * from './BottomSheet';
 export * from './SearchPickerSheet';
+export * from './NutritionTargetCard';
 
 export { Button as AppButton } from './Button';
 export { Input as AppInput } from './Input';

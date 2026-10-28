@@ -9,7 +9,8 @@ import { useProfileStore } from '../profileStore';
 
 export function ProfileScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const vi = locale === 'vi';
   const dietOptions = getDietOptions(t);
   const data = useProfileStore((state) => state.data);
   const unread = useUnreadNotificationCount();
@@ -84,6 +85,94 @@ export function ProfileScreen() {
         </View>
       </View>
 
+      <MenuSection title={t('pantry.title')}>
+        <MenuItem
+          title={vi ? 'Kho nâng cao' : 'Advanced pantry'}
+          subtitle={
+            vi
+              ? 'Thêm hàng loạt, hạn dùng và gợi ý món từ kho'
+              : 'Bulk add, expiry and recipe matching'
+          }
+          onPress={() => router.push('/pantry/advanced')}
+        />
+        <MenuItem
+          title={t('pantry.open')}
+          subtitle={t('pantry.subtitle')}
+          onPress={() => router.push('/pantry')}
+        />
+        <MenuItem
+          title={t('pantry.add')}
+          subtitle={t('pantry.addDescription')}
+          onPress={() => router.push('/pantry/item')}
+        />
+      </MenuSection>
+
+      <MenuSection title={vi ? 'Trợ lý và cộng đồng' : 'Assistant and community'}>
+        <MenuItem
+          title={vi ? 'Trò chuyện với AI' : 'AI chat'}
+          subtitle={
+            vi ? 'Trao đổi về chế độ ăn và nấu nướng' : 'Discuss food and cooking'
+          }
+          onPress={() => router.push('/ai')}
+        />
+        <MenuItem
+          title={vi ? 'AI lên thực đơn' : 'AI meal planner'}
+          subtitle={
+            vi
+              ? 'Xem và sửa đề xuất trước khi lưu'
+              : 'Review and edit proposals before saving'
+          }
+          onPress={() => router.push('/ai/meal-planner')}
+        />
+        <MenuItem
+          title={vi ? 'Nhận diện nguyên liệu' : 'Ingredient recognition'}
+          subtitle={
+            vi
+              ? 'Chụp ảnh, kiểm tra và thêm vào kho'
+              : 'Take a photo, review and add to pantry'
+          }
+          onPress={() => router.push('/ai/ingredients')}
+        />
+        <MenuItem
+          title={vi ? 'Tóm tắt video bằng AI' : 'AI video summary'}
+          subtitle={
+            vi ? 'Tạo tóm tắt từ bản lời thoại' : 'Summarize a video transcript'
+          }
+          onPress={() => router.push('/ai/video-summary')}
+        />
+        <MenuItem
+          title={vi ? 'Cộng đồng' : 'Community'}
+          subtitle={
+            vi ? 'Chia sẻ bài viết và bình luận' : 'Share posts and comments'
+          }
+          onPress={() => router.push('/community')}
+        />
+        <MenuItem
+          title={vi ? 'Công thức của tôi' : 'My recipes'}
+          subtitle={
+            vi
+              ? 'Tạo, chỉnh sửa và gửi duyệt công thức'
+              : 'Create, edit and submit recipes'
+          }
+          onPress={() => router.push('/recipes')}
+        />
+        <MenuItem
+          title={vi ? 'Báo cáo của tôi' : 'My reports'}
+          subtitle={
+            vi ? 'Theo dõi kết quả xử lý báo cáo' : 'Track report resolutions'
+          }
+          onPress={() => router.push('/community/report')}
+        />
+        <MenuItem
+          title={vi ? 'Nhắc lịch' : 'Reminders'}
+          subtitle={
+            vi
+              ? 'Lịch ăn, uống nước và nhắc việc riêng'
+              : 'Meals, water and custom schedules'
+          }
+          onPress={() => router.push('/reminders')}
+        />
+      </MenuSection>
       <MenuSection title={t('profile.healthSection')}>
         <MenuItem
           title={t('profile.nutrition')}
@@ -113,6 +202,13 @@ export function ProfileScreen() {
       </MenuSection>
       <MenuSection title={t('profile.contentSection')}>
         <MenuItem
+          title={vi ? 'Lịch sử đã xem' : 'View history'}
+          subtitle={
+            vi ? 'Xem lại nội dung gần đây' : 'Revisit recently viewed content'
+          }
+          onPress={() => router.push('/view-history')}
+        />
+        <MenuItem
           title={t('profile.saved')}
           subtitle={t('profile.savedSubtitle')}
           onPress={() => router.push('/(discover)/saved')}
@@ -133,6 +229,46 @@ export function ProfileScreen() {
         />
       </MenuSection>
       <MenuSection title={t('profile.settingsSection')}>
+        <MenuItem
+          title={vi ? 'Lịch sử trò chuyện AI' : 'AI chat history'}
+          subtitle={
+            vi
+              ? 'Xem lại và tiếp tục các cuộc trò chuyện'
+              : 'Review and continue previous conversations'
+          }
+          onPress={() => router.push('/ai/history')}
+        />
+        {data.user.role === 'admin' ? (
+          <>
+            <MenuItem
+              title={vi ? 'Quản trị hệ thống' : 'Administration'}
+              subtitle={
+                vi
+                  ? 'Thống kê, tài khoản và audit log'
+                  : 'Metrics, accounts, and audit logs'
+              }
+              onPress={() => router.push('/admin')}
+            />
+            <MenuItem
+              title={vi ? 'Kiểm duyệt' : 'Moderation'}
+              subtitle={
+                vi
+                  ? 'Duyệt nội dung, báo cáo và hồ sơ xử lý'
+                  : 'Review content, reports and moderation cases'
+              }
+              onPress={() => router.push('/moderation')}
+            />
+            <MenuItem
+              title={vi ? 'Giám sát AI' : 'AI monitoring'}
+              subtitle={
+                vi
+                  ? 'Theo dõi lỗi, độ trễ và phản hồi'
+                  : 'Review failures, latency, and feedback'
+              }
+              onPress={() => router.push('/ai/monitoring')}
+            />
+          </>
+        ) : null}
         <MenuItem
           title={t('profile.language')}
           subtitle={t('profile.languageSubtitle')}

@@ -3,6 +3,7 @@ import { authSession, firebaseAuth } from '@/services/auth';
 import { storage, storageKeys } from '@/services/storage';
 import { AppError } from '@/services/errors';
 import { translate } from '@/i18n';
+import { unregisterStoredDevice } from '@/features/reminders/deviceRegistration';
 import type { User } from '../types/auth.types';
 
 interface AccountDto {
@@ -24,7 +25,10 @@ export interface LoginResponse {
 function toUser(account: AccountDto): User {
   return {
     id: account.userId || account._id,
-    name: account.displayName || account.email?.split('@')[0] || translate('common.userFallback'),
+    name:
+      account.displayName ||
+      account.email?.split('@')[0] ||
+      translate('common.userFallback'),
     email: account.email || '',
     avatarUrl: account.avatarUrl || undefined,
     role: account.role,
@@ -101,7 +105,9 @@ export const authApi = {
     return firebaseAuth.sendPasswordReset(email);
   },
 
-  logout() {
+  async logout() {
+    const user = await readCachedUser();
+    if (user) await unregisterStoredDevice(user.id);
     return Promise.all([
       authSession.clear(),
       storage.removeItem(storageKeys.authUser),

@@ -39,6 +39,11 @@ export function GroceryListsScreen() {
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('grocery.subtitle')}
         </AppText>
+        <AppButton
+          title={t('pantry.open')}
+          variant="outline"
+          onPress={() => router.push('/pantry')}
+        />
         <View style={styles.filters}>
           {statuses.map((value) => (
             <FilterChip
@@ -63,7 +68,12 @@ export function GroceryListsScreen() {
             description={t(`grocery.empty.${status}.description`)}
             icon={
               <View style={styles.emptyIcon}>
-                <AppIcon name="pantry" size={52} color={colors.primary[700]} decorative />
+                <AppIcon
+                  name="pantry"
+                  size={52}
+                  color={colors.primary[700]}
+                  decorative
+                />
               </View>
             }
           />
@@ -78,13 +88,23 @@ export function GroceryListsScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={list.name}
                   onPress={() => openList(list)}
-                  style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                  style={({ pressed }) => [
+                    styles.card,
+                    pressed && styles.cardPressed,
+                  ]}
                 >
                   <View style={styles.cardIcon}>
-                    <AppIcon name="pantry" size={28} color={colors.primary[700]} decorative />
+                    <AppIcon
+                      name="pantry"
+                      size={28}
+                      color={colors.primary[700]}
+                      decorative
+                    />
                   </View>
                   <View style={styles.cardContent}>
-                    <AppText variant="heading4" numberOfLines={2}>{list.name}</AppText>
+                    <AppText variant="heading4" numberOfLines={2}>
+                      {list.name}
+                    </AppText>
                     <AppText variant="bodySmall" color={colors.text.secondary}>
                       {t('grocery.progress', progress)}
                     </AppText>
@@ -97,7 +117,12 @@ export function GroceryListsScreen() {
       </View>
       <View style={styles.footer}>
         <AppButton
+          title={t('grocery.generateFromPlan')}
+          onPress={() => router.push('/(grocery)/generate')}
+        />
+        <AppButton
           title={t('grocery.create')}
+          variant="outline"
           onPress={() => router.push('/(grocery)/create')}
         />
       </View>
@@ -107,7 +132,11 @@ export function GroceryListsScreen() {
 
 const styles = StyleSheet.create({
   screen: { flexGrow: 1, paddingBottom: spacing['4xl'] },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   card: {
     flexDirection: 'row',
@@ -137,5 +166,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.primary[100],
   },
-  footer: { marginTop: 'auto', paddingHorizontal: spacing.xl, paddingTop: spacing.xl },
+  footer: {
+    marginTop: 'auto',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    gap: spacing.md,
+  },
 });

@@ -26,6 +26,14 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép VEGETA chọn ảnh nguyên liệu.",
+          "cameraPermission": "Cho phép VEGETA chụp ảnh nguyên liệu.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Cho phép VEGETA dùng máy ảnh để nhận diện nguyên liệu."

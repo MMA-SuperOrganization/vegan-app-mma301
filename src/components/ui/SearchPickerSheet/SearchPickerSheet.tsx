@@ -26,6 +26,9 @@ export interface SearchPickerSheetProps {
   onRetry: () => void;
   onSelect: (id: string) => void;
   onClose: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function SearchPickerSheet({
@@ -40,6 +43,9 @@ export function SearchPickerSheet({
   onRetry,
   onSelect,
   onClose,
+  hasMore = false,
+  loadingMore = false,
+  onLoadMore,
 }: SearchPickerSheetProps) {
   const { t } = useTranslation();
 
@@ -74,6 +80,16 @@ export function SearchPickerSheet({
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.list}
+        ListFooterComponent={
+          hasMore && onLoadMore ? (
+            <Button
+              title={t('common.loadMore')}
+              variant="outline"
+              loading={loadingMore}
+              onPress={onLoadMore}
+            />
+          ) : null
+        }
         renderItem={({ item }) => (
           <Pressable
             accessibilityRole="button"

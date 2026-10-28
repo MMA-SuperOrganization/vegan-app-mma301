@@ -1,10 +1,6 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -118,7 +114,7 @@ export function DiscoveryHomeScreen() {
       {home.isError ? (
         <EmptyState
           title={t('home.suggestionError')}
-          description={home.error.message}
+          description={getUserErrorMessage(home.error)}
           actionLabel={t('common.retry')}
           onAction={() => void home.refetch()}
         />

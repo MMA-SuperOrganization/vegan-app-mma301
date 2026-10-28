@@ -25,6 +25,19 @@ test('recipe nutrition is rounded to one decimal and ingredient amounts stay com
   assert.equal(formatIngredientQuantity(240, 'g', 'en'), '240 g');
 });
 
+test('fractional per-serving nutrition uses one decimal in each supported locale', () => {
+  const nutrition = [18.92, 62.29333333333333, 7.773333333333332];
+  assert.deepEqual(
+    nutrition.map((value) => formatNutritionValue(value, 'vi')),
+    ['18,9', '62,3', '7,8']
+  );
+  assert.deepEqual(
+    nutrition.map((value) => formatNutritionValue(value, 'en')),
+    ['18.9', '62.3', '7.8']
+  );
+  assert.equal(formatNutritionValue(0, 'vi'), '0,0');
+});
+
 test('search terms are trimmed and compacted before fuzzy lookup', () => {
   assert.equal(normalizeSearchQuery('  dau   hu  '), 'dau hu');
   assert.equal(normalizeSearchQuery('   '), '');

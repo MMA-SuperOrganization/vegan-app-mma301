@@ -1,16 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import {
-  AppButton,
-  AppInput,
-  AppText,
-  SettingsScreenLayout,
-} from '@/components';
+import { AppButton, AppInput, AppText, SettingsScreenLayout } from '@/components';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
+import { parseNutritionTarget } from '../validation';
 
 export function NutritionProfileScreen() {
   const { t } = useTranslation();
@@ -25,25 +21,59 @@ export function NutritionProfileScreen() {
   const [calories, setCalories] = useState(
     nutrition?.dailyCalorieTarget?.toString() ?? ''
   );
+  const [protein, setProtein] = useState(
+    nutrition?.proteinTargetG?.toString() ?? ''
+  );
+  const [carbs, setCarbs] = useState(nutrition?.carbTargetG?.toString() ?? '');
+  const [fat, setFat] = useState(nutrition?.fatTargetG?.toString() ?? '');
+  const [fiber, setFiber] = useState(nutrition?.fiberTargetG?.toString() ?? '');
   const [validation, setValidation] = useState<string | null>(null);
 
   const submit = async () => {
     const heightError = validateMeasurement(height, t('onboarding.height'), 50, 250);
     const weightError = validateMeasurement(weight, t('onboarding.weight'), 10, 500);
-    const parsedCalories = calories.trim() ? parseDecimal(calories) : null;
-    const caloriesError =
-      parsedCalories !== null && (parsedCalories < 500 || parsedCalories > 10000)
-        ? t('profile.nutritionCaloriesRange')
-        : null;
-    setValidation(heightError ?? weightError ?? caloriesError);
-    if (heightError || weightError || caloriesError) return;
+    const calorieTarget = parseNutritionTarget(calories, 500, 10000);
+    const proteinTarget = parseNutritionTarget(protein, 0, 500);
+    const carbTarget = parseNutritionTarget(carbs, 0, 1500);
+    const fatTarget = parseNutritionTarget(fat, 0, 500);
+    const fiberTarget = parseNutritionTarget(fiber, 0, 100);
+    const caloriesError = calorieTarget.valid
+      ? null
+      : t('profile.nutritionCaloriesRange');
+    const proteinError = proteinTarget.valid ? null : t('profile.proteinRange');
+    const carbsError = carbTarget.valid ? null : t('profile.carbsRange');
+    const fatError = fatTarget.valid ? null : t('profile.fatRange');
+    const fiberError = fiberTarget.valid ? null : t('profile.fiberRange');
+    setValidation(
+      heightError ??
+        weightError ??
+        caloriesError ??
+        proteinError ??
+        carbsError ??
+        fatError ??
+        fiberError
+    );
+    if (
+      heightError ||
+      weightError ||
+      caloriesError ||
+      proteinError ||
+      carbsError ||
+      fatError ||
+      fiberError
+    )
+      return;
     const heightCm = parseDecimal(height);
     const currentWeightKg = parseDecimal(weight);
     if (heightCm === null || currentWeightKg === null) return;
     await save({
       heightCm,
       currentWeightKg,
-      ...(parsedCalories !== null ? { dailyCalorieTarget: parsedCalories } : {}),
+      dailyCalorieTarget: calorieTarget.value,
+      proteinTargetG: proteinTarget.value,
+      carbTargetG: carbTarget.value,
+      fatTargetG: fatTarget.value,
+      fiberTargetG: fiberTarget.value,
     });
   };
 
@@ -81,6 +111,30 @@ export function NutritionProfileScreen() {
           value={calories}
           onChangeText={setCalories}
           keyboardType="number-pad"
+        />
+        <AppInput
+          label={t('profile.dailyProtein')}
+          value={protein}
+          onChangeText={setProtein}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyCarbs')}
+          value={carbs}
+          onChangeText={setCarbs}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyFat')}
+          value={fat}
+          onChangeText={setFat}
+          keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyFiber')}
+          value={fiber}
+          onChangeText={setFiber}
+          keyboardType="decimal-pad"
         />
       </View>
       {validation || error ? (

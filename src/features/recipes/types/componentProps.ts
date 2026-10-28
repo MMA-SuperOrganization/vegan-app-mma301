@@ -84,6 +84,7 @@ export interface RecipeDetailTabsProps {
   servings?: number;
   ingredients?: RecipeIngredientItem[];
   steps?: RecipeDetailStepItem[];
+  onOpenIngredient: (foodItemId: string) => void;
 }
 
 // ==================== SEARCH & RESULTS ====================

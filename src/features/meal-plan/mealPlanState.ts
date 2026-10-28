@@ -1,4 +1,5 @@
 import type { MealType } from '@/features/tracking/types';
+import type { NutritionValues } from '@/features/tracking/types';
 import type { MealPlan, PlannedMeal } from './types';
 
 const DAY_MS = 86_400_000;
@@ -108,11 +109,23 @@ export function groupMealsByType(meals: PlannedMeal[]) {
 }
 
 export function plannedCalories(meals: PlannedMeal[]) {
-  return meals.reduce(
-    (total, meal) =>
-      total +
-      (meal.recipeSnapshot.nutritionPerServing.caloriesKcal ?? 0) * meal.servings,
-    0
+  return plannedNutrition(meals).caloriesKcal;
+}
+
+export function plannedNutrition(meals: PlannedMeal[]): NutritionValues {
+  return meals.reduce<NutritionValues>(
+    (total, meal) => {
+      const nutrition = meal.recipeSnapshot.nutritionPerServing;
+      return {
+        caloriesKcal:
+          total.caloriesKcal + (nutrition.caloriesKcal ?? 0) * meal.servings,
+        proteinG: total.proteinG + (nutrition.proteinG ?? 0) * meal.servings,
+        carbsG: total.carbsG + (nutrition.carbsG ?? 0) * meal.servings,
+        fatG: total.fatG + (nutrition.fatG ?? 0) * meal.servings,
+        fiberG: total.fiberG + (nutrition.fiberG ?? 0) * meal.servings,
+      };
+    },
+    { caloriesKcal: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0 }
   );
 }
 

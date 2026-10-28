@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
 import { Alert, Linking, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -22,9 +23,13 @@ export function AccountSecurityScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const resetProfile = useProfileStore((state) => state.reset);
   const signOut = async () => {
-    await logout();
-    resetProfile();
-    router.replace('/(auth)/login');
+    try {
+      await logout();
+      resetProfile();
+      router.replace('/(auth)/login');
+    } catch {
+      // The auth store exposes the retryable error on this screen.
+    }
   };
   const deleteAccount = () =>
     Alert.alert(t('profile.deleteAccount'), t('profile.deleteAccountWarning'), [
@@ -40,7 +45,7 @@ export function AccountSecurityScreen() {
             .catch((error) =>
               Alert.alert(
                 t('profile.deleteFailed'),
-                error instanceof Error ? error.message : t('profile.deleteFailed')
+                getUserErrorMessage(error, t('profile.deleteFailed'))
               )
             )
             .finally(() => setIsDeleting(false));

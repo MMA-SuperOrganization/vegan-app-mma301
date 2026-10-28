@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { logAppError, toAppErrorDetails } from '@/services/errors';
+import {
+  getUserErrorMessage,
+  logAppError,
+  toAppErrorDetails,
+} from '@/services/errors';
 import { authApi } from '../services/authApi';
 import type { AuthState, User } from '../types/auth.types';
 import { translate } from '@/i18n';
@@ -14,7 +18,7 @@ function captureError(
 ) {
   const details = toAppErrorDetails(error, operation, fallbackMessage, fallbackCode);
   logAppError(details);
-  return details;
+  return { ...details, message: getUserErrorMessage(error, fallbackMessage) };
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -117,7 +121,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true });
     try {
       await authApi.logout();
-    } finally {
       set({
         user: null,
         token: null,
@@ -125,6 +128,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isLoading: false,
         error: null,
       });
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: captureError(
+          error,
+          'logout',
+          translate('error.unexpected'),
+          'LOGOUT_FAILED'
+        ),
+      });
+      throw error;
     }
   },
 

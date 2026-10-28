@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -14,6 +15,7 @@ import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
 import { useExploreRecipes, useFoodItems, useHomeFeed } from '../hooks';
 import type { ContentType } from '../types';
+import { contentHref } from '../contentNavigation';
 
 const FILTERS: Array<{
   type: ContentType;
@@ -118,7 +120,7 @@ export function ExploreScreen() {
       {error ? (
         <EmptyState
           title={t('discover.loadError')}
-          description={error.message}
+          description={getUserErrorMessage(error)}
           actionLabel={t('common.retry')}
           onAction={() => void retry()}
         />
@@ -134,21 +136,7 @@ export function ExploreScreen() {
           <ContentResultCard
             key={item._id}
             item={{ ...item, type }}
-            onPress={
-              type === 'recipe'
-                ? () =>
-                    router.push({
-                      pathname: '/(discover)/recipe/[id]',
-                      params: { id: item.slug ?? item._id },
-                    })
-                : type === 'food-item'
-                  ? () =>
-                      router.push({
-                        pathname: '/(discover)/food/[id]',
-                        params: { id: item._id },
-                      })
-                  : undefined
-            }
+            onPress={() => router.push(contentHref({ ...item, type }))}
           />
         ))}
       </View>

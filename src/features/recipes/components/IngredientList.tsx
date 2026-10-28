@@ -1,9 +1,17 @@
-import { Pressable, StyleSheet, View } from 'react-native';
-import { AppText, Thumbnail } from '@/components';
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { AppText, BottomSheet } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { formatIngredientQuantity } from '../recipePresentation';
 import type { RecipeDetail } from '../types';
+import { IngredientDetails } from './IngredientDetails';
 
 type Ingredient = NonNullable<RecipeDetail['ingredients']>[number];
 
@@ -15,6 +23,10 @@ export function IngredientList({
   onOpen: (foodItemId: string) => void;
 }) {
   const { locale, t } = useTranslation();
+  const { height } = useWindowDimensions();
+  const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(
+    null
+  );
 
   if (!ingredients?.length) {
     return (
@@ -35,27 +47,17 @@ export function IngredientList({
             accessibilityLabel={t('recipe.openIngredientA11y', {
               name: item.foodNameSnapshot,
             })}
-            onPress={() => onOpen(item.foodItemId)}
+            onPress={() => setSelectedIngredient(item)}
             style={({ pressed }) => [
               styles.row,
               index < ingredients.length - 1 && styles.divider,
               pressed && styles.pressed,
             ]}
           >
-            <Thumbnail kind="ingredient" size={40} radius={radius.md} />
             <View style={styles.copy}>
               <AppText variant="bodyStrong" numberOfLines={1}>
                 {item.foodNameSnapshot}
               </AppText>
-              {item.note ? (
-                <AppText
-                  variant="bodySmall"
-                  color={colors.text.secondary}
-                  numberOfLines={1}
-                >
-                  {item.note}
-                </AppText>
-              ) : null}
             </View>
             <AppText variant="bodyStrong" color={colors.primary[700]}>
               {formatIngredientQuantity(item.quantity, item.unit, locale)}
@@ -66,6 +68,26 @@ export function IngredientList({
           </Pressable>
         ))}
       </View>
+      {selectedIngredient ? (
+        <BottomSheet
+          visible
+          title={selectedIngredient.foodNameSnapshot}
+          onClose={() => setSelectedIngredient(null)}
+        >
+          <ScrollView
+            style={{ maxHeight: height * 0.6 }}
+            showsVerticalScrollIndicator
+          >
+            <IngredientDetails
+              ingredient={selectedIngredient}
+              onOpen={(foodItemId) => {
+                setSelectedIngredient(null);
+                onOpen(foodItemId);
+              }}
+            />
+          </ScrollView>
+        </BottomSheet>
+      ) : null}
     </View>
   );
 }
@@ -79,7 +101,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   row: {
-    minHeight: 64,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

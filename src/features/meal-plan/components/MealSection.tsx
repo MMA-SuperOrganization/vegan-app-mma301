@@ -10,6 +10,7 @@ export function MealSection({
   pending,
   formatNumber,
   onAdd,
+  onReplace,
   onChangeServings,
   onRemove,
 }: {
@@ -18,6 +19,7 @@ export function MealSection({
   pending: boolean;
   formatNumber: (value: number, fractionDigits?: number) => string;
   onAdd: () => void;
+  onReplace: (meal: PlannedMeal) => void;
   onChangeServings: (meal: PlannedMeal, delta: number) => void;
   onRemove: (meal: PlannedMeal) => void;
 }) {
@@ -60,6 +62,22 @@ export function MealSection({
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={t('mealPlan.replaceDishA11y', {
+                  name: meal.recipeSnapshot.title,
+                })}
+                disabled={pending}
+                onPress={() => onReplace(meal)}
+                style={({ pressed }) => [
+                  styles.textButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <AppText variant="bodySmall" color={colors.primary[700]}>
+                  {t('mealPlan.replaceDish')}
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
                 accessibilityLabel={t('mealPlan.decreaseServingA11y', {
                   name: meal.recipeSnapshot.title,
                 })}
@@ -99,7 +117,7 @@ export function MealSection({
                 disabled={pending}
                 onPress={() => onRemove(meal)}
                 style={({ pressed }) => [
-                  styles.removeButton,
+                  styles.textButton,
                   pressed && styles.pressed,
                 ]}
               >
@@ -138,7 +156,12 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   mealCopy: { gap: spacing.xs },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   stepButton: {
     width: 36,
     height: 36,
@@ -148,6 +171,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.selected,
   },
   servings: { minWidth: 68, textAlign: 'center' },
-  removeButton: { marginLeft: 'auto', padding: spacing.sm },
+  textButton: { padding: spacing.sm },
   pressed: { opacity: 0.65 },
 });

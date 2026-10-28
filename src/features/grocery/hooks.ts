@@ -50,6 +50,20 @@ export function useGroceryActions(listId?: string) {
     mutationFn: (name: string) => groceryApi.create(name),
     onSuccess: storeList,
   });
+  const generate = useMutation({
+    mutationFn: ({
+      planId,
+      name,
+      range,
+      subtractPantry,
+    }: {
+      planId: string;
+      name?: string;
+      range?: { from: string; to: string };
+      subtractPantry?: boolean;
+    }) => groceryApi.generateFromMealPlan(planId, name, range, subtractPantry),
+    onSuccess: storeList,
+  });
   const update = useMutation({
     mutationFn: (variables: {
       id: string;
@@ -91,5 +105,14 @@ export function useGroceryActions(listId?: string) {
     onSuccess: storeList,
   });
 
-  return { create, update, archive, addItem, updateItem, deleteItem, clearChecked };
+  return {
+    create,
+    generate,
+    update,
+    archive,
+    addItem,
+    updateItem,
+    deleteItem,
+    clearChecked,
+  };
 }

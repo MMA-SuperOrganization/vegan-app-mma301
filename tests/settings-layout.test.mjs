@@ -6,6 +6,7 @@ const settingsScreens = [
   'src/features/settings/screens/LanguageScreen.tsx',
   'src/features/settings/screens/NotificationInboxScreen.tsx',
   'src/features/settings/screens/NotificationSettingsScreen.tsx',
+  'src/features/ai/screens/AiHistoryScreen.tsx',
   'src/features/profile/screens/EditProfileScreen.tsx',
   'src/features/profile/screens/NutritionProfileScreen.tsx',
   'src/features/profile/screens/DietaryPreferencesScreen.tsx',
@@ -15,7 +16,10 @@ const settingsScreens = [
 
 test('setting detail screens share the full-width settings layout', () => {
   for (const screenPath of settingsScreens) {
-    const source = readFileSync(new URL(`../${screenPath}`, import.meta.url), 'utf8');
+    const source = readFileSync(
+      new URL(`../${screenPath}`, import.meta.url),
+      'utf8'
+    );
 
     assert.match(source, /<SettingsScreenLayout\b/, screenPath);
     assert.doesNotMatch(source, /<CustomHeader\b|<BackButton\b/, screenPath);
@@ -38,13 +42,16 @@ const customHeaderHosts = [
   'src/features/tracking/screens/FoodDiaryScreen.tsx',
   'src/features/tracking/screens/WeightTrackingScreen.tsx',
   'src/features/tracking/screens/WaterTrackingScreen.tsx',
-  'src/features/tracking/screens/TrackingComingSoonScreen.tsx',
+  'src/features/tracking/screens/NutritionSummaryScreen.tsx',
   'src/features/tracking/screens/DiaryEntryScreen.tsx',
 ];
 
 test('every custom header is mounted in the fixed screen header slot', () => {
   for (const screenPath of customHeaderHosts) {
-    const source = readFileSync(new URL(`../${screenPath}`, import.meta.url), 'utf8');
+    const source = readFileSync(
+      new URL(`../${screenPath}`, import.meta.url),
+      'utf8'
+    );
 
     assert.match(source, /header=\{/, screenPath);
     assert.doesNotMatch(source, />\s*<CustomHeader\b/, screenPath);

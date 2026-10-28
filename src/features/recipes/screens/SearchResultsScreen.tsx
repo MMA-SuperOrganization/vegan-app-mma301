@@ -1,3 +1,5 @@
+import { getUserErrorMessage } from '@/services/errors';
+import { contentHref } from '../contentNavigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, StyleSheet, View } from 'react-native';
@@ -84,17 +86,7 @@ export function SearchResultsScreen() {
     });
 
   const openItem = (item: ContentCardData) => {
-    if (item.type === 'food-item') {
-      router.push({
-        pathname: '/(discover)/food/[id]',
-        params: { id: item._id },
-      });
-    } else if (item.type === 'recipe' || !item.type) {
-      router.push({
-        pathname: '/(discover)/recipe/[id]',
-        params: { id: item.slug ?? item._id },
-      });
-    }
+    router.push(contentHref(item));
   };
 
   return (
@@ -111,10 +103,7 @@ export function SearchResultsScreen() {
         data={content}
         keyExtractor={(item) => `${item.type ?? 'recipe'}-${item._id}`}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.list,
-          !content.length && styles.growList,
-        ]}
+        contentContainerStyle={[styles.list, !content.length && styles.growList]}
         ItemSeparatorComponent={ListSeparator}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -144,7 +133,7 @@ export function SearchResultsScreen() {
           ) : results.isError ? (
             <EmptyState
               title={t('discover.searchError')}
-              description={results.error.message}
+              description={getUserErrorMessage(results.error)}
               actionLabel={t('common.retry')}
               onAction={() => void results.refetch()}
             />
@@ -180,16 +169,7 @@ export function SearchResultsScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <ContentResultCard
-            item={item}
-            onPress={
-              item.type === 'recipe' ||
-              item.type === 'food-item' ||
-              !item.type
-                ? () => openItem(item)
-                : undefined
-            }
-          />
+          <ContentResultCard item={item} onPress={() => openItem(item)} />
         )}
       />
     </ScreenWrapper>

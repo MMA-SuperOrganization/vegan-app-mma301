@@ -9,6 +9,8 @@ import { useAuthStore } from '@/features/auth';
 import { useProfileStore } from '@/features/profile';
 import { useI18nStore, useTranslation } from '@/i18n';
 import { colors, typography, useDesignFonts } from '@/theme';
+import { PushNotificationBridge } from '@/features/reminders/PushNotificationBridge';
+import { AiChatWidget } from '@/features/ai/components/AiChatWidget';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
@@ -99,6 +101,11 @@ export default function RootLayout() {
         <Stack.Screen name="(discover)" options={{ headerShown: false }} />
         <Stack.Screen name="(tracking)" options={{ headerShown: false }} />
         <Stack.Screen name="(grocery)" options={{ headerShown: false }} />
+        <Stack.Screen name="pantry" options={{ headerShown: false }} />
+        <Stack.Screen name="ai" options={{ headerShown: false }} />
+        <Stack.Screen name="community" options={{ headerShown: false }} />
+        <Stack.Screen name="reminders" options={{ headerShown: false }} />
+        <Stack.Screen name="moderation" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="language" options={{ headerShown: false }} />
         <Stack.Screen name="nutrition-profile" options={{ headerShown: false }} />
@@ -117,8 +124,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
+        <PushNotificationBridge />
         <StatusBar style="dark" />
         {content}
+        <AiChatWidget />
       </QueryClientProvider>
     </SafeAreaProvider>
   );

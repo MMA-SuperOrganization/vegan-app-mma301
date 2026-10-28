@@ -40,8 +40,11 @@ export function useDiary(date = today()) {
 
 export function useDiarySummary(date = today()) {
   const userId = useAuthStore((state) => state.user?.id);
+  const targets = useTrackingTargets();
   return useQuery({
-    queryKey: keys.summary(userId, date),
+    // Targets are current profile values, including after dietary edits/recalculation.
+    // A target change must not reuse a five-minute-old summary for the same day.
+    queryKey: [...keys.summary(userId, date), targets],
     queryFn: () => trackingApi.diary.summary({ date, timezone }),
     enabled: Boolean(userId),
   });

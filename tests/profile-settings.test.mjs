@@ -3,7 +3,25 @@ import assert from 'node:assert/strict';
 import {
   isValidIanaTimezone,
   validateProfileText,
+  parseNutritionTarget,
 } from '../src/features/profile/validation.ts';
+
+test('nutrition targets reject malformed non-empty input instead of silently omitting it', () => {
+  assert.deepEqual(parseNutritionTarget(' ', 500, 10000), {
+    valid: true,
+    value: undefined,
+  });
+  assert.deepEqual(parseNutritionTarget('123,5', 0, 500), {
+    valid: true,
+    value: 123.5,
+  });
+  for (const value of ['abc', 'NaN', 'Infinity', '0', '-1', '501', '1e2', '1,2,3']) {
+    assert.equal(parseNutritionTarget(value, 0, 500).valid, false, value);
+  }
+  assert.equal(parseNutritionTarget('499', 500, 10000).valid, false);
+  assert.equal(parseNutritionTarget('500', 500, 10000).valid, true);
+  assert.equal(parseNutritionTarget('10000', 500, 10000).valid, true);
+});
 import { validateNotificationPreferences } from '../src/features/settings/validation.ts';
 import {
   formatTimezoneLabel,

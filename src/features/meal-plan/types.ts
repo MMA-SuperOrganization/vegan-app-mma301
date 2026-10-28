@@ -1,7 +1,7 @@
 import type { NutritionFacts } from '@/features/recipes/types';
 import type { MealType } from '@/features/tracking/types';
 
-export type MealPlanStatus = 'draft' | 'active' | 'archived';
+export type MealPlanStatus = 'draft' | 'active' | 'archived' | 'completed';
 
 export interface PlannedMeal {
   mealId: string;
@@ -41,6 +41,7 @@ export interface AddMealInput {
 }
 
 export interface UpdateMealInput {
+  recipeId?: string;
   servings?: number;
   completed?: boolean;
 }

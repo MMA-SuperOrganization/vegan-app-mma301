@@ -24,13 +24,16 @@ export function GroceryItemRow({
         accessibilityRole="checkbox"
         accessibilityLabel={toggleLabel}
         accessibilityState={{ checked: item.checked, disabled }}
+        aria-checked={item.checked}
         disabled={disabled}
         onPress={onToggle}
         hitSlop={8}
         style={[styles.checkbox, item.checked && styles.checkboxChecked]}
       >
         {item.checked ? (
-          <AppText color={colors.text.inverse} style={styles.checkmark}>✓</AppText>
+          <AppText color={colors.text.inverse} style={styles.checkmark}>
+            ✓
+          </AppText>
         ) : null}
       </Pressable>
       <Pressable
@@ -51,7 +54,8 @@ export function GroceryItemRow({
           color={colors.text.secondary}
           style={item.checked ? styles.checkedText : undefined}
         >
-          {quantityLabel}{item.note ? ` · ${item.note}` : ''}
+          {quantityLabel}
+          {item.note ? ` · ${item.note}` : ''}
         </AppText>
       </Pressable>
       <AppText color={colors.text.secondary}>›</AppText>

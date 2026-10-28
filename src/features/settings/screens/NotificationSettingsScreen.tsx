@@ -1,3 +1,4 @@
+import { getUserErrorMessage } from '@/services/errors';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
@@ -80,7 +81,7 @@ export function NotificationSettingsScreen() {
       >
         <EmptyState
           title={t('notifications.settingsError')}
-          description={query.error?.message}
+          description={query.error ? getUserErrorMessage(query.error) : undefined}
           actionLabel={t('common.retry')}
           onAction={() => void query.refetch()}
         />
@@ -168,7 +169,9 @@ export function NotificationSettingsScreen() {
         </AppText>
       </View>
       {save.error ? (
-        <AppText color={colors.status.danger}>{save.error.message}</AppText>
+        <AppText color={colors.status.danger}>
+          {getUserErrorMessage(save.error)}
+        </AppText>
       ) : null}
       {validationError ? (
         <AppText color={colors.status.danger}>{validationError}</AppText>

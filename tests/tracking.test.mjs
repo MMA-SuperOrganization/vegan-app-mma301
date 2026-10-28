@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createMockTrackingData } from '../src/features/tracking/mocks/trackingMocks.ts';
+import { createTrackingFixture } from './fixtures/trackingFixtures.ts';
 import {
   addDays,
   combineDateAndTime,
@@ -13,6 +13,9 @@ import {
   defaultMealTypeFor,
   groupDiaryByMeal,
   isLocalIsoDate,
+  macroEnergyShares,
+  mealCalorieTotals,
+  monthGrid,
   normalizeDiaryEntry,
   parseDecimal,
   parseTimeOfDay,
@@ -23,13 +26,14 @@ import {
   toLocalIsoDate,
   unitsForFood,
   waterGlasses,
+  weekDays,
   weightTrend,
 } from '../src/features/tracking/trackingState.ts';
 
 const now = new Date(2026, 9, 8, 15, 0);
 
 test('tracking overview matches the Figma mock numbers', () => {
-  const overview = selectTrackingOverview(createMockTrackingData(now), now);
+  const overview = selectTrackingOverview(createTrackingFixture(now), now);
   assert.equal(overview.date, '2026-10-08');
   assert.deepEqual(overview.energy, { consumedKcal: 800, targetKcal: 2000 });
   assert.deepEqual(overview.weight, {
@@ -41,7 +45,7 @@ test('tracking overview matches the Figma mock numbers', () => {
 });
 
 test('new water and diary logs for today change the overview; other days do not', () => {
-  const data = createMockTrackingData(now);
+  const data = createTrackingFixture(now);
   const yesterday = new Date(2026, 9, 7, 20, 0);
   data.waterLogs.push(
     {
@@ -62,7 +66,7 @@ test('new water and diary logs for today change the overview; other days do not'
 });
 
 test('diary nutrition totals add every macro', () => {
-  const { diaryEntries } = createMockTrackingData(now);
+  const { diaryEntries } = createTrackingFixture(now);
   assert.deepEqual(sumNutrition(diaryEntries), {
     caloriesKcal: 800,
     proteinG: 39,
@@ -73,7 +77,7 @@ test('diary nutrition totals add every macro', () => {
 });
 
 test('API diary timestamps normalize to the calendar date used by screens', () => {
-  const entry = createMockTrackingData(now).diaryEntries[0];
+  const entry = createTrackingFixture(now).diaryEntries[0];
   assert.equal(
     normalizeDiaryEntry({ ...entry, date: '2026-10-08T00:00:00.000Z' }).date,
     '2026-10-08'
@@ -153,7 +157,7 @@ test('nutrition scales by servings and diary entries group by meal', () => {
     fatG: 6,
     fiberG: 10,
   });
-  const groups = groupDiaryByMeal(createMockTrackingData(now).diaryEntries);
+  const groups = groupDiaryByMeal(createTrackingFixture(now).diaryEntries);
   assert.deepEqual(
     Object.fromEntries(
       Object.entries(groups).map(([meal, items]) => [meal, items.length])
@@ -218,4 +222,61 @@ test('day navigation shifts calendar days and validates route dates', () => {
   for (const bad of ['2026-02-30', '12/10/2026', '2026-1-5', '', undefined, 42]) {
     assert.equal(isLocalIsoDate(bad), false, String(bad));
   }
+});
+
+test('week strip shows the Monday-to-Sunday week of the selected day', () => {
+  assert.deepEqual(weekDays('2026-10-14'), [
+    '2026-10-12',
+    '2026-10-13',
+    '2026-10-14',
+    '2026-10-15',
+    '2026-10-16',
+    '2026-10-17',
+    '2026-10-18',
+  ]);
+  assert.equal(weekDays('2026-10-11')[0], '2026-10-05');
+  assert.equal(weekDays('2026-11-01')[6], '2026-11-01');
+});
+
+test('macro energy shares add up to 100 and handle empty days', () => {
+  const shares = macroEnergyShares({ carbsG: 106, proteinG: 39, fatG: 22 });
+  assert.deepEqual(shares, { carbs: 55, protein: 20, fat: 25 });
+  assert.equal(shares.carbs + shares.protein + shares.fat, 100);
+  const thirds = macroEnergyShares({ carbsG: 9, proteinG: 9, fatG: 4 });
+  assert.equal(thirds.carbs + thirds.protein + thirds.fat, 100);
+  assert.equal(macroEnergyShares({ carbsG: 0, proteinG: 0, fatG: 0 }), null);
+});
+
+test('meal calorie totals follow meal order and skip empty meals', () => {
+  const entry = (mealType, caloriesKcal) => ({
+    _id: mealType + caloriesKcal,
+    date: '2026-10-12',
+    mealType,
+    sourceType: 'custom',
+    nameSnapshot: 'x',
+    nutritionSnapshot: { caloriesKcal, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0 },
+    consumedAt: '2026-10-12T05:00:00.000Z',
+  });
+  assert.deepEqual(
+    mealCalorieTotals([
+      entry('snack', 100),
+      entry('breakfast', 380),
+      entry('breakfast', 20),
+    ]),
+    [
+      { mealType: 'breakfast', kcal: 400 },
+      { mealType: 'snack', kcal: 100 },
+    ]
+  );
+  assert.deepEqual(mealCalorieTotals([]), []);
+});
+
+test('month calendar grid starts on Monday and covers every day', () => {
+  const october = monthGrid(2026, 10);
+  assert.deepEqual(october.slice(0, 4), [null, null, null, '2026-10-01']);
+  assert.equal(october.at(-1), '2026-10-31');
+  assert.equal(october.filter(Boolean).length, 31);
+  const february = monthGrid(2028, 2);
+  assert.equal(february.filter(Boolean).length, 29);
+  assert.equal(monthGrid(2026, 6)[0], '2026-06-01');
 });

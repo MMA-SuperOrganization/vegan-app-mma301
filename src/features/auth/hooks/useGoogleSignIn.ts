@@ -47,7 +47,9 @@ export function useGoogleSignIn() {
   const finishLogin = async (idToken: string, requestUri: string) => {
     if (!(await loginWithGoogle(idToken, requestUri))) return;
     const user = useAuthStore.getState().user;
-    router.replace(user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals');
+    router.replace(
+      user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
+    );
   };
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export function useGoogleSignIn() {
             'GOOGLE_AUTH_CODE_MISSING'
           ),
           'auth.login.google.oauth',
-          translate('auth.google.receiveFailed')
+          translate('auth.error.googleLogin')
         );
         return;
       }
@@ -95,7 +97,7 @@ export function useGoogleSignIn() {
           reportError(
             error,
             'auth.login.google.token_exchange',
-            translate('auth.google.exchangeFailed'),
+            translate('auth.error.googleLogin'),
             'GOOGLE_TOKEN_EXCHANGE_FAILED'
           );
         });
@@ -174,9 +176,12 @@ export function useGoogleSignIn() {
 
     if (!appConfig.firebaseApiKey) {
       reportError(
-        new AppError(translate('auth.google.firebaseKeyMissing'), 'FIREBASE_NOT_CONFIGURED'),
+        new AppError(
+          translate('auth.google.firebaseKeyMissing'),
+          'FIREBASE_NOT_CONFIGURED'
+        ),
         'auth.login.google.setup',
-        translate('auth.google.firebaseNotConfigured')
+        translate('auth.error.googleLogin')
       );
       return;
     }
@@ -189,7 +194,7 @@ export function useGoogleSignIn() {
       reportError(
         error,
         'auth.login.google.oauth',
-        translate('auth.google.openFailed'),
+        translate('auth.error.googleLogin'),
         'GOOGLE_OAUTH_PROMPT_FAILED'
       );
     } finally {

@@ -46,10 +46,13 @@ redirect URI; Google returns the ID token directly to the app.
 ## Team setup and Google Play
 
 After cloning, create your own ignored `.env` using the team's Firebase API key
-and Web OAuth client ID, run `npm ci`, then run `npm run android`. The repository
-includes `android/app/debug.keystore` for development only, so team debug builds
-use the same SHA-1 listed above. If you replace that keystore, register its SHA-1
-in Firebase as well.
+and Web OAuth client ID, run `npm ci`, then run `npm run android`. Installation
+automatically restores the shared public development keystore from Expo's
+installed template. Gradle uses `android/app/debug.keystore`, so all development
+machines use the same SHA-1 listed above. Register this fingerprint once in
+Firebase; a new workstation does not need a separate fingerprint. The generated
+keystore remains ignored by Git. See [Android signing](docs/ANDROID_SIGNING.md)
+for setup details and existing-key conflicts.
 
 Before publishing, configure a separate release/upload signing key. The current
 generated release build uses the debug signing configuration and is not ready

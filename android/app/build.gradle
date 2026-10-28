@@ -1,6 +1,10 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+// Native Firebase is optional on checkouts without local provider configuration.
+if (file("google-services.json").exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
@@ -88,6 +92,7 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.ngocthang.veganapp'
+
     defaultConfig {
         applicationId 'com.ngocthang.veganapp'
         minSdkVersion rootProject.ext.minSdkVersion
@@ -99,6 +104,7 @@ android {
     }
     signingConfigs {
         debug {
+            // Restored from Expo's public template by npm install / npm run android.
             storeFile file('debug.keystore')
             storePassword 'android'
             keyAlias 'androiddebugkey'

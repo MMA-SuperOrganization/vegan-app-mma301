@@ -5,11 +5,8 @@ import { AppText, FilterChip, Surface } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 
-import type {
-  RecipeDetailStepItem,
-  RecipeDetailTabsProps,
-  RecipeIngredientItem,
-} from '../types';
+import type { RecipeDetailTabsProps } from '../types';
+import { IngredientList } from './IngredientList';
 
 type DetailTab = 'ingredients' | 'steps';
 
@@ -17,6 +14,7 @@ export function RecipeDetailTabs({
   servings,
   ingredients,
   steps,
+  onOpenIngredient,
 }: RecipeDetailTabsProps) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<DetailTab>('ingredients');
@@ -45,24 +43,7 @@ export function RecipeDetailTabs({
               ? t('recipe.ingredientsFor', { count: servings })
               : t('recipe.ingredients')}
           </AppText>
-          {ingredients?.length ? (
-            ingredients.map((item, index) => (
-              <View
-                key={`${item.foodItemId}-${item.quantity}-${index}`}
-                style={styles.listRow}
-              >
-                <AppText color={colors.primary[700]}>•</AppText>
-                <AppText style={styles.listText}>
-                  {item.foodNameSnapshot}: {item.quantity} {item.unit}
-                  {item.note ? ` · ${item.note}` : ''}
-                </AppText>
-              </View>
-            ))
-          ) : (
-            <AppText color={colors.text.secondary}>
-              {t('recipe.noIngredients')}
-            </AppText>
-          )}
+          <IngredientList ingredients={ingredients} onOpen={onOpenIngredient} />
         </Surface>
       ) : (
         <Surface bordered padding="lg" radius="lg" style={styles.block}>
@@ -100,11 +81,6 @@ const styles = StyleSheet.create({
   },
   block: {
     gap: spacing.md,
-  },
-  listRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
   },
   listText: {
     flex: 1,

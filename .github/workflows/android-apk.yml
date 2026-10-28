@@ -16,9 +16,14 @@ jobs:
   build-apk:
     name: Build downloadable APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       EXPO_NO_DOTENV: '1'
+      # Large React Native AARs can exceed Gradle's default read timeout on a
+      # temporarily slow Maven Central connection.
+      GRADLE_OPTS: >-
+        -Dorg.gradle.internal.http.connectionTimeout=120000
+        -Dorg.gradle.internal.http.socketTimeout=300000
       EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
       EXPO_PUBLIC_FIREBASE_API_KEY: ${{ vars.EXPO_PUBLIC_FIREBASE_API_KEY }}
       EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
@@ -35,7 +40,8 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
+      - name: Configure Gradle cache
+        uses: gradle/actions/setup-gradle@v4
       - name: Validate public build configuration
         shell: bash
         run: |
@@ -54,7 +60,20 @@ jobs:
         run: chmod +x android/gradlew
       - name: Build standalone release APK
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew assembleRelease --no-daemon --stacktrace; then
+              exit 0
+            fi
+            if [[ "$attempt" -eq 3 ]]; then
+              echo "::error::Android build failed after $attempt attempts."
+              exit 1
+            fi
+            delay=$((attempt * 20))
+            echo "::warning::Gradle attempt $attempt failed; retrying in ${delay}s to recover from a transient repository download error."
+            sleep "$delay"
+          done
       - name: Prepare artifact
         shell: bash
         run: cp android/app/build/outputs/apk/release/app-release.apk "VEGETA-develop-${GITHUB_RUN_NUMBER}.apk"

@@ -30,3 +30,7 @@ release requires a private upload keystore stored as GitHub Secrets.
 
 Open **Actions → Android APK → the completed run → Artifacts**, then download
 `VEGETA-develop-<run number>`. Artifacts are retained for 14 days.
+
+The workflow caches Gradle dependencies, allows extra time for large React
+Native artifacts, and retries the Gradle build up to three times when a remote
+repository download fails transiently.

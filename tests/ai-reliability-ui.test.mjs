@@ -38,6 +38,9 @@ test('Android workflow builds on develop with repository variables and uploads a
   const workflow = read('../.github/workflows/android-apk.yml');
   assert.match(workflow, /push:\s*\n\s*branches: \[develop\]/);
   assert.match(workflow, /vars\.EXPO_PUBLIC_API_URL/);
+  assert.match(workflow, /gradle\/actions\/setup-gradle@v4/);
+  assert.match(workflow, /socketTimeout=300000/);
+  assert.match(workflow, /for attempt in 1 2 3/);
   assert.match(workflow, /\.\/gradlew assembleRelease/);
   assert.match(workflow, /actions\/upload-artifact@v4/);
   assert.doesNotMatch(workflow, /CLOUDFLARE_R2_SECRET|FIREBASE_PRIVATE_KEY/);

@@ -19,6 +19,8 @@ import { useTranslation } from '@/i18n';
 import { colors, coreTokens, radius, shadows, spacing } from '@/theme';
 import { useAiChat } from '../hooks';
 import { AiMarkdownMessage } from './AiMarkdownMessage';
+import { AiProcessingStatus } from './AiProcessingStatus';
+import { AiMedicalDisclaimer, AiSafetyNotices } from './AiSafetyNotices';
 
 const WIDGET_SIZE = 64;
 const SUGGESTIONS = {
@@ -48,6 +50,7 @@ export function AiChatWidget() {
   const [conversationId, setConversationId] = useState<string>();
   const [content, setContent] = useState('');
   const [useProfile, setUseProfile] = useState(false);
+  const [lastAction, setLastAction] = useState<'submit' | 'new'>('submit');
   const scrollRef = useRef<ScrollView>(null);
   const chat = useAiChat(conversationId);
   const busy = chat.create.isPending || chat.send.isPending;
@@ -63,6 +66,7 @@ export function AiChatWidget() {
     setConversationId(undefined);
     setContent('');
     setUseProfile(false);
+    setLastAction('submit');
   }, [userId]);
 
   useEffect(() => {
@@ -81,6 +85,7 @@ export function AiChatWidget() {
     const question = content.trim();
     if (!question || busy) return;
 
+    setLastAction('submit');
     try {
       let targetConversationId = conversationId;
       if (!targetConversationId) {
@@ -121,6 +126,7 @@ export function AiChatWidget() {
     (Boolean(conversationId) && chat.messages.isLoading);
 
   const startNewConversation = async () => {
+    setLastAction('new');
     try {
       const conversation = await chat.create.mutateAsync(
         vi ? 'Trò chuyện mới' : 'New conversation'
@@ -286,10 +292,13 @@ export function AiChatWidget() {
                         {message.content}
                       </AppText>
                     ) : (
-                      <AiMarkdownMessage
-                        content={message.content}
-                        onOpenContent={closePanel}
-                      />
+                      <>
+                        <AiMarkdownMessage
+                          content={message.content}
+                          onOpenContent={closePanel}
+                        />
+                        <AiSafetyNotices notices={message.safetyNotices} vi={vi} />
+                      </>
                     )}
                   </View>
                 </View>
@@ -301,11 +310,8 @@ export function AiChatWidget() {
                 <View style={styles.aiAvatar}>
                   <AppIcon name="mam-companion" size={30} decorative />
                 </View>
-                <View style={[styles.message, styles.aiMessage, styles.pending]}>
-                  <ActivityIndicator size="small" color={colors.primary[700]} />
-                  <AppText color={colors.text.secondary}>
-                    {vi ? 'Mầm đang suy nghĩ…' : 'Mầm is thinking…'}
-                  </AppText>
+                <View style={styles.progressMessage}>
+                  <AiProcessingStatus vi={vi} />
                 </View>
               </View>
             ) : null}
@@ -330,6 +336,22 @@ export function AiChatWidget() {
                   <AppText color={colors.text.secondary} style={styles.errorMessage}>
                     {getFeatureErrorMessage(actionError, vi ? 'vi' : 'en')}
                   </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      void (lastAction === 'new'
+                        ? startNewConversation()
+                        : submitQuestion())
+                    }
+                    style={({ pressed }) => [
+                      styles.retryButton,
+                      pressed && styles.controlPressed,
+                    ]}
+                  >
+                    <AppText variant="bodyStrong" color={colors.primary[700]}>
+                      {vi ? 'Thử lại' : 'Retry'}
+                    </AppText>
+                  </Pressable>
                 </View>
                 <Pressable
                   accessibilityRole="button"
@@ -394,11 +416,7 @@ export function AiChatWidget() {
                 )}
               </Pressable>
             </View>
-            <AppText color={colors.text.secondary} style={styles.disclaimer}>
-              {vi
-                ? 'AI có thể nhầm. Hãy kiểm tra thông tin quan trọng.'
-                : 'AI can make mistakes. Check important information.'}
-            </AppText>
+            <AiMedicalDisclaimer vi={vi} />
           </View>
         </View>
       </BottomSheet>
@@ -532,7 +550,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[50],
     borderBottomLeftRadius: spacing.xs,
   },
-  pending: { flexDirection: 'row', alignItems: 'center' },
+  progressMessage: { flex: 1, maxWidth: '86%' },
   errorNotice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -553,6 +571,7 @@ const styles = StyleSheet.create({
   },
   errorCopy: { flex: 1, gap: spacing.xs },
   errorMessage: { fontSize: 12 },
+  retryButton: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
   composerArea: {
     gap: spacing.sm,
     paddingTop: spacing.md,
@@ -578,5 +597,4 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     fontWeight: '700',
   },
-  disclaimer: { textAlign: 'center', fontSize: 10 },
 });

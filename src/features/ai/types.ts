@@ -2,6 +2,13 @@ import type { MealType } from '@/features/tracking/types';
 export interface Conversation {
   _id: string;
   title: string;
+  lastMessageAt?: string;
+  updatedAt?: string;
+}
+export interface AiSafetyNotice {
+  code: 'ALLERGEN_CAUTION';
+  severity: 'warning';
+  message: string;
 }
 export interface AiMessage {
   _id: string;
@@ -11,6 +18,7 @@ export interface AiMessage {
   runId?: string;
   aiRunId?: string;
   disclaimer?: string;
+  safetyNotices?: AiSafetyNotice[];
 }
 export interface ProposalMeal {
   slot: MealType;

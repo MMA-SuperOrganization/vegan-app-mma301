@@ -6,6 +6,7 @@ const settingsScreens = [
   'src/features/settings/screens/LanguageScreen.tsx',
   'src/features/settings/screens/NotificationInboxScreen.tsx',
   'src/features/settings/screens/NotificationSettingsScreen.tsx',
+  'src/features/ai/screens/AiHistoryScreen.tsx',
   'src/features/profile/screens/EditProfileScreen.tsx',
   'src/features/profile/screens/NutritionProfileScreen.tsx',
   'src/features/profile/screens/DietaryPreferencesScreen.tsx',

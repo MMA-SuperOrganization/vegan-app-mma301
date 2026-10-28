@@ -22,6 +22,16 @@ export interface ContentCardData {
   allergenIds?: string[];
   nutritionPerServing?: NutritionFacts;
   nutritionPer100g?: NutritionFacts;
+  nutritionDataQuality?: 'verified' | 'estimated' | 'unavailable';
+  sourceAttribution?: SourceAttribution;
+}
+
+export interface SourceAttribution {
+  provider: string;
+  sourceId: string;
+  url?: string;
+  license: string;
+  importedAt: string;
 }
 
 export interface NutritionFacts {

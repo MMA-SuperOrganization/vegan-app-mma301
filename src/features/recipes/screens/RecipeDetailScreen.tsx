@@ -1,7 +1,7 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { Linking, StyleSheet } from 'react-native';
 
 import {
   AppButton,
@@ -77,7 +77,10 @@ export function RecipeDetailScreen() {
   }
 
   const data = recipe.data;
-  const nutrition = data.nutritionPerServing;
+  const nutrition =
+    data.nutritionDataQuality === 'unavailable'
+      ? undefined
+      : data.nutritionPerServing;
   const allergenText =
     data.allergenIds === undefined
       ? t('recipe.allergensUnknown')
@@ -139,6 +142,25 @@ export function RecipeDetailScreen() {
         <AppText variant="heading4">{t('recipe.allergens')}</AppText>
         <AppText color={colors.text.secondary}>{allergenText}</AppText>
       </Surface>
+
+      {data.sourceAttribution ? (
+        <Surface bordered padding="lg" radius="lg" style={styles.block}>
+          <AppText variant="heading4">
+            {locale === 'vi' ? 'Nguồn công thức' : 'Recipe source'}
+          </AppText>
+          <AppText color={colors.text.secondary}>
+            {data.sourceAttribution.provider} · {data.sourceAttribution.license}
+          </AppText>
+          {data.sourceAttribution.url ? (
+            <AppButton
+              title={locale === 'vi' ? 'Xem nguồn' : 'View source'}
+              variant="ghost"
+              fullWidth={false}
+              onPress={() => void Linking.openURL(data.sourceAttribution!.url!)}
+            />
+          ) : null}
+        </Surface>
+      ) : null}
 
       <AppButton
         title={t('recipe.startCooking')}

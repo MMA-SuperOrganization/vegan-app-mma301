@@ -93,14 +93,6 @@ android {
 
     namespace 'com.ngocthang.veganapp'
 
-    // A short local staging path avoids Ninja's Windows path limit in deep checkouts.
-    if (findProperty('vegeta.cmakeStagingDirectory')) {
-        externalNativeBuild {
-            cmake {
-                buildStagingDirectory file(findProperty('vegeta.cmakeStagingDirectory'))
-            }
-        }
-    }
     defaultConfig {
         applicationId 'com.ngocthang.veganapp'
         minSdkVersion rootProject.ext.minSdkVersion

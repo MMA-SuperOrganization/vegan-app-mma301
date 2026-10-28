@@ -90,3 +90,28 @@ test('setup preserves an existing custom keystore and reports the conflict', () 
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test('Android excludes the empty vector-icon native codegen target', () => {
+  const reactNativeConfig = readFileSync(
+    new URL('../react-native.config.js', import.meta.url),
+    'utf8'
+  );
+  const lock = JSON.parse(
+    readFileSync(new URL('../package-lock.json', import.meta.url), 'utf8')
+  );
+
+  assert.match(reactNativeConfig, /material-design-icons/);
+  assert.match(reactNativeConfig, /platforms:\s*\{\s*android:\s*null\s*\}/);
+  assert.equal(
+    lock.packages[''].dependencies[
+      '@react-native-vector-icons/material-design-icons'
+    ],
+    '13.1.5'
+  );
+  assert.equal(
+    lock.packages[
+      'node_modules/@ronradtke/react-native-markdown-display/node_modules/@react-native-vector-icons/material-design-icons'
+    ],
+    undefined
+  );
+});

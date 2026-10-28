@@ -12,6 +12,9 @@ import {
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { AiMarkdownMessage } from '../components/AiMarkdownMessage';
+import { AiProcessingStatus } from '../components/AiProcessingStatus';
+import { AiMedicalDisclaimer, AiSafetyNotices } from '../components/AiSafetyNotices';
 import { useAiChat } from '../hooks';
 
 export function AiChatScreen() {
@@ -23,6 +26,21 @@ export function AiChatScreen() {
   const [useProfile, setUseProfile] = useState(false);
   const [rated, setRated] = useState<string[]>([]);
   const busy = chat.send.isPending || chat.create.isPending;
+
+  const createConversation = () =>
+    chat.create.mutate(vi ? 'Trò chuyện mới' : 'New conversation', {
+      onSuccess: (conversation) => router.setParams({ id: conversation._id }),
+    });
+
+  const submitQuestion = () => {
+    const question = content.trim();
+    if (!id || !question || busy) return;
+    chat.send.mutate(
+      { content: question, useProfile },
+      { onSuccess: () => setContent('') }
+    );
+  };
+
   return (
     <ScreenWrapper
       scrollable
@@ -35,20 +53,12 @@ export function AiChatScreen() {
       }
       contentContainerStyle={styles.screen}
     >
-      <AppText color={colors.text.secondary}>
-        {vi
-          ? 'AI có thể nhầm. Kiểm tra thông tin trước khi áp dụng; không thay thế tư vấn chuyên môn.'
-          : 'AI can make mistakes. Review its answers; they do not replace professional advice.'}
-      </AppText>
+      <AiMedicalDisclaimer vi={vi} />
       <AppButton
         title={vi ? 'Cuộc trò chuyện mới' : 'New conversation'}
         loading={chat.create.isPending}
         disabled={busy}
-        onPress={() =>
-          chat.create.mutate(vi ? 'Trò chuyện mới' : 'New conversation', {
-            onSuccess: (conversation) => router.setParams({ id: conversation._id }),
-          })
-        }
+        onPress={createConversation}
       />
       <FeatureState
         loading={chat.conversations.isLoading}
@@ -96,7 +106,14 @@ export function AiChatScreen() {
               <AppText variant="bodyStrong">
                 {message.role === 'user' ? (vi ? 'Bạn' : 'You') : 'AI'}
               </AppText>
-              <AppText selectable>{message.content}</AppText>
+              {message.role === 'assistant' ? (
+                <>
+                  <AiMarkdownMessage content={message.content} />
+                  <AiSafetyNotices notices={message.safetyNotices} vi={vi} />
+                </>
+              ) : (
+                <AppText selectable>{message.content}</AppText>
+              )}
               {message.role === 'assistant' && (message.aiRunId || message.runId) ? (
                 <View style={styles.actions}>
                   {[true, false].map((helpful) => (
@@ -149,23 +166,19 @@ export function AiChatScreen() {
             maxLength={4000}
             editable={!busy}
           />
-          <FeatureState
-            error={chat.create.error || chat.send.error || chat.feedback.error}
-          />
+          <FeatureState error={chat.create.error} retry={createConversation} />
+          <FeatureState error={chat.send.error} retry={submitQuestion} />
+          <FeatureState error={chat.feedback.error} />
+          {chat.send.isPending ? <AiProcessingStatus vi={vi} /> : null}
           <AppButton
             title={vi ? 'Gửi' : 'Send'}
             loading={chat.send.isPending}
             disabled={busy || !content.trim()}
-            onPress={() =>
-              chat.send.mutate(
-                { content: content.trim(), useProfile },
-                { onSuccess: () => setContent('') }
-              )
-            }
+            onPress={submitQuestion}
           />
         </>
       ) : (
-        <FeatureState error={chat.create.error} />
+        <FeatureState error={chat.create.error} retry={createConversation} />
       )}
     </ScreenWrapper>
   );

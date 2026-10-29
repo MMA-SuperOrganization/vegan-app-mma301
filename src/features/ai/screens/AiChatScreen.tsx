@@ -13,32 +13,49 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { AiMarkdownMessage } from '../components/AiMarkdownMessage';
+import { AiImageAttachmentPicker } from '../components/AiImageAttachmentPicker';
 import { AiProcessingStatus } from '../components/AiProcessingStatus';
 import { AiMedicalDisclaimer, AiSafetyNotices } from '../components/AiSafetyNotices';
 import { useAiChat } from '../hooks';
+import { useAiImageAttachment } from '../useAiImageAttachment';
 
 export function AiChatScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const vi = useTranslation().locale === 'vi';
   const chat = useAiChat(id);
+  const attachment = useAiImageAttachment();
   const [content, setContent] = useState('');
   const [useProfile, setUseProfile] = useState(false);
   const [rated, setRated] = useState<string[]>([]);
-  const busy = chat.send.isPending || chat.create.isPending;
+  const busy =
+    chat.send.isPending ||
+    chat.create.isPending ||
+    attachment.choose.isPending ||
+    attachment.upload.isPending;
 
   const createConversation = () =>
     chat.create.mutate(vi ? 'Trò chuyện mới' : 'New conversation', {
       onSuccess: (conversation) => router.setParams({ id: conversation._id }),
     });
 
-  const submitQuestion = () => {
-    const question = content.trim();
+  const submitQuestion = async () => {
+    const question =
+      content.trim() ||
+      (attachment.asset
+        ? vi
+          ? 'Hãy phân tích hình ảnh này.'
+          : 'Please analyze this image.'
+        : '');
     if (!id || !question || busy) return;
-    chat.send.mutate(
-      { content: question, useProfile },
-      { onSuccess: () => setContent('') }
-    );
+    try {
+      const mediaId = await attachment.uploadIfNeeded();
+      await chat.send.mutateAsync({ content: question, useProfile, mediaId });
+      setContent('');
+      attachment.clear();
+    } catch {
+      // Mutation errors are rendered below and the attachment stays available to retry.
+    }
   };
 
   return (
@@ -112,7 +129,14 @@ export function AiChatScreen() {
                   <AiSafetyNotices notices={message.safetyNotices} vi={vi} />
                 </>
               ) : (
-                <AppText selectable>{message.content}</AppText>
+                <>
+                  {message.mediaId ? (
+                    <AppText color={colors.text.secondary}>
+                      {vi ? '📷 Có đính kèm hình ảnh' : '📷 Image attached'}
+                    </AppText>
+                  ) : null}
+                  <AppText selectable>{message.content}</AppText>
+                </>
               )}
               {message.role === 'assistant' && (message.aiRunId || message.runId) ? (
                 <View style={styles.actions}>
@@ -158,6 +182,13 @@ export function AiChatScreen() {
             onValueChange={setUseProfile}
             disabled={busy}
           />
+          <AiImageAttachmentPicker
+            asset={attachment.asset}
+            busy={busy}
+            vi={vi}
+            onChoose={() => attachment.choose.mutate()}
+            onClear={attachment.clear}
+          />
           <AppInput
             label={vi ? 'Câu hỏi' : 'Question'}
             value={content}
@@ -167,14 +198,25 @@ export function AiChatScreen() {
             editable={!busy}
           />
           <FeatureState error={chat.create.error} retry={createConversation} />
-          <FeatureState error={chat.send.error} retry={submitQuestion} />
+          <FeatureState
+            error={attachment.choose.error}
+            retry={() => attachment.choose.mutate()}
+          />
+          <FeatureState
+            error={attachment.upload.error}
+            retry={() => void submitQuestion()}
+          />
+          <FeatureState
+            error={chat.send.error}
+            retry={() => void submitQuestion()}
+          />
           <FeatureState error={chat.feedback.error} />
           {chat.send.isPending ? <AiProcessingStatus vi={vi} /> : null}
           <AppButton
             title={vi ? 'Gửi' : 'Send'}
             loading={chat.send.isPending}
-            disabled={busy || !content.trim()}
-            onPress={submitQuestion}
+            disabled={busy || (!content.trim() && !attachment.asset)}
+            onPress={() => void submitQuestion()}
           />
         </>
       ) : (

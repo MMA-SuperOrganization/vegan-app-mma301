@@ -6,6 +6,7 @@ import {
   AppButton,
   AppInput,
   AppText,
+  DateInputField,
   SettingsScreenLayout,
   TimezonePickerField,
 } from '@/components';
@@ -174,12 +175,10 @@ export function EditProfileScreen() {
           onChangeText={setBio}
           error={errors.bio}
         />
-        <AppInput
+        <DateInputField
           label={t('profile.birthDate')}
           value={dateOfBirth}
-          onChangeText={setDateOfBirth}
-          keyboardType="number-pad"
-          placeholder="DD/MM/YYYY"
+          onChange={setDateOfBirth}
           error={errors.dateOfBirth}
         />
         <SelectionField

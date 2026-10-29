@@ -1,4 +1,5 @@
 import { translate } from '../../i18n/translator.ts';
+export { formatDateInput } from '../../utils/dateInput.ts';
 
 export function parseDecimal(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
@@ -15,7 +16,9 @@ export function validateMeasurement(
 ) {
   const parsed = parseDecimal(value);
   if (parsed === null)
-    return translate('onboarding.validation.required', { label: label.toLowerCase() });
+    return translate('onboarding.validation.required', {
+      label: label.toLowerCase(),
+    });
   if (parsed < min || parsed > max)
     return translate('onboarding.validation.range', { label, min, max });
   return null;

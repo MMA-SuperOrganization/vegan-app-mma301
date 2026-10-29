@@ -4,7 +4,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: config.name ?? 'vegan-app-mma302',
+  name: config.name ?? 'VEGETA',
   slug: config.slug ?? 'vegan-app-mma302',
   plugins: [...(config.plugins ?? []), 'expo-video'],
   android: {

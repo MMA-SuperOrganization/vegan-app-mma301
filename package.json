@@ -25,6 +25,7 @@
     "@expo-google-fonts/montserrat": "^0.4.2",
     "@expo/metro-runtime": "~57.0.16",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-google-signin/google-signin": "^16.1.5",
     "@react-native-vector-icons/material-design-icons": "13.1.5",
     "@ronradtke/react-native-markdown-display": "9.0.3",

@@ -20,6 +20,7 @@ async function uploadAsset(
     | 'recipe'
     | 'recipe_step'
     | 'video_thumbnail'
+    | 'ai_chat'
     | 'video',
   allowedMimeTypes: readonly string[],
   fallbackMimeType: string,
@@ -67,7 +68,8 @@ export const mediaApi = {
       | 'avatar'
       | 'recipe'
       | 'recipe_step'
-      | 'video_thumbnail',
+      | 'video_thumbnail'
+      | 'ai_chat',
     options?: UploadOptions
   ) {
     return uploadAsset(

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { AppInput } from '@/components';
+import { AppInput, DateInputField } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
@@ -33,7 +33,9 @@ export function NutritionProfileScreen() {
         10,
         500
       ),
-      activityLevel: draft.activityLevel ? null : t('onboarding.validation.activity'),
+      activityLevel: draft.activityLevel
+        ? null
+        : t('onboarding.validation.activity'),
     };
     setErrors(nextErrors);
     if (!Object.values(nextErrors).some(Boolean))
@@ -55,12 +57,10 @@ export function NutritionProfileScreen() {
       onPrimary={next}
     >
       <View style={styles.fields}>
-        <AppInput
+        <DateInputField
           label={t('onboarding.birthDate')}
-          placeholder="DD/MM/YYYY"
           value={draft.dateOfBirth}
-          onChangeText={update('dateOfBirth')}
-          keyboardType="numbers-and-punctuation"
+          onChange={update('dateOfBirth')}
           error={errors.dateOfBirth}
         />
         <AppInput

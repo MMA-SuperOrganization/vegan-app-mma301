@@ -42,6 +42,10 @@ const featureErrorMessages: Record<string, [string, string]> = {
     'Cần cấp quyền máy ảnh để chụp nguyên liệu.',
     'Allow camera access to photograph ingredients.',
   ],
+  PHOTO_PERMISSION_REQUIRED: [
+    'Cần cấp quyền thư viện ảnh để đính kèm hình cho AI.',
+    'Allow photo library access to attach an image for AI.',
+  ],
   NOTIFICATION_PERMISSION_REQUIRED: [
     'Cần cấp quyền thông báo trong cài đặt thiết bị.',
     'Allow notifications in your device settings.',

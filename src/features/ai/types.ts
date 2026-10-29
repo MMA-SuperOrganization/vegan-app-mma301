@@ -15,6 +15,7 @@ export interface AiMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt?: string;
+  mediaId?: string;
   runId?: string;
   aiRunId?: string;
   disclaimer?: string;

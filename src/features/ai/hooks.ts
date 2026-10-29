@@ -33,12 +33,20 @@ export function useAiChat(conversationId?: string) {
     mutationFn: ({
       content,
       useProfile,
+      mediaId,
       targetConversationId,
     }: {
       content: string;
       useProfile: boolean;
+      mediaId?: string;
       targetConversationId?: string;
-    }) => aiApi.send(targetConversationId ?? conversationId!, content, useProfile),
+    }) =>
+      aiApi.send(
+        targetConversationId ?? conversationId!,
+        content,
+        useProfile,
+        mediaId
+      ),
     onSettled: refresh,
   });
   const feedback = useMutation({

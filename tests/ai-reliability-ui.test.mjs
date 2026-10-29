@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { getAiProgressStage } from '../src/features/ai/aiProgress.ts';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -26,11 +26,52 @@ test('both AI chat surfaces show safety limits, allergen cautions, progress and 
   }
   assert.match(
     read('../src/features/ai/screens/AiChatScreen.tsx'),
-    /error=\{chat\.send\.error\} retry=\{submitQuestion\}/
+    /error=\{chat\.send\.error\}[\s\S]*retry=\{\(\) => void submitQuestion\(\)\}/
   );
   assert.match(
     read('../src/features/ai/components/AiChatWidget.tsx'),
     /'Thử lại' : 'Retry'/
+  );
+});
+
+test('both AI chat surfaces upload an image before sending its media ID', () => {
+  const attachmentHook = read('../src/features/ai/useAiImageAttachment.ts');
+  assert.match(attachmentHook, /uploadImage\(asset, 'ai_chat'\)/);
+
+  for (const path of [
+    '../src/features/ai/screens/AiChatScreen.tsx',
+    '../src/features/ai/components/AiChatWidget.tsx',
+  ]) {
+    const source = read(path);
+    assert.match(source, /AiImageAttachmentPicker/);
+    assert.match(source, /uploadIfNeeded\(\)/);
+    assert.match(source, /mediaId/);
+  }
+});
+
+test('Android app uses the VEGETA adaptive icon assets', () => {
+  const config = JSON.parse(read('../app.json')).expo;
+  assert.equal(config.name, 'VEGETA');
+  assert.equal(config.android.adaptiveIcon.backgroundColor, '#F7F2EB');
+  for (const path of [
+    config.icon,
+    config.android.adaptiveIcon.foregroundImage,
+    config.android.adaptiveIcon.monochromeImage,
+  ]) {
+    assert.equal(
+      existsSync(new URL(`../${path.replace(/^\.\//, '')}`, import.meta.url)),
+      true
+    );
+  }
+  assert.match(read('../assets/vegeta/mam-companion.svg'), /fill="#247A52"/);
+  assert.equal(
+    existsSync(
+      new URL(
+        '../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp',
+        import.meta.url
+      )
+    ),
+    true
   );
 });
 

@@ -20,6 +20,7 @@ export * from './TimezonePickerField';
 export * from './BottomSheet';
 export * from './SearchPickerSheet';
 export * from './NutritionTargetCard';
+export * from './DateInputField';
 
 export { Button as AppButton } from './Button';
 export { Input as AppInput } from './Input';

@@ -16,8 +16,11 @@ import {
 } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
+import { useKeyboardInsets } from '@/hooks';
 import { colors, coreTokens, radius, shadows, spacing } from '@/theme';
 import { useAiChat } from '../hooks';
+import { useAiImageAttachment } from '../useAiImageAttachment';
+import { AiImageAttachmentPicker } from './AiImageAttachmentPicker';
 import { AiMarkdownMessage } from './AiMarkdownMessage';
 import { AiProcessingStatus } from './AiProcessingStatus';
 import { AiMedicalDisclaimer, AiSafetyNotices } from './AiSafetyNotices';
@@ -52,8 +55,14 @@ export function AiChatWidget() {
   const [useProfile, setUseProfile] = useState(false);
   const [lastAction, setLastAction] = useState<'submit' | 'new'>('submit');
   const scrollRef = useRef<ScrollView>(null);
+  const keyboard = useKeyboardInsets();
   const chat = useAiChat(conversationId);
-  const busy = chat.create.isPending || chat.send.isPending;
+  const attachment = useAiImageAttachment();
+  const busy =
+    chat.create.isPending ||
+    chat.send.isPending ||
+    attachment.choose.isPending ||
+    attachment.upload.isPending;
   const messages = chat.messages.data?.data ?? [];
   const launcherBottom =
     Math.max(insets.bottom, spacing.lg) +
@@ -79,10 +88,21 @@ export function AiChatWidget() {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [messages.length, visible]);
 
+  useEffect(() => {
+    if (!visible || !keyboard.visible) return;
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }, [keyboard.overlap, keyboard.visible, visible]);
+
   if (!isAuthenticated || !onboardingCompleted || isRestoringSession) return null;
 
   const submitQuestion = async () => {
-    const question = content.trim();
+    const question =
+      content.trim() ||
+      (attachment.asset
+        ? vi
+          ? 'Hãy phân tích hình ảnh này.'
+          : 'Please analyze this image.'
+        : '');
     if (!question || busy) return;
 
     setLastAction('submit');
@@ -96,12 +116,15 @@ export function AiChatWidget() {
         setConversationId(targetConversationId);
       }
 
+      const mediaId = await attachment.uploadIfNeeded();
       await chat.send.mutateAsync({
         content: question,
         useProfile,
+        mediaId,
         targetConversationId,
       });
       setContent('');
+      attachment.clear();
     } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
@@ -110,6 +133,7 @@ export function AiChatWidget() {
   const closePanel = () => {
     chat.create.reset();
     chat.send.reset();
+    attachment.clear();
     setVisible(false);
   };
 
@@ -119,7 +143,8 @@ export function AiChatWidget() {
   };
 
   const queryError = chat.conversations.error || chat.messages.error;
-  const actionError = chat.create.error || chat.send.error;
+  const actionError =
+    chat.create.error || attachment.upload.error || chat.send.error;
   const actionErrorCode = (actionError as { code?: string } | null)?.code;
   const loadingChat =
     chat.conversations.isLoading ||
@@ -133,6 +158,7 @@ export function AiChatWidget() {
       );
       setConversationId(conversation._id);
       setContent('');
+      attachment.clear();
     } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
@@ -288,9 +314,16 @@ export function AiChatWidget() {
                       </AppText>
                     ) : null}
                     {fromUser ? (
-                      <AppText selectable color={colors.text.inverse}>
-                        {message.content}
-                      </AppText>
+                      <>
+                        {message.mediaId ? (
+                          <AppText color={colors.primary[100]}>
+                            {vi ? '📷 Có đính kèm hình ảnh' : '📷 Image attached'}
+                          </AppText>
+                        ) : null}
+                        <AppText selectable color={colors.text.inverse}>
+                          {message.content}
+                        </AppText>
+                      </>
                     ) : (
                       <>
                         <AiMarkdownMessage
@@ -384,6 +417,17 @@ export function AiChatWidget() {
               onValueChange={setUseProfile}
               disabled={busy}
             />
+            <AiImageAttachmentPicker
+              asset={attachment.asset}
+              busy={busy}
+              vi={vi}
+              onChoose={() => attachment.choose.mutate()}
+              onClear={attachment.clear}
+            />
+            <FeatureState
+              error={attachment.choose.error}
+              retry={() => attachment.choose.mutate()}
+            />
             <View style={styles.composer}>
               <AppInput
                 value={content}
@@ -400,12 +444,16 @@ export function AiChatWidget() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={vi ? 'Gửi câu hỏi' : 'Send question'}
-                accessibilityState={{ disabled: busy || !content.trim(), busy }}
-                disabled={busy || !content.trim()}
+                accessibilityState={{
+                  disabled: busy || (!content.trim() && !attachment.asset),
+                  busy,
+                }}
+                disabled={busy || (!content.trim() && !attachment.asset)}
                 onPress={() => void submitQuestion()}
                 style={({ pressed }) => [
                   styles.sendButton,
-                  (busy || !content.trim()) && styles.sendButtonDisabled,
+                  (busy || (!content.trim() && !attachment.asset)) &&
+                    styles.sendButtonDisabled,
                   pressed && styles.sendButtonPressed,
                 ]}
               >

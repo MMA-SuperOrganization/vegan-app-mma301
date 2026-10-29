@@ -7,6 +7,7 @@ import {
 } from '../src/features/auth/validations/loginValidation.ts';
 import {
   dateInputToIso,
+  formatDateInput,
   parseDecimal,
   toggleAllergenSelection,
   validateMeasurement,
@@ -133,6 +134,17 @@ test('date of birth parser rejects invalid and future calendar dates', () => {
   assert.equal(dateInputToIso('31/02/2002'), null);
   assert.equal(dateInputToIso('2002-08-15'), null);
   assert.equal(dateInputToIso('01/01/2999'), null);
+});
+
+test('date of birth input blocks letters, inserts slashes and supports one-digit manual slashes', () => {
+  assert.equal(formatDateInput('2a'), '2');
+  assert.equal(formatDateInput('28'), '28/');
+  assert.equal(formatDateInput('2808'), '28/08/');
+  assert.equal(formatDateInput('28/08', '28/0'), '28/08/');
+  assert.equal(formatDateInput('28082002'), '28/08/2002');
+  assert.equal(formatDateInput('1/'), '01/');
+  assert.equal(formatDateInput('1/8/'), '01/08/');
+  assert.equal(formatDateInput('28', '28/'), '28');
 });
 
 test('allergen selection is multi-select and none is represented by an empty list', () => {

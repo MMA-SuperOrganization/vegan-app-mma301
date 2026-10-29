@@ -60,5 +60,17 @@ export const assetRegistry = {
     height: 20,
     xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4.5 4H15.5C16.3 4 17 4.7 17 5.5V15.5C17 16.3 16.3 17 15.5 17H4.5C3.7 17 3 16.3 3 15.5V5.5C3 4.7 3.7 4 4.5 4Z" stroke="#16583D" stroke-width="1.8" stroke-linejoin="round"/>\n<path d="M3 8H17M7 2.5V5.5M13 2.5V5.5" stroke="#16583D" stroke-width="1.8" stroke-linecap="round"/>\n</svg>\n',
   },
+  eye: {
+    id: 'core:eye',
+    width: 24,
+    height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n<circle cx="12" cy="12" r="3" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n',
+  },
+  'eye-off': {
+    id: 'core:eye-off',
+    width: 24,
+    height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12A18.45 18.45 0 0 1 6.06 6.06M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12A18.5 18.5 0 0 1 20.84 15.19M14.12 14.12A3 3 0 1 1 9.88 9.88" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M1 1L23 23" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n',
+  },
 } as const;
 export type AssetName = keyof typeof assetRegistry;

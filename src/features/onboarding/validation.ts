@@ -41,3 +41,26 @@ export function toggleAllergenSelection(selectedIds: string[], id: string) {
     ? selectedIds.filter((selectedId) => selectedId !== id)
     : [...selectedIds, id];
 }
+
+export function isStep1Complete(draft: { dietType: unknown; goal: unknown }): boolean {
+  return Boolean(draft.dietType && draft.goal);
+}
+
+export function isStep2Complete(draft: {
+  dateOfBirth: string;
+  heightCm: string;
+  currentWeightKg: string;
+  activityLevel: unknown;
+}): boolean {
+  return Boolean(
+    dateInputToIso(draft.dateOfBirth) &&
+      parseDecimal(draft.heightCm) !== null &&
+      parseDecimal(draft.currentWeightKg) !== null &&
+      draft.activityLevel
+  );
+}
+
+export function isStep3Complete(draft: { allergyAnswered: boolean }): boolean {
+  return draft.allergyAnswered === true;
+}
+

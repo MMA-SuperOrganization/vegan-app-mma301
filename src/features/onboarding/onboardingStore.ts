@@ -21,6 +21,8 @@ interface OnboardingState {
   isLoadingAllergens: boolean;
   isSaving: boolean;
   error: string | null;
+  allergensError: string | null;
+  saveError: string | null;
   hydrate: (userId: string) => Promise<void>;
   setDraft: (patch: Partial<OnboardingDraft>) => void;
   toggleAllergen: (id: string) => void;
@@ -42,10 +44,18 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   isLoadingAllergens: false,
   isSaving: false,
   error: null,
+  allergensError: null,
+  saveError: null,
 
   hydrate: async (userId) => {
     if (get().draftUserId === userId && !get().isHydrating) return;
-    set({ isHydrating: true, draftUserId: userId, error: null });
+    set({
+      isHydrating: true,
+      draftUserId: userId,
+      error: null,
+      allergensError: null,
+      saveError: null,
+    });
     try {
       set({ draft: await onboardingDraftStorage.load(userId) });
     } catch {
@@ -59,7 +69,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     set((state) => {
       const draft = { ...state.draft, ...patch };
       persist(state.draftUserId, draft);
-      return { draft, error: null };
+      return { draft, error: null, saveError: null };
     }),
 
   toggleAllergen: (id) =>
@@ -82,19 +92,21 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   loadAllergens: async () => {
     if (get().isLoadingAllergens) return;
-    set({ isLoadingAllergens: true, error: null });
+    set({ isLoadingAllergens: true, error: null, allergensError: null });
     try {
       set({
         allergens: await onboardingApi.getAllergens(),
         isLoadingAllergens: false,
       });
     } catch (error) {
+      const message = getUserErrorMessage(
+        error,
+        translate('onboarding.error.loadAllergens')
+      );
       set({
         isLoadingAllergens: false,
-        error: getUserErrorMessage(
-          error,
-          translate('onboarding.error.loadAllergens')
-        ),
+        error: message,
+        allergensError: message,
       });
     }
   },
@@ -102,7 +114,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   complete: async () => {
     if (get().isSaving) return false;
     const { draft, draftUserId } = get();
-    set({ isSaving: true, error: null });
+    set({ isSaving: true, error: null, saveError: null });
     try {
       await completeOnboarding(draft, draftUserId);
       useAuthStore.getState().markOnboardingCompleted();
@@ -115,13 +127,19 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       set({ isSaving: false, draft: initialOnboardingDraft });
       return true;
     } catch (error) {
+      const message = getUserErrorMessage(
+        error,
+        translate('onboarding.error.saveProfile')
+      );
       set({
         isSaving: false,
-        error: getUserErrorMessage(error, translate('onboarding.error.saveProfile')),
+        error: message,
+        saveError: message,
       });
       return false;
     }
   },
 
-  clearError: () => set({ error: null }),
+  clearError: () =>
+    set({ error: null, allergensError: null, saveError: null }),
 }));

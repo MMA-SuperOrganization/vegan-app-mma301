@@ -8,6 +8,9 @@ import {
 import {
   dateInputToIso,
   formatDateInput,
+  isStep1Complete,
+  isStep2Complete,
+  isStep3Complete,
   parseDecimal,
   toggleAllergenSelection,
   validateMeasurement,
@@ -194,3 +197,28 @@ test('release builds retain diagnostics without an error overlay', (t) => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0][1].message, 'private detail');
 });
+
+test('onboarding step completion guards enforce sequential progress', () => {
+  const empty = { ...initialOnboardingDraft };
+  assert.equal(isStep1Complete(empty), false);
+  assert.equal(isStep2Complete(empty), false);
+  assert.equal(isStep3Complete(empty), false);
+
+  const step1 = { ...empty, dietType: 'vegan', goal: 'maintain' };
+  assert.equal(isStep1Complete(step1), true);
+  assert.equal(isStep2Complete(step1), false);
+
+  const step2 = {
+    ...step1,
+    dateOfBirth: '15/08/2000',
+    heightCm: '175',
+    currentWeightKg: '68',
+    activityLevel: 'moderate',
+  };
+  assert.equal(isStep2Complete(step2), true);
+  assert.equal(isStep3Complete(step2), false);
+
+  const step3 = { ...step2, allergyAnswered: true, allergenIds: [] };
+  assert.equal(isStep3Complete(step3), true);
+});
+

@@ -12,6 +12,7 @@ import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
+import { isStep1Complete, isStep2Complete } from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 
@@ -20,14 +21,24 @@ export function AllergiesScreen() {
   const goBack = useSafeBack('/(onboarding)/nutrition-profile');
   const { t } = useTranslation();
   const draft = useOnboardingStore((state) => state.draft);
+  const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const allergens = useOnboardingStore((state) => state.allergens);
   const isLoading = useOnboardingStore((state) => state.isLoadingAllergens);
-  const error = useOnboardingStore((state) => state.error);
+  const error = useOnboardingStore((state) => state.allergensError);
   const loadAllergens = useOnboardingStore((state) => state.loadAllergens);
   const toggleAllergen = useOnboardingStore((state) => state.toggleAllergen);
   const selectNoAllergens = useOnboardingStore((state) => state.selectNoAllergens);
   const clearError = useOnboardingStore((state) => state.clearError);
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isHydrating) return;
+    if (!isStep1Complete(draft)) {
+      router.replace('/(onboarding)/diet-goals');
+    } else if (!isStep2Complete(draft)) {
+      router.replace('/(onboarding)/nutrition-profile');
+    }
+  }, [isHydrating, draft, router]);
 
   useEffect(() => {
     void loadAllergens();

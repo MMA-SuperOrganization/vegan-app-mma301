@@ -181,9 +181,10 @@ export function Input({
               onBlur?.(e);
             }}
           />
-          {icon &&
+          {(icon || kind === 'password') &&
             (kind === 'password' ? (
               <Pressable
+                testID={props.testID ? `${props.testID}-toggle` : 'password-toggle'}
                 disabled={blocked}
                 onPress={visibility.toggle}
                 hitSlop={interactionTokens.iconHitSlop}
@@ -193,17 +194,24 @@ export function Input({
                 aria-pressed={visible}
                 aria-disabled={blocked}
               >
-                <AppText accessible={false} style={icon.style}>
-                  {icon.text}
-                </AppText>
+                <AppIcon
+                  name={visible ? 'eye-off' : 'eye'}
+                  size={20}
+                  color={
+                    typeof icon?.style?.color === 'string'
+                      ? icon.style.color
+                      : colors.text.secondary
+                  }
+                  decorative
+                />
               </Pressable>
             ) : kind === 'search' ? (
               <AppIcon name="search" size={22} color={colors.primary[700]} decorative />
-            ) : (
+            ) : icon ? (
               <AppText accessible={false} style={icon.style}>
                 {icon.text}
               </AppText>
-            ))}
+            ) : null)}
         </View>
       )}
     </FormField>

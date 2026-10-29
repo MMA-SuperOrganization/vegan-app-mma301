@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { AppInput, DateInputField } from '@/components';
@@ -7,7 +7,11 @@ import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { getActivityOptions } from '../constants';
 import { useOnboardingStore } from '../onboardingStore';
-import { dateInputToIso, validateMeasurement } from '../validation';
+import {
+  dateInputToIso,
+  isStep1Complete,
+  validateMeasurement,
+} from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 import { SelectionField } from '../components/SelectionField';
@@ -18,8 +22,15 @@ export function NutritionProfileScreen() {
   const { t } = useTranslation();
   const activityOptions = getActivityOptions(t);
   const draft = useOnboardingStore((state) => state.draft);
+  const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const setDraft = useOnboardingStore((state) => state.setDraft);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    if (!isHydrating && !isStep1Complete(draft)) {
+      router.replace('/(onboarding)/diet-goals');
+    }
+  }, [isHydrating, draft, router]);
 
   const next = () => {
     const nextErrors = {

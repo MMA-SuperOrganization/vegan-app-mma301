@@ -25,3 +25,17 @@ test('AI bottom sheet resizes and scrolls its composer above the Android keyboar
   assert.match(chat, /keyboard\.visible/);
   assert.match(chat, /scrollToEnd/);
 });
+
+test('password input renders eye and eye-off toggle icon instead of text dot', () => {
+  const input = read('../src/components/ui/Input/Input.tsx');
+  const assets = read('../src/theme/assets.ts');
+
+  assert.match(assets, /eye:\s*\{/);
+  assert.match(assets, /'eye-off':\s*\{/);
+  assert.match(input, /visible \? 'eye-off' : 'eye'/);
+  assert.doesNotMatch(
+    input,
+    /kind === 'password'[\s\S]*?<AppText[^>]*>\{icon\.text\}<\/AppText>/
+  );
+});
+

@@ -22,5 +22,12 @@ export default function OnboardingLayout() {
   }
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
   if (user?.onboardingCompleted) return <Redirect href="/(tabs)" />;
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack initialRouteName="diet-goals" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="diet-goals" />
+      <Stack.Screen name="nutrition-profile" />
+      <Stack.Screen name="allergies" />
+      <Stack.Screen name="permissions" />
+    </Stack>
+  );
 }

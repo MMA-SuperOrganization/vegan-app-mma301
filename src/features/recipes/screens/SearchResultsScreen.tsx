@@ -18,6 +18,7 @@ import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
+import { RecipeFilterSheet } from '../components/RecipeFilterSheet';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResultsFilterBar } from '../components/SearchResultsFilterBar';
 import {
@@ -71,6 +72,7 @@ export function SearchResultsScreen() {
   const [query, setQuery] = useState(initialQuery);
   const [submitted, setSubmitted] = useState(initialQuery);
   const [type, setType] = useState<ContentType | 'all'>(initialType);
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const debouncedQuery = useDebouncedValue(normalizeSearchQuery(query), 350);
   const filters = useMemo(() => parseRecipeFilters(params), [params]);
   const allergenIds =
@@ -95,12 +97,6 @@ export function SearchResultsScreen() {
     setSubmitted(next);
     router.setParams({ q: next });
   };
-
-  const openFilters = () =>
-    router.push({
-      pathname: '/(discover)/filters',
-      params: { q: submitted, type, ...serializeRecipeFilters(filters) },
-    });
 
   const openItem = (item: ContentCardData) => {
     router.push(contentHref(item));
@@ -140,7 +136,7 @@ export function SearchResultsScreen() {
                 });
               }}
               hasActiveFilters={hasActiveRecipeFilters(filters)}
-              onOpenFilters={openFilters}
+              onOpenFilters={() => setFilterSheetVisible(true)}
             />
           </View>
         }
@@ -188,6 +184,23 @@ export function SearchResultsScreen() {
         renderItem={({ item }) => (
           <ContentResultCard item={item} onPress={() => openItem(item)} />
         )}
+      />
+      <RecipeFilterSheet
+        visible={filterSheetVisible}
+        contentType={type}
+        initialFilters={filters}
+        onClose={() => setFilterSheetVisible(false)}
+        onApply={(nextFilters) => {
+          setFilterSheetVisible(false);
+          router.replace({
+            pathname: '/(discover)/search-results',
+            params: {
+              q: submitted,
+              type,
+              ...serializeRecipeFilters(nextFilters),
+            },
+          });
+        }}
       />
     </ScreenWrapper>
   );

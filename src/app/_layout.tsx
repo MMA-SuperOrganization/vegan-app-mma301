@@ -113,6 +113,7 @@ export default function RootLayout() {
         <Stack.Screen name="(discover)" options={{ headerShown: false }} />
         <Stack.Screen name="(tracking)" options={{ headerShown: false }} />
         <Stack.Screen name="(grocery)" options={{ headerShown: false }} />
+        <Stack.Screen name="recipes" options={{ headerShown: false }} />
         <Stack.Screen name="pantry" options={{ headerShown: false }} />
         <Stack.Screen name="ai" options={{ headerShown: false }} />
         <Stack.Screen name="community" options={{ headerShown: false }} />

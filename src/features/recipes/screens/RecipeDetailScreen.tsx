@@ -44,6 +44,7 @@ export function RecipeDetailScreen() {
           <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
             backFallbackHref="/(discover)/explore"
+            showHome={false}
           />
         }
         contentContainerStyle={styles.state}
@@ -60,6 +61,7 @@ export function RecipeDetailScreen() {
           <DiscoveryDetailHeader
             title={t('recipe.detailTitle')}
             backFallbackHref="/(discover)/explore"
+            showHome={false}
           />
         }
         contentContainerStyle={styles.state}
@@ -101,6 +103,7 @@ export function RecipeDetailScreen() {
         <DiscoveryDetailHeader
           title={data.title ?? t('recipe.detailTitle')}
           backFallbackHref="/(discover)/explore"
+          showHome={false}
         />
       }
       scrollable

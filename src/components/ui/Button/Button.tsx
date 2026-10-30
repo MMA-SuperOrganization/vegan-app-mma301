@@ -66,7 +66,7 @@ export function Button({
         ? 'loading'
         : state;
   const blocked = current === 'disabled' || current === 'loading';
-  const visibleIcon = icon === false ? undefined : icon ?? inferButtonIcon(title);
+  const visibleIcon = icon === false ? undefined : (icon ?? inferButtonIcon(title));
   const token = (pressed: boolean) =>
     variantNode(
       'Button /',
@@ -113,7 +113,12 @@ export function Button({
             {iconPosition === 'start' ? iconNode : null}
             <AppText
               numberOfLines={2}
-              style={[labelStyle, interactionTokens.flexibleText, textStyle]}
+              style={[
+                labelStyle,
+                styles.label,
+                interactionTokens.flexibleText,
+                textStyle,
+              ]}
             >
               {current === 'loading' ? `•••  ${visibleLoadingTitle}` : title}
             </AppText>
@@ -127,10 +132,14 @@ export function Button({
 
 const styles = StyleSheet.create({
   content: {
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     minWidth: 0,
+  },
+  label: {
+    textAlign: 'center',
   },
 });

@@ -61,5 +61,5 @@ const styles = StyleSheet.create({
   icon: { marginBottom: spacing.lg },
   title: { color: colors.text.primary, textAlign: 'center' },
   description: { marginTop: spacing.sm, textAlign: 'center' },
-  action: { marginTop: spacing.xl },
+  action: { alignSelf: 'center', marginTop: spacing.xl },
 });

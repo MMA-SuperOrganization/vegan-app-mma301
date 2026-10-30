@@ -9,9 +9,11 @@ import { colors, radius, spacing } from '@/theme';
 import { adminApi, type MasterRecord } from './adminApi';
 
 const number = (value: string) => Number(value.replace(',', '.')) || 0;
+type MasterSection = 'categories' | 'allergens' | 'foods';
 
 export function MasterDataPanel() {
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const [activeSection, setActiveSection] = useState<MasterSection>('categories');
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ['admin', 'master', 'categories'],
@@ -75,6 +77,18 @@ export function MasterDataPanel() {
     }) => adminApi.setMasterStatus(type, { ...record, _id: id }, status),
     onSuccess: refresh,
   });
+  const activeQuery =
+    activeSection === 'categories'
+      ? categories
+      : activeSection === 'allergens'
+        ? allergens
+        : foods;
+  const activeMutationError =
+    activeSection === 'categories'
+      ? categorySave.error
+      : activeSection === 'allergens'
+        ? allergenSave.error
+        : foodSave.error;
   const card = {
     padding: spacing.md,
     gap: spacing.sm,
@@ -92,7 +106,7 @@ export function MasterDataPanel() {
         <AppText>{[record.type, record.status].filter(Boolean).join(' · ')}</AppText>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
           <AppButton
-            title={vi ? 'Sửa' : 'Edit'}
+            title={t('admin.master.edit')}
             variant="outline"
             fullWidth={false}
             disabled={record.status === 'inactive'}
@@ -101,12 +115,8 @@ export function MasterDataPanel() {
           <AppButton
             title={
               record.status === 'inactive'
-                ? vi
-                  ? 'Khôi phục'
-                  : 'Restore'
-                : vi
-                  ? 'Ngưng dùng'
-                  : 'Deactivate'
+                ? t('admin.master.restore')
+                : t('admin.master.deactivate')
             }
             variant="ghost"
             fullWidth={false}
@@ -125,27 +135,37 @@ export function MasterDataPanel() {
     ));
   return (
     <View style={{ gap: spacing.lg }}>
-      <AppText variant="heading2">{vi ? 'Dữ liệu nền' : 'Master data'}</AppText>
+      <AppText variant="heading2">{t('admin.master.title')}</AppText>
       <FeatureState
-        loading={categories.isLoading || allergens.isLoading || foods.isLoading}
-        error={
-          categories.error ||
-          allergens.error ||
-          foods.error ||
-          categorySave.error ||
-          allergenSave.error ||
-          foodSave.error ||
-          masterStatus.error
-        }
+        loading={activeQuery.isLoading}
+        error={activeQuery.error || activeMutationError || masterStatus.error}
+        retry={() => void activeQuery.refetch()}
       />
-      <AppText variant="heading3">{vi ? 'Danh mục' : 'Categories'}</AppText>
+      <AppText color={colors.text.secondary}>{t('admin.master.chooseSection')}</AppText>
+      <View style={styles.sectionTabs}>
+        {([
+          ['categories', t('admin.master.categories')],
+          ['allergens', t('admin.master.allergens')],
+          ['foods', t('admin.master.foods')],
+        ] as const).map(([section, label]) => (
+          <AppButton
+            key={section}
+            title={label}
+            variant={activeSection === section ? 'primary' : 'outline'}
+            fullWidth={false}
+            onPress={() => setActiveSection(section)}
+          />
+        ))}
+      </View>
+      {activeSection === 'categories' ? <>
+      <AppText variant="heading3">{t('admin.master.categories')}</AppText>
       <AppInput
-        label={vi ? 'Tên danh mục' : 'Category name'}
+        label={t('admin.master.categoryName')}
         value={category.name || ''}
         onChangeText={(name) => setCategory((value) => ({ ...value, name }))}
       />
       <SelectionField
-        label={vi ? 'Loại' : 'Type'}
+        label={t('admin.master.type')}
         placeholder=""
         value={category.type || 'recipe'}
         options={(['food', 'recipe', 'post'] as const).map((value) => ({
@@ -157,12 +177,8 @@ export function MasterDataPanel() {
       <AppButton
         title={
           category._id
-            ? vi
-              ? 'Cập nhật danh mục'
-              : 'Update category'
-            : vi
-              ? 'Thêm danh mục'
-              : 'Add category'
+            ? t('admin.master.update', { type: t('admin.master.categories') })
+            : t('admin.master.add', { type: t('admin.master.categories') })
         }
         disabled={!category.name?.trim() || categorySave.isPending}
         onPress={() =>
@@ -170,22 +186,19 @@ export function MasterDataPanel() {
         }
       />
       {list(categories.data?.data || [], 'categories', setCategory)}
-
-      <AppText variant="heading3">{vi ? 'Dị nguyên' : 'Allergens'}</AppText>
+      </> : null}
+      {activeSection === 'allergens' ? <>
+      <AppText variant="heading3">{t('admin.master.allergens')}</AppText>
       <AppInput
-        label={vi ? 'Tên dị nguyên' : 'Allergen name'}
+        label={t('admin.master.allergenName')}
         value={allergen.name || ''}
         onChangeText={(name) => setAllergen((value) => ({ ...value, name }))}
       />
       <AppButton
         title={
           allergen._id
-            ? vi
-              ? 'Cập nhật dị nguyên'
-              : 'Update allergen'
-            : vi
-              ? 'Thêm dị nguyên'
-              : 'Add allergen'
+            ? t('admin.master.update', { type: t('admin.master.allergens') })
+            : t('admin.master.add', { type: t('admin.master.allergens') })
         }
         disabled={!allergen.name?.trim() || allergenSave.isPending}
         onPress={() =>
@@ -193,16 +206,17 @@ export function MasterDataPanel() {
         }
       />
       {list(allergens.data?.data || [], 'allergens', setAllergen)}
-
-      <AppText variant="heading3">{vi ? 'Thực phẩm' : 'Foods'}</AppText>
+      </> : null}
+      {activeSection === 'foods' ? <>
+      <AppText variant="heading3">{t('admin.master.foods')}</AppText>
       <AppInput
-        label={vi ? 'Tên thực phẩm' : 'Food name'}
+        label={t('admin.master.foodName')}
         value={food.name || ''}
         onChangeText={(name) => setFood((value) => ({ ...value, name }))}
       />
       <SelectionField
-        label={vi ? 'Danh mục thực phẩm' : 'Food category'}
-        placeholder={vi ? 'Chọn danh mục' : 'Choose category'}
+        label={t('admin.master.foodCategory')}
+        placeholder={t('admin.master.chooseCategory')}
         value={food.categoryId || null}
         options={(categories.data?.data || [])
           .filter((item) => item.type === 'food')
@@ -210,7 +224,7 @@ export function MasterDataPanel() {
         onChange={(categoryId) => setFood((value) => ({ ...value, categoryId }))}
       />
       <AppInput
-        label={vi ? 'Khẩu phần mặc định (g)' : 'Default serving (g)'}
+        label={t('admin.master.serving')}
         value={serving}
         onChangeText={setServing}
         keyboardType="decimal-pad"
@@ -222,7 +236,7 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={vi ? 'Đạm / 100g' : 'Protein / 100g'}
+        label={t('admin.master.protein')}
         value={protein}
         onChangeText={setProtein}
         keyboardType="decimal-pad"
@@ -234,13 +248,13 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={vi ? 'Béo / 100g' : 'Fat / 100g'}
+        label={t('admin.master.fat')}
         value={fat}
         onChangeText={setFat}
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={vi ? 'Xơ / 100g' : 'Fiber / 100g'}
+        label={t('admin.master.fiber')}
         value={fiber}
         onChangeText={setFiber}
         keyboardType="decimal-pad"
@@ -248,12 +262,8 @@ export function MasterDataPanel() {
       <AppButton
         title={
           food._id
-            ? vi
-              ? 'Cập nhật thực phẩm'
-              : 'Update food'
-            : vi
-              ? 'Thêm thực phẩm'
-              : 'Add food'
+            ? t('admin.master.update', { type: t('admin.master.foods') })
+            : t('admin.master.add', { type: t('admin.master.foods') })
         }
         disabled={!food.name?.trim() || !food.categoryId || foodSave.isPending}
         onPress={() =>
@@ -286,6 +296,15 @@ export function MasterDataPanel() {
         setFat(String(record.nutritionPer100g?.fatG || 0));
         setFiber(String(record.nutritionPer100g?.fiberG || 0));
       })}
+      </> : null}
     </View>
   );
 }
+
+const styles = {
+  sectionTabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+} as const;

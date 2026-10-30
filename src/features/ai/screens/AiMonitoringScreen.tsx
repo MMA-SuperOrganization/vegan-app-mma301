@@ -24,7 +24,7 @@ export function AiMonitoringScreen() {
         <CustomHeader
           title={vi ? 'Giám sát AI' : 'AI monitoring'}
           showBack
-          backFallbackHref="/(tabs)/profile"
+          backFallbackHref="/admin"
         />
       }
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}

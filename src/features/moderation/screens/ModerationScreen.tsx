@@ -7,8 +7,9 @@ import { useModeration } from '../hooks';
 import { ReviewCard } from '../components/ReviewCard';
 import { ReportReviewCard } from '../components/ReportReviewCard';
 import { CaseReviewCard } from '../components/CaseReviewCard';
-export function ModerationScreen() {
-  const vi = useTranslation().locale === 'vi';
+export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
+  const { locale, t } = useTranslation();
+  const vi = locale === 'vi';
   const actions = useModeration();
   const [tab, setTab] = useState<'pending' | 'reports' | 'cases'>('pending');
   const query = actions[tab];
@@ -18,9 +19,9 @@ export function ModerationScreen() {
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader
-          title={vi ? 'Kiểm duyệt' : 'Moderation'}
-          showBack
-          backFallbackHref="/(tabs)/profile"
+          title={t('admin.moderation.title')}
+          showBack={showBack}
+          backFallbackHref="/admin"
         />
       }
     >
@@ -29,9 +30,7 @@ export function ModerationScreen() {
           key={value}
           variant={tab === value ? 'primary' : 'outline'}
           title={
-            (vi
-              ? ['Chờ duyệt', 'Báo cáo', 'Hồ sơ kiểm duyệt']
-              : ['Pending content', 'Reports', 'Moderation cases'])[index]
+            [t('admin.moderation.pending'), t('admin.moderation.reports'), t('admin.moderation.cases')][index]
           }
           onPress={() => setTab(value)}
         />
@@ -42,7 +41,7 @@ export function ModerationScreen() {
         retry={() => void query.refetch()}
       />
       {query.data?.data.length === 0 ? (
-        <AppText>{vi ? 'Chưa có mục nào.' : 'No items.'}</AppText>
+        <AppText>{t('admin.moderation.empty')}</AppText>
       ) : null}
       {tab === 'pending'
         ? actions.pending.data?.data.map((item) => (

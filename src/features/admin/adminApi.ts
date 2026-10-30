@@ -92,16 +92,6 @@ export const adminApi = {
             reason: 'Administrative action from VEGETA mobile app',
           })
     ),
-  deleteUser: (user: AdminUser) =>
-    unwrapApiRequest<AdminUser>(() =>
-      apiClient.delete(`/admin/users/${user._id}`, {
-        data: { reason: 'Administrative action from VEGETA mobile app' },
-      })
-    ),
-  restoreUser: (user: AdminUser) =>
-    unwrapApiRequest<AdminUser>(() =>
-      apiClient.post(`/admin/users/${user._id}/restore`, {})
-    ),
   changeRole: (user: AdminUser) =>
     unwrapApiRequest<AdminUser>(() =>
       apiClient.patch(`/admin/users/${user._id}/role`, {

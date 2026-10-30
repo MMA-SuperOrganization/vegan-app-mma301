@@ -40,10 +40,15 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     if (!force && current.userId === userId && current.status === 'success')
       return true;
     if (current.status === 'loading') return false;
+    const isBackgroundRefresh =
+      current.userId === userId && current.status === 'success';
     set({
       data: current.userId === userId ? current.data : null,
       userId,
-      status: 'loading',
+      // Keep the mounted navigation tree during saves. A forced profile
+      // reload happens after editing nutrition values and should not reset
+      // the current screen back to the app root.
+      status: isBackgroundRefresh ? 'success' : 'loading',
       error: null,
     });
     try {

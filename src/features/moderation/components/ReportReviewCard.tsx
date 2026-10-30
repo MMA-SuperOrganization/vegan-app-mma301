@@ -5,6 +5,7 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { postStatusLabel as reportStatusLabel } from '@/features/community/status';
 import type { UserReport } from '@/features/community/types';
 import { useModeration } from '../hooks';
+import { ReportTargetPreview } from './ReportTargetPreview';
 import { colors, radius, spacing } from '@/theme';
 export function ReportReviewCard({
   report,
@@ -30,7 +31,11 @@ export function ReportReviewCard({
       <AppText variant="bodyStrong">
         {report.targetType} · {report.reason}
       </AppText>
-      <AppText selectable>{report.targetId}</AppText>
+      <ReportTargetPreview
+        targetType={report.targetType}
+        targetId={report.targetId}
+        vi={vi}
+      />
       <AppText>{report.description}</AppText>
       <AppText>{reportStatusLabel(report.status, vi)}</AppText>
       <AppText>{report.resolution}</AppText>

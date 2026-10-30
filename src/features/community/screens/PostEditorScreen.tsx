@@ -16,10 +16,18 @@ import { spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { mediaApi } from '@/features/media/mediaApi';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
-import { useContentCategories } from '@/features/recipes/hooks';
+import {
+  useContentCategories,
+  useExploreRecipes,
+  useRecipeDetail,
+} from '@/features/recipes/hooks';
+import { normalizeLinkedRecipeId } from '../postRelationship';
 
 export function PostEditorScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, recipeId: routeRecipeId } = useLocalSearchParams<{
+    id?: string;
+    recipeId?: string;
+  }>();
   const router = useRouter();
   const vi = useTranslation().locale === 'vi';
   const actions = useCommunityPost(id);
@@ -27,10 +35,36 @@ export function PostEditorScreen() {
   const [content, setContent] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [tags, setTags] = useState('');
-  const [recipeId, setRecipeId] = useState('');
+  const [recipeId, setRecipeId] = useState(routeRecipeId ?? '');
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const categories = useContentCategories('post');
+  const recipes = useExploreRecipes({ limit: 50, sort: 'newest' });
+  const selectedRecipe = useRecipeDetail(recipeId);
+  const recipeOptions = [
+    {
+      value: '',
+      label: vi ? 'Không liên kết công thức' : 'No linked recipe',
+    },
+    ...(recipes.data?.pages.flatMap((page) =>
+      page.data.map((recipe) => ({
+        value: recipe._id,
+        label: recipe.title ?? (vi ? 'Công thức chưa đặt tên' : 'Untitled recipe'),
+      }))
+    ) ?? []),
+  ];
+  if (
+    recipeId &&
+    selectedRecipe.data &&
+    !recipeOptions.some((option) => option.value === recipeId)
+  ) {
+    recipeOptions.splice(1, 0, {
+      value: recipeId,
+      label:
+        selectedRecipe.data.title ??
+        (vi ? 'Công thức chưa đặt tên' : 'Untitled recipe'),
+    });
+  }
   const upload = useMutation({
     mutationFn: () => mediaApi.uploadImage(image!, 'post'),
   });
@@ -73,7 +107,7 @@ export function PostEditorScreen() {
             .split(',')
             .map((tag) => tag.trim())
             .filter(Boolean),
-          recipeId: recipeId.trim() || null,
+          recipeId: normalizeLinkedRecipeId(recipeId),
           visibility,
           previous: actions.post.data,
         },
@@ -146,16 +180,31 @@ export function PostEditorScreen() {
         onChangeText={setTags}
         editable={editable}
       />
-      <AppInput
-        label={
-          vi
-            ? 'ID công thức liên kết (không bắt buộc)'
-            : 'Linked recipe ID (optional)'
+      <AppText>
+        {vi
+          ? 'Bạn có thể gắn một công thức nếu bài viết đang chia sẻ mẹo hoặc trải nghiệm về món đó.'
+          : 'Optionally link a recipe when this post shares tips or experience about that dish.'}
+      </AppText>
+      <SelectionField
+        label={vi ? 'Công thức liên quan (không bắt buộc)' : 'Related recipe (optional)'}
+        placeholder={
+          recipes.isLoading
+            ? vi
+              ? 'Đang tải công thức…'
+              : 'Loading recipes…'
+            : vi
+              ? 'Không liên kết công thức'
+              : 'No linked recipe'
         }
         value={recipeId}
-        onChangeText={setRecipeId}
-        autoCapitalize="none"
-        editable={editable}
+        options={recipeOptions}
+        onChange={setRecipeId}
+      />
+      <FeatureState
+        error={recipes.error || (recipeId ? selectedRecipe.error : null)}
+        retry={() =>
+          void (recipes.error ? recipes.refetch() : selectedRecipe.refetch())
+        }
       />
       <SelectionField
         label={vi ? 'Quyền xem' : 'Visibility'}

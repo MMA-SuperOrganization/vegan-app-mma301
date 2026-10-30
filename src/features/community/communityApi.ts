@@ -87,6 +87,12 @@ export const communityApi = {
         })
       )
     ),
+  relatedPosts: (recipeId: string) =>
+    unwrapApiPageRequest<CommunityPost>(() =>
+      apiClient.get('/posts', {
+        params: { page: 1, limit: 10, postType: 'community', recipeId },
+      })
+    ),
   post: (id: string) =>
     unwrapApiRequest<CommunityPost>(() => apiClient.get(`/posts/${id}`)),
   create: (input: {

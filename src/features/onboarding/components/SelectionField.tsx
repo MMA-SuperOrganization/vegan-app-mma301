@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppButton, AppInput, AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
@@ -47,7 +47,12 @@ export function SelectionField<T extends string>({
               <AppText variant="heading3" style={styles.heading}>
                 {label}
               </AppText>
-              <View style={styles.options}>
+              <ScrollView
+                style={styles.optionsScroll}
+                contentContainerStyle={styles.options}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+              >
                 {options.map((option) => (
                   <Pressable
                     key={option.value}
@@ -69,7 +74,7 @@ export function SelectionField<T extends string>({
                     </AppText>
                   </Pressable>
                 ))}
-              </View>
+              </ScrollView>
               <AppButton
                 title={t('common.close')}
                 variant="ghost"
@@ -96,7 +101,8 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   heading: { marginBottom: spacing.lg },
-  options: { gap: spacing.sm, marginBottom: spacing.md },
+  optionsScroll: { maxHeight: 360, marginBottom: spacing.md },
+  options: { gap: spacing.sm },
   option: {
     minHeight: 48,
     justifyContent: 'center',

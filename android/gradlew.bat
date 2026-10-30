@@ -40,6 +40,14 @@ set APP_HOME=%DIRNAME%
 @rem Resolve any "." and ".." in APP_HOME to make it shorter.
 for %%i in ("%APP_HOME%") do set APP_HOME=%%~fi
 
+@rem Keep Gradle's JDK sockets out of user TEMP paths that resolve through an
+@rem 8.3 alias. Recent JDKs can fail to establish their loopback connection
+@rem from such paths on Windows.
+set "GRADLE_LOCAL_TEMP=%APP_HOME%\.gradle-tmp"
+if not exist "%GRADLE_LOCAL_TEMP%" mkdir "%GRADLE_LOCAL_TEMP%" >NUL 2>&1
+set "TEMP=%GRADLE_LOCAL_TEMP%"
+set "TMP=%GRADLE_LOCAL_TEMP%"
+
 @rem Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
 set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 

@@ -88,7 +88,7 @@ export const recipeApi = {
   suggestions: (query: string) =>
     unwrapApiRequest<SearchSuggestion[]>(() =>
       apiClient.get('/search/suggestions', {
-        params: { q: query, type: 'all', limit: 8 },
+        params: { q: query, type: 'recipe', limit: 8 },
       })
     ),
   detail: async (idOrSlug: string) => {

@@ -6,13 +6,11 @@ import { spacing } from '@/theme';
 
 import type { ContentType, SearchResultsFilterBarProps } from '../types';
 
-const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> = [
-  { value: 'all', labelKey: 'discover.filterAll' },
-  { value: 'recipe', labelKey: 'discover.typeRecipe' },
-  { value: 'food-item', labelKey: 'discover.typeFood' },
-  { value: 'post', labelKey: 'discover.typePost' },
-  { value: 'video', labelKey: 'discover.typeVideo' },
-];
+const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
+  [
+    { value: 'recipe', labelKey: 'discover.typeRecipe' },
+    { value: 'food-item', labelKey: 'discover.typeFood' },
+  ];
 
 export function SearchResultsFilterBar({
   selectedType,

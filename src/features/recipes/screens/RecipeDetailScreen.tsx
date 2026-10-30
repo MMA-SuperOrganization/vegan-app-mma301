@@ -24,6 +24,8 @@ import { useRecipeDetail } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { RatingPanel } from '@/features/engagement/RatingPanel';
 import { DiscussionPanel } from '@/features/engagement/DiscussionPanel';
+import { useRelatedRecipePosts } from '@/features/community/hooks';
+import { FeatureState } from '@/components/feedback/FeatureState';
 
 export function RecipeDetailScreen() {
   const router = useRouter();
@@ -31,6 +33,7 @@ export function RecipeDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
+  const relatedPosts = useRelatedRecipePosts(recipe.data?._id);
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
   useEffect(() => {
     if (recipe.data?._id)
@@ -174,6 +177,50 @@ export function RecipeDetailScreen() {
         initialSaved={data.isSaved}
       />
       <RatingPanel targetType="recipe" targetId={data._id} />
+      <Surface bordered padding="lg" radius="lg" style={styles.block}>
+        <AppText variant="heading4">
+          {locale === 'vi' ? 'Kinh nghiệm từ cộng đồng' : 'Community experience'}
+        </AppText>
+        <AppText color={colors.text.secondary}>
+          {locale === 'vi'
+            ? 'Mẹo, biến tấu và trải nghiệm thực tế dành riêng cho công thức này.'
+            : 'Tips, variations, and real experiences tied to this recipe.'}
+        </AppText>
+        {relatedPosts.isLoading ? <LoadingSpinner /> : null}
+        <FeatureState
+          error={relatedPosts.error}
+          retry={() => void relatedPosts.refetch()}
+        />
+        {relatedPosts.data?.data.map((post) => (
+          <AppButton
+            key={post._id}
+            title={post.title}
+            variant="outline"
+            onPress={() =>
+              router.push({ pathname: '/community/post', params: { id: post._id } })
+            }
+          />
+        ))}
+        {!relatedPosts.isLoading &&
+        !relatedPosts.isError &&
+        relatedPosts.data?.data.length === 0 ? (
+          <AppText color={colors.text.secondary}>
+            {locale === 'vi'
+              ? 'Chưa có bài chia sẻ cho công thức này.'
+              : 'No one has shared an experience for this recipe yet.'}
+          </AppText>
+        ) : null}
+        <AppButton
+          title={locale === 'vi' ? 'Chia sẻ kinh nghiệm' : 'Share your experience'}
+          variant="ghost"
+          onPress={() =>
+            router.push({
+              pathname: '/community/editor',
+              params: { recipeId: data._id },
+            })
+          }
+        />
+      </Surface>
       <DiscussionPanel
         targetType="recipe"
         targetId={data._id}

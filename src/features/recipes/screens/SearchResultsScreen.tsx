@@ -14,7 +14,7 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useDebouncedValue } from '@/hooks';
-import { useTranslation, type TranslationKey } from '@/i18n';
+import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
@@ -32,19 +32,10 @@ import { useSearchResults } from '../hooks';
 import { normalizeSearchQuery } from '../searchState';
 import type { ContentCardData, ContentType } from '../types';
 
-const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
-  [
-    { value: 'all', labelKey: 'discover.filterAll' },
-    { value: 'recipe', labelKey: 'discover.typeRecipe' },
-    { value: 'food-item', labelKey: 'discover.typeFood' },
-    { value: 'post', labelKey: 'discover.typePost' },
-    { value: 'video', labelKey: 'discover.typeVideo' },
-  ];
-
 const parseType = (value?: string): ContentType | 'all' =>
-  ['all', 'recipe', 'food-item', 'post', 'video'].includes(value ?? '')
+  ['recipe', 'food-item'].includes(value ?? '')
     ? (value as ContentType | 'all')
-    : 'all';
+    : 'recipe';
 
 export function SearchResultsScreen() {
   const router = useRouter();

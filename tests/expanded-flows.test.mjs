@@ -6,6 +6,7 @@ import {
   reminderWallTime,
 } from '../src/features/reminders/reminderTime.ts';
 import { contentHref } from '../src/features/recipes/contentNavigation.ts';
+import { normalizeLinkedRecipeId } from '../src/features/community/postRelationship.ts';
 
 test('one-time reminders use the selected IANA zone and reject skipped DST times', () => {
   assert.equal(
@@ -42,6 +43,11 @@ test('discovery and saved content navigate every supported content type using th
     pathname: '/(discover)/recipe/[id]',
     params: { id: 'slug' },
   });
+});
+test('posts keep recipe references optional and preserve an explicitly linked recipe', () => {
+  assert.equal(normalizeLinkedRecipeId(undefined), null);
+  assert.equal(normalizeLinkedRecipeId('   '), null);
+  assert.equal(normalizeLinkedRecipeId(' recipe-123 '), 'recipe-123');
 });
 import {
   reviewMealProposal,

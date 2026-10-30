@@ -109,6 +109,11 @@ export function CommunityScreen() {
             >
               <AppText variant="heading3">{post.title}</AppText>
               <AppText numberOfLines={3}>{post.content}</AppText>
+              {post.recipeId ? (
+                <AppText color={colors.primary[700]}>
+                  {vi ? 'Có công thức liên quan' : 'Includes a related recipe'}
+                </AppText>
+              ) : null}
               {mine ? <AppText>{postStatusLabel(post.status, vi)}</AppText> : null}
               <AppButton
                 title={vi ? 'Xem bài viết' : 'Read post'}

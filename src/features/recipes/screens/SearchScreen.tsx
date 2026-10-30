@@ -24,7 +24,11 @@ export function SearchScreen() {
 
   const submit = (value = query) => {
     const q = normalizeSearchQuery(value);
-    if (q) router.push({ pathname: '/(discover)/search-results', params: { q } });
+    if (q)
+      router.push({
+        pathname: '/(discover)/search-results',
+        params: { q, type: 'recipe' },
+      });
   };
 
   return (

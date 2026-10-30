@@ -16,6 +16,13 @@ export function useCommunityPosts(mine: boolean) {
     enabled: Boolean(userId),
   });
 }
+export function useRelatedRecipePosts(recipeId?: string) {
+  return useQuery({
+    queryKey: ['recipes', recipeId, 'related-posts'],
+    queryFn: () => communityApi.relatedPosts(recipeId!),
+    enabled: Boolean(recipeId),
+  });
+}
 export function useCommunityVideos(mine: boolean) {
   const userId = useAuthStore((state) => state.user?.id);
   return useQuery({

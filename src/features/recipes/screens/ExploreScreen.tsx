@@ -1,7 +1,6 @@
 import { getUserErrorMessage } from '@/services/errors';
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
@@ -13,58 +12,14 @@ import { colors, radius, spacing } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeHeader } from '../components/RecipeHeader';
-import { useExploreRecipes, useFoodItems, useHomeFeed } from '../hooks';
-import type { ContentType } from '../types';
+import { useExploreRecipes } from '../hooks';
 import { contentHref } from '../contentNavigation';
-
-const FILTERS: Array<{
-  type: ContentType;
-  label:
-    | 'discover.typeRecipe'
-    | 'discover.typeFood'
-    | 'discover.typePost'
-    | 'discover.typeVideo';
-}> = [
-  { type: 'recipe', label: 'discover.typeRecipe' },
-  { type: 'food-item', label: 'discover.typeFood' },
-  { type: 'post', label: 'discover.typePost' },
-  { type: 'video', label: 'discover.typeVideo' },
-];
 
 export function ExploreScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [type, setType] = useState<ContentType>('recipe');
   const recipes = useExploreRecipes();
-  const foods = useFoodItems({ isVegan: true });
-  const home = useHomeFeed();
-  const recipeContent = recipes.data?.pages.flatMap((page) => page.data) ?? [];
-  const content =
-    type === 'recipe'
-      ? recipeContent
-      : type === 'food-item'
-        ? (foods.data?.pages.flatMap((page) => page.data) ?? [])
-        : type === 'post'
-          ? (home.data?.featured.posts ?? [])
-          : (home.data?.featured.videos ?? []);
-  const isLoading =
-    type === 'recipe'
-      ? recipes.isLoading
-      : type === 'food-item'
-        ? foods.isLoading
-        : home.isLoading;
-  const error =
-    type === 'recipe'
-      ? recipes.error
-      : type === 'food-item'
-        ? foods.error
-        : home.error;
-  const retry =
-    type === 'recipe'
-      ? recipes.refetch
-      : type === 'food-item'
-        ? foods.refetch
-        : home.refetch;
+  const content = recipes.data?.pages.flatMap((page) => page.data) ?? [];
   return (
     <ScreenWrapper
       scrollable
@@ -96,64 +51,44 @@ export function ExploreScreen() {
           onPress={() => router.push('/(discover)/saved')}
         />
       </View>
-      <View style={styles.filters}>
-        {FILTERS.map((filter) => (
-          <Pressable
-            key={filter.type}
-            accessibilityRole="button"
-            accessibilityState={{ selected: type === filter.type }}
-            onPress={() => setType(filter.type)}
-            style={[styles.filter, type === filter.type && styles.activeFilter]}
-          >
-            <AppText
-              variant="chipLabel"
-              color={
-                type === filter.type ? colors.text.inverse : colors.text.primary
-              }
-            >
-              {t(filter.label)}
-            </AppText>
-          </Pressable>
-        ))}
+      <View style={styles.recipeIntro}>
+        <AppText variant="heading3">{t('discover.recipeLibraryTitle')}</AppText>
+        <AppText color={colors.text.secondary}>
+          {t('discover.recipeLibraryDescription')}
+        </AppText>
       </View>
-      {isLoading ? <LoadingSpinner text={t('discover.loadingRecipes')} /> : null}
-      {error ? (
+      {recipes.isLoading ? (
+        <LoadingSpinner text={t('discover.loadingRecipes')} />
+      ) : null}
+      {recipes.error ? (
         <EmptyState
           title={t('discover.loadError')}
-          description={getUserErrorMessage(error)}
+          description={getUserErrorMessage(recipes.error)}
           actionLabel={t('common.retry')}
-          onAction={() => void retry()}
+          onAction={() => void recipes.refetch()}
         />
       ) : null}
-      {!isLoading && !error && !content.length ? (
+      {!recipes.isLoading && !recipes.error && !content.length ? (
         <EmptyState
-          title={t('discover.noContent')}
-          description={t('discover.noContentDescription')}
+          title={t('discover.noRecipes')}
+          description={t('discover.noRecipesDescription')}
         />
       ) : null}
       <View style={styles.list}>
         {content.map((item) => (
           <ContentResultCard
             key={item._id}
-            item={{ ...item, type }}
-            onPress={() => router.push(contentHref({ ...item, type }))}
+            item={{ ...item, type: 'recipe' }}
+            onPress={() => router.push(contentHref({ ...item, type: 'recipe' }))}
           />
         ))}
       </View>
-      {type === 'recipe' && recipes.hasNextPage ? (
+      {recipes.hasNextPage ? (
         <AppButton
           title={t('discover.loadMore')}
           variant="outline"
           loading={recipes.isFetchingNextPage}
           onPress={() => void recipes.fetchNextPage()}
-        />
-      ) : null}
-      {type === 'food-item' && foods.hasNextPage ? (
-        <AppButton
-          title={t('discover.loadMore')}
-          variant="outline"
-          loading={foods.isFetchingNextPage}
-          onPress={() => void foods.fetchNextPage()}
         />
       ) : null}
     </ScreenWrapper>
@@ -163,19 +98,13 @@ export function ExploreScreen() {
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, gap: spacing.xl },
   headerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  filter: {
-    minHeight: 38,
-    paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
-    borderRadius: radius.full,
+  recipeIntro: {
+    gap: spacing.xs,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.background.surface,
-  },
-  activeFilter: {
-    borderColor: colors.primary[500],
-    backgroundColor: colors.primary[500],
+    borderColor: colors.primary[300],
+    backgroundColor: colors.background.selected,
   },
   list: { gap: spacing.md },
 });

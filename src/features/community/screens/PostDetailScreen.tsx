@@ -7,6 +7,7 @@ import {
   AppText,
   CustomHeader,
   ScreenWrapper,
+  Surface,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
@@ -16,6 +17,8 @@ import { useCommunityPost } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { postStatusLabel } from '../status';
 import type { PostComment } from '../types';
+import { ContentResultCard } from '@/features/recipes/components/ContentResultCard';
+import { useRecipeDetail } from '@/features/recipes/hooks';
 
 export function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,6 +27,7 @@ export function PostDetailScreen() {
   const userId = useAuthStore((state) => state.user?.id);
   const actions = useCommunityPost(id);
   const post = actions.post.data;
+  const linkedRecipe = useRecipeDetail(post?.recipeId ?? '');
   useEffect(() => {
     if (post?._id && post.status === 'published')
       void engagementApi.recordView('post', post._id).catch(() => undefined);
@@ -83,6 +87,36 @@ export function PostDetailScreen() {
             ) : null
           )}
           <FeatureState error={actions.media.error} />
+          {post.recipeId ? (
+            <Surface bordered padding="lg" radius="lg" style={{ gap: spacing.md }}>
+              <AppText variant="heading3">
+                {vi ? 'Công thức trong bài viết' : 'Recipe in this post'}
+              </AppText>
+              <AppText color={colors.text.secondary}>
+                {vi
+                  ? 'Đây là công thức độc lập được bài viết này nhắc đến.'
+                  : 'This is the separate recipe referenced by this post.'}
+              </AppText>
+              <FeatureState
+                loading={linkedRecipe.isLoading}
+                error={linkedRecipe.error}
+                retry={() => void linkedRecipe.refetch()}
+              />
+              {linkedRecipe.data ? (
+                <ContentResultCard
+                  item={{ ...linkedRecipe.data, type: 'recipe' }}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(discover)/recipe/[id]',
+                      params: {
+                        id: linkedRecipe.data.slug ?? linkedRecipe.data._id,
+                      },
+                    })
+                  }
+                />
+              ) : null}
+            </Surface>
+          ) : null}
           {post.rejectionReason ? <AppText>{post.rejectionReason}</AppText> : null}
           {mine &&
           ['draft', 'rejected', 'published', 'archived'].includes(post.status) ? (

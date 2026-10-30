@@ -1,1 +1,5 @@
-export { PantryScreen as default } from '@/features/pantry/screens/PantryScreen';
+import { InventoryScreen } from '@/features/inventory/screens/InventoryScreen';
+
+export default function PantryRoute() {
+  return <InventoryScreen initialTab="pantry" />;
+}

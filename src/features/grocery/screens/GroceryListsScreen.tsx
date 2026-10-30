@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
+import { GroceryPantryTabs } from '../components/GroceryPantryTabs';
 import { groceryProgress } from '../groceryState';
 import { useGroceryLists } from '../hooks';
 import type { GroceryList, GroceryStatus } from '../types';
@@ -39,10 +40,12 @@ export function GroceryListsScreen() {
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('grocery.subtitle')}
         </AppText>
-        <AppButton
-          title={t('pantry.open')}
-          variant="outline"
-          onPress={() => router.push('/pantry')}
+        <GroceryPantryTabs
+          active="grocery"
+          onChange={(tab) => {
+            if (tab === 'pantry')
+              router.replace({ pathname: '/pantry', params: { from: 'inventory' } });
+          }}
         />
         <View style={styles.filters}>
           {statuses.map((value) => (

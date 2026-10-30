@@ -17,46 +17,11 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
+import { ReactionButtons } from '@/features/engagement/ReactionButtons';
 import { postStatusLabel } from '../status';
 import type { PostComment } from '../types';
 import { ContentResultCard } from '@/features/recipes/components/ContentResultCard';
 import { useRecipeDetail } from '@/features/recipes/hooks';
-import type { AssetName } from '@/theme';
-
-function PostReactionButton({
-  icon,
-  label,
-  selected,
-  disabled,
-  onPress,
-}: {
-  icon: AssetName;
-  label: string;
-  selected: boolean;
-  disabled: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ selected, disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.reactionPill,
-        selected && styles.reactionPillSelected,
-        pressed && styles.actionPressed,
-        disabled && styles.actionDisabled,
-      ]}
-    >
-      <AppIcon name={icon} size={19} color={colors.primary[700]} decorative />
-      <AppText variant="bodyStrong" color={colors.primary[700]} numberOfLines={1}>
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
 
 export function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -230,38 +195,12 @@ export function PostDetailScreen() {
           {published ? (
             <>
               <Surface padding="md" radius="xl" style={styles.engagementCard}>
-                <View style={styles.reactions}>
-                  {(['like', 'love', 'helpful'] as const).map((type) => (
-                    <PostReactionButton
-                      key={type}
-                      icon={
-                        type === 'like'
-                          ? 'thumb-up'
-                          : type === 'love'
-                            ? 'heart'
-                            : 'lightbulb'
-                      }
-                      label={
-                        type === 'like'
-                          ? vi
-                            ? 'Thích'
-                            : 'Like'
-                          : type === 'love'
-                            ? vi
-                              ? 'Yêu'
-                              : 'Love'
-                            : vi
-                              ? 'Hữu ích'
-                              : 'Helpful'
-                      }
-                      selected={reaction === type}
-                      disabled={busy}
-                      onPress={() =>
-                        actions.react.mutate({ remove: reaction === type, type })
-                      }
-                    />
-                  ))}
-                </View>
+                <ReactionButtons
+                  selected={reaction}
+                  disabled={busy}
+                  vi={vi}
+                  onPress={(type, remove) => actions.react.mutate({ remove, type })}
+                />
                 <View style={styles.engagementDivider} />
                 <View style={styles.secondaryActions}>
                   <AppButton
@@ -523,32 +462,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.subtle,
   },
-  reactions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  reactionPill: {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.background.muted,
-  },
-  reactionPillSelected: {
-    backgroundColor: colors.background.selected,
-    borderWidth: 1,
-    borderColor: colors.primary[300],
-  },
   actionPressed: {
     opacity: 0.72,
-  },
-  actionDisabled: {
-    opacity: 0.5,
   },
   engagementDivider: {
     height: 1,

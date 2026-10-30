@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -16,8 +16,11 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2, staleTime: 1000 * 60 * 5 } },
 });
 
+const STARTUP_BRAND_DURATION_MS = 2000;
+
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useDesignFonts();
+  const [isStartupBrandVisible, setIsStartupBrandVisible] = useState(true);
   const { t } = useTranslation();
   const hydrateI18n = useI18nStore((state) => state.hydrate);
   const i18nHydrated = useI18nStore((state) => state.isHydrated);
@@ -35,6 +38,14 @@ export default function RootLayout() {
   useEffect(() => {
     void hydrateI18n();
   }, [hydrateI18n]);
+
+  useEffect(() => {
+    const timer = setTimeout(
+      () => setIsStartupBrandVisible(false),
+      STARTUP_BRAND_DURATION_MS
+    );
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     void restoreSession();
@@ -60,10 +71,11 @@ export default function RootLayout() {
   }, [isAuthenticated, isRestoringSession, user?.id]);
 
   if (fontError) throw fontError;
-  if (!fontsLoaded || !i18nHydrated) return null;
 
   let content: React.ReactNode;
-  if (isRestoringSession) {
+  if (isStartupBrandVisible || !fontsLoaded || !i18nHydrated) {
+    content = <LoadingScreen message={t('common.loading')} />;
+  } else if (isRestoringSession) {
     content = <LoadingScreen message={t('bootstrap.restoringSession')} />;
   } else if (
     isAuthenticated &&
@@ -104,6 +116,7 @@ export default function RootLayout() {
         <Stack.Screen name="pantry" options={{ headerShown: false }} />
         <Stack.Screen name="ai" options={{ headerShown: false }} />
         <Stack.Screen name="community" options={{ headerShown: false }} />
+        <Stack.Screen name="admin" options={{ headerShown: false }} />
         <Stack.Screen name="reminders" options={{ headerShown: false }} />
         <Stack.Screen name="moderation" options={{ headerShown: false }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: false }} />

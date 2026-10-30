@@ -73,7 +73,7 @@ export const recipeApi = {
       q: query,
       type,
       page: filters.page ?? 1,
-      limit: filters.limit ?? 10,
+      limit: filters.limit ?? (type === 'all' ? 30 : 10),
       category: filters.category,
       difficulty: filters.difficulty,
       maxTotalMinutes: filters.maxTotalMinutes,
@@ -88,7 +88,7 @@ export const recipeApi = {
   suggestions: (query: string) =>
     unwrapApiRequest<SearchSuggestion[]>(() =>
       apiClient.get('/search/suggestions', {
-        params: { q: query, type: 'recipe', limit: 8 },
+        params: { q: query, type: 'all', limit: 8 },
       })
     ),
   detail: async (idOrSlug: string) => {

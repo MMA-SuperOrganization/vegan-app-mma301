@@ -79,13 +79,11 @@ export const communityApi = {
     unwrapApiRequest<{ summary: string; chapters?: unknown[] }>(() =>
       apiClient.post(`/videos/${id}/generate-summary`, {})
     ),
-  posts: (mine: boolean) =>
-    collectPages((page) =>
-      unwrapApiPageRequest<CommunityPost>(() =>
-        apiClient.get(mine ? '/posts/mine' : '/posts', {
-          params: { page, limit: 50, postType: 'community' },
-        })
-      )
+  posts: (mine: boolean, page = 1, limit = 10) =>
+    unwrapApiPageRequest<CommunityPost>(() =>
+      apiClient.get(mine ? '/posts/mine' : '/posts', {
+        params: { page, limit, postType: 'community' },
+      })
     ),
   relatedPosts: (recipeId: string) =>
     unwrapApiPageRequest<CommunityPost>(() =>

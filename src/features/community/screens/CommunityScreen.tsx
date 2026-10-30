@@ -1,20 +1,63 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+
+import {
+  AppButton,
+  AppText,
+  CustomHeader,
+  LoadingSpinner,
+  ScreenWrapper,
+  Surface,
+} from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+
+import { communityApi } from '../communityApi';
+import { CommunityPostCard } from '../components/CommunityPostCard';
 import { useCommunityPosts, useCommunityVideos } from '../hooks';
 import { postStatusLabel } from '../status';
-import { communityApi } from '../communityApi';
+import type { CommunityPost, CommunityVideo } from '../types';
+
+type ContentType = 'posts' | 'videos';
+
+function Segment({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.segment,
+        selected && styles.segmentSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <AppText
+        variant="bodyStrong"
+        color={selected ? colors.text.inverse : colors.text.secondary}
+      >
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
 
 export function CommunityScreen() {
   const router = useRouter();
   const vi = useTranslation().locale === 'vi';
   const [mine, setMine] = useState(false);
-  const [contentType, setContentType] = useState<'posts' | 'videos'>('posts');
+  const [contentType, setContentType] = useState<ContentType>('posts');
   const posts = useCommunityPosts(mine);
   const videos = useCommunityVideos(mine);
   const client = useQueryClient();
@@ -27,10 +70,32 @@ export function CommunityScreen() {
     mutationFn: communityApi.archiveVideo,
     onSuccess: refresh,
   });
+  const postFeed = posts.data?.pages.flatMap((page) => page.data) ?? [];
+  const videoFeed = videos.data?.data ?? [];
+  const feedItems: Array<
+    { kind: 'post'; value: CommunityPost } | { kind: 'video'; value: CommunityVideo }
+  > =
+    contentType === 'posts'
+      ? postFeed.map((value) => ({ kind: 'post', value }))
+      : videoFeed.map((value) => ({ kind: 'video', value }));
+  const currentLoading =
+    contentType === 'posts' ? posts.isLoading : videos.isLoading;
+  const currentError = contentType === 'posts' ? posts.error : videos.error;
+  const currentRefetching =
+    contentType === 'posts' ? posts.isRefetching : videos.isRefetching;
+  const refetchCurrent = () =>
+    contentType === 'posts' ? posts.refetch() : videos.refetch();
+  const writeLabel =
+    contentType === 'posts'
+      ? vi
+        ? 'Viết bài mới'
+        : 'Write a post'
+      : vi
+        ? 'Đăng video'
+        : 'Upload video';
+
   return (
     <ScreenWrapper
-      scrollable
-      contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader
           title={vi ? 'Cộng đồng' : 'Community'}
@@ -39,159 +104,265 @@ export function CommunityScreen() {
         />
       }
     >
-      <AppButton
-        title={
-          contentType === 'posts'
-            ? vi
-              ? 'Viết bài'
-              : 'Write a post'
-            : vi
-              ? 'Đăng video'
-              : 'Upload video'
-        }
-        onPress={() =>
-          router.push(
-            contentType === 'posts' ? '/community/editor' : '/community/video-editor'
-          )
-        }
-      />
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <AppButton
-          title={vi ? 'Bài viết' : 'Posts'}
-          fullWidth={false}
-          variant={contentType === 'posts' ? 'primary' : 'outline'}
-          onPress={() => setContentType('posts')}
-        />
-        <AppButton
-          title="Video"
-          fullWidth={false}
-          variant={contentType === 'videos' ? 'primary' : 'outline'}
-          onPress={() => setContentType('videos')}
-        />
-      </View>
-      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <AppButton
-          title={vi ? 'Bảng tin' : 'Feed'}
-          fullWidth={false}
-          variant={mine ? 'outline' : 'primary'}
-          onPress={() => setMine(false)}
-        />
-        <AppButton
-          title={vi ? 'Bài của tôi' : 'My posts'}
-          fullWidth={false}
-          variant={mine ? 'primary' : 'outline'}
-          onPress={() => setMine(true)}
-        />
-      </View>
-      <FeatureState
-        loading={contentType === 'posts' ? posts.isLoading : videos.isLoading}
-        error={contentType === 'posts' ? posts.error : videos.error}
-        retry={() =>
-          void (contentType === 'posts' ? posts.refetch() : videos.refetch())
-        }
-      />
-      {contentType === 'posts' && posts.data?.data.length === 0 ? (
-        <AppText>{vi ? 'Chưa có bài viết.' : 'No posts yet.'}</AppText>
-      ) : null}
-      {contentType === 'videos' && videos.data?.data.length === 0 ? (
-        <AppText>{vi ? 'Chưa có video.' : 'No videos yet.'}</AppText>
-      ) : null}
-      {contentType === 'posts'
-        ? posts.data?.data.map((post) => (
-            <View
-              key={post._id}
-              style={{
-                backgroundColor: colors.background.surface,
-                borderRadius: radius.lg,
-                padding: spacing.lg,
-                gap: spacing.sm,
-              }}
-            >
-              <AppText variant="heading3">{post.title}</AppText>
-              <AppText numberOfLines={3}>{post.content}</AppText>
-              {post.recipeId ? (
-                <AppText color={colors.primary[700]}>
-                  {vi ? 'Có công thức liên quan' : 'Includes a related recipe'}
+      <FlatList
+        data={feedItems}
+        keyExtractor={(item) => `${item.kind}-${item.value._id}`}
+        initialNumToRender={5}
+        maxToRenderPerBatch={6}
+        windowSize={7}
+        removeClippedSubviews
+        contentContainerStyle={styles.screen}
+        ItemSeparatorComponent={() => <View style={styles.feedSeparator} />}
+        ListHeaderComponentStyle={styles.listHeader}
+        ListHeaderComponent={
+          <>
+            <Surface tone="selected" padding="xl" radius="xl" style={styles.hero}>
+              <View style={styles.heroCopy}>
+                <AppText variant="heading2">
+                  {vi ? 'Cộng đồng ăn xanh' : 'Plant-powered community'}
                 </AppText>
-              ) : null}
-              {mine ? <AppText>{postStatusLabel(post.status, vi)}</AppText> : null}
+                <AppText color={colors.text.secondary}>
+                  {vi
+                    ? 'Lướt chia sẻ mới nhất, trao đổi mẹo nấu và trải nghiệm ăn xanh. Công thức vẫn là nội dung độc lập.'
+                    : 'Browse the latest stories, cooking tips and plant-based experiences. Recipes remain independent.'}
+                </AppText>
+              </View>
               <AppButton
-                title={vi ? 'Xem bài viết' : 'Read post'}
-                variant="outline"
+                title={writeLabel}
                 onPress={() =>
-                  router.push({
-                    pathname: '/community/post',
-                    params: { id: post._id },
-                  })
+                  router.push(
+                    contentType === 'posts'
+                      ? '/community/editor'
+                      : '/community/video-editor'
+                  )
                 }
               />
-              {mine && ['draft', 'rejected', 'published'].includes(post.status) ? (
-                <AppButton
-                  title={vi ? 'Lưu trữ bài viết' : 'Archive post'}
-                  variant="ghost"
-                  disabled={archivePost.isPending}
-                  onPress={() =>
-                    Alert.alert(
-                      vi ? 'Lưu trữ bài viết?' : 'Archive post?',
-                      post.title,
-                      [
-                        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
-                        {
-                          text: vi ? 'Lưu trữ' : 'Archive',
-                          onPress: () => archivePost.mutate(post),
-                        },
-                      ]
-                    )
-                  }
-                />
-              ) : null}
+              <AppText variant="caption" color={colors.text.secondary}>
+                {contentType === 'posts'
+                  ? vi
+                    ? 'Bài viết được đăng ngay và có thể báo cáo nếu vi phạm.'
+                    : 'Posts publish immediately and can be reported if they violate rules.'
+                  : vi
+                    ? 'Video vẫn đi qua quy trình xử lý và kiểm duyệt.'
+                    : 'Videos still follow processing and review.'}
+              </AppText>
+            </Surface>
+
+            <View style={styles.segmentGroup}>
+              <Segment
+                label={vi ? 'Bài viết' : 'Posts'}
+                selected={contentType === 'posts'}
+                onPress={() => setContentType('posts')}
+              />
+              <Segment
+                label="Video"
+                selected={contentType === 'videos'}
+                onPress={() => setContentType('videos')}
+              />
             </View>
-          ))
-        : videos.data?.data.map((video) => (
-            <View
-              key={video._id}
-              style={{
-                backgroundColor: colors.background.surface,
-                borderRadius: radius.lg,
-                padding: spacing.lg,
-                gap: spacing.sm,
-              }}
-            >
-              <AppText variant="heading3">{video.title}</AppText>
-              <AppText numberOfLines={3}>{video.description}</AppText>
-              {mine ? <AppText>{postStatusLabel(video.status, vi)}</AppText> : null}
+
+            <View style={styles.feedHeader}>
+              <View style={styles.feedCopy}>
+                <AppText variant="heading3">
+                  {mine
+                    ? vi
+                      ? 'Bài của tôi'
+                      : 'My posts'
+                    : vi
+                      ? 'Bảng tin mới nhất'
+                      : 'Latest feed'}
+                </AppText>
+                <AppText variant="bodySmall" color={colors.text.secondary}>
+                  {mine
+                    ? vi
+                      ? 'Quản lý những nội dung bạn đã đăng.'
+                      : 'Manage the content you have published.'
+                    : vi
+                      ? 'Cuộn xuống để tự động tải thêm bài viết.'
+                      : 'Scroll down to automatically load more posts.'}
+                </AppText>
+              </View>
+              <View style={styles.scopeToggle}>
+                <Pressable
+                  onPress={() => setMine(false)}
+                  style={[styles.scopeButton, !mine && styles.scopeButtonSelected]}
+                >
+                  <AppText
+                    variant="caption"
+                    color={!mine ? colors.primary[700] : undefined}
+                  >
+                    {vi ? 'Mới nhất' : 'Latest'}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => setMine(true)}
+                  style={[styles.scopeButton, mine && styles.scopeButtonSelected]}
+                >
+                  <AppText
+                    variant="caption"
+                    color={mine ? colors.primary[700] : undefined}
+                  >
+                    {vi ? 'Của tôi' : 'Mine'}
+                  </AppText>
+                </Pressable>
+              </View>
+            </View>
+
+            <FeatureState
+              loading={currentLoading}
+              error={currentError}
+              retry={() => void refetchCurrent()}
+            />
+
+            {!currentLoading && feedItems.length === 0 ? (
+              <Surface bordered padding="xl" radius="xl" style={styles.empty}>
+                <AppText variant="heading4">
+                  {vi ? 'Chưa có nội dung ở đây' : 'Nothing here yet'}
+                </AppText>
+                <AppText color={colors.text.secondary}>
+                  {mine
+                    ? vi
+                      ? 'Hãy tạo bài viết đầu tiên của bạn.'
+                      : 'Create your first post.'
+                    : vi
+                      ? 'Bài viết mới sẽ xuất hiện tại đây.'
+                      : 'New posts will appear here.'}
+                </AppText>
+              </Surface>
+            ) : null}
+          </>
+        }
+        renderItem={({ item }) =>
+          item.kind === 'post' ? (
+            <CommunityPostCard
+              post={item.value}
+              mine={mine}
+              vi={vi}
+              onOpen={() =>
+                router.push({
+                  pathname: '/community/post',
+                  params: { id: item.value._id },
+                })
+              }
+              onArchive={
+                mine &&
+                ['draft', 'rejected', 'published'].includes(item.value.status)
+                  ? () =>
+                      Alert.alert(
+                        vi ? 'Lưu trữ bài viết?' : 'Archive post?',
+                        item.value.title,
+                        [
+                          { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                          {
+                            text: vi ? 'Lưu trữ' : 'Archive',
+                            onPress: () => archivePost.mutate(item.value),
+                          },
+                        ]
+                      )
+                  : undefined
+              }
+            />
+          ) : (
+            <Surface bordered padding="lg" radius="xl" style={styles.videoCard}>
+              <View style={styles.videoHeading}>
+                <AppText variant="heading3" style={styles.feedCopy}>
+                  {item.value.title}
+                </AppText>
+                {mine ? (
+                  <AppText variant="caption" color={colors.primary[700]}>
+                    {postStatusLabel(item.value.status, vi)}
+                  </AppText>
+                ) : null}
+              </View>
+              <AppText color={colors.text.secondary} numberOfLines={3}>
+                {item.value.description}
+              </AppText>
               <AppButton
                 title={vi ? 'Xem video' : 'View video'}
                 variant="outline"
                 onPress={() =>
                   router.push({
                     pathname: '/community/video',
-                    params: { id: video._id },
+                    params: { id: item.value._id },
                   })
                 }
               />
-              {mine && ['draft', 'rejected', 'published'].includes(video.status) ? (
+              {mine &&
+              ['draft', 'rejected', 'published'].includes(item.value.status) ? (
                 <AppButton
                   title={vi ? 'Lưu trữ video' : 'Archive video'}
                   variant="ghost"
                   disabled={archiveVideo.isPending}
-                  onPress={() =>
-                    Alert.alert(
-                      vi ? 'Lưu trữ video?' : 'Archive video?',
-                      video.title,
-                      [
-                        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
-                        {
-                          text: vi ? 'Lưu trữ' : 'Archive',
-                          onPress: () => archiveVideo.mutate(video),
-                        },
-                      ]
-                    )
-                  }
+                  onPress={() => archiveVideo.mutate(item.value)}
                 />
               ) : null}
+            </Surface>
+          )
+        }
+        ListFooterComponent={
+          posts.isFetchingNextPage ? (
+            <View style={styles.feedFooter}>
+              <LoadingSpinner
+                text={vi ? 'Đang tải thêm bài viết…' : 'Loading more posts…'}
+              />
             </View>
-          ))}
+          ) : null
+        }
+        refreshing={currentRefetching && !currentLoading}
+        onRefresh={() => void refetchCurrent()}
+        onEndReachedThreshold={0.6}
+        onEndReached={() => {
+          if (
+            contentType === 'posts' &&
+            posts.hasNextPage &&
+            !posts.isFetchingNextPage
+          )
+            void posts.fetchNextPage();
+        }}
+      />
     </ScreenWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { padding: spacing.xl, paddingBottom: spacing['4xl'] },
+  listHeader: { gap: spacing.xl, marginBottom: spacing.xl },
+  feedSeparator: { height: spacing.xl },
+  feedFooter: { paddingVertical: spacing.xl },
+  hero: { gap: spacing.lg },
+  heroCopy: { gap: spacing.sm },
+  segmentGroup: {
+    flexDirection: 'row',
+    padding: spacing.xs,
+    gap: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentSelected: { backgroundColor: colors.primary[700] },
+  pressed: { opacity: 0.74 },
+  feedHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  feedCopy: { flex: 1, gap: spacing.xs },
+  scopeToggle: { flexDirection: 'row', gap: spacing.xs },
+  scopeButton: {
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.background.muted,
+  },
+  scopeButtonSelected: { backgroundColor: colors.background.selected },
+  empty: { alignItems: 'center', gap: spacing.sm },
+  videoCard: { gap: spacing.md },
+  videoHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+});

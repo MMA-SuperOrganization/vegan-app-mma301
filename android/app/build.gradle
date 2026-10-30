@@ -85,6 +85,33 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def releaseSigningValue = { String name ->
+    def value = findProperty(name) ?: System.getenv(name)
+    return value?.toString()?.trim()
+}
+def releaseStoreFile = releaseSigningValue('VEGETA_UPLOAD_STORE_FILE')
+def releaseStorePassword = releaseSigningValue('VEGETA_UPLOAD_STORE_PASSWORD')
+def releaseKeyAlias = releaseSigningValue('VEGETA_UPLOAD_KEY_ALIAS')
+def releaseKeyPassword = releaseSigningValue('VEGETA_UPLOAD_KEY_PASSWORD')
+def cxxStagingDirectory = releaseSigningValue('VEGETA_CXX_STAGING_DIR')
+def hasReleaseSigningConfig = [
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+].every { it }
+def isReleaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains('release')
+}
+
+if (isReleaseBuildRequested && !hasReleaseSigningConfig) {
+    throw new GradleException(
+        'Release signing is not configured. Set VEGETA_UPLOAD_STORE_FILE, ' +
+        'VEGETA_UPLOAD_STORE_PASSWORD, VEGETA_UPLOAD_KEY_ALIAS, and ' +
+        'VEGETA_UPLOAD_KEY_PASSWORD in ~/.gradle/gradle.properties or environment variables.'
+    )
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -92,6 +119,14 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.ngocthang.veganapp'
+
+    if (cxxStagingDirectory) {
+        externalNativeBuild {
+            cmake {
+                buildStagingDirectory = file(cxxStagingDirectory)
+            }
+        }
+    }
 
     defaultConfig {
         applicationId 'com.ngocthang.veganapp'
@@ -110,15 +145,21 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (hasReleaseSigningConfig) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.findByName('release')
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

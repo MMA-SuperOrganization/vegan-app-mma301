@@ -115,3 +115,19 @@ test('Android excludes the empty vector-icon native codegen target', () => {
     undefined
   );
 });
+
+test('Android release builds require a dedicated upload key', () => {
+  const buildGradle = readFileSync(
+    new URL('../android/app/build.gradle', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(buildGradle, /VEGETA_UPLOAD_STORE_FILE/);
+  assert.match(buildGradle, /VEGETA_UPLOAD_STORE_PASSWORD/);
+  assert.match(buildGradle, /VEGETA_UPLOAD_KEY_ALIAS/);
+  assert.match(buildGradle, /VEGETA_UPLOAD_KEY_PASSWORD/);
+  assert.equal(
+    (buildGradle.match(/signingConfig signingConfigs\.debug/g) ?? []).length,
+    1
+  );
+});

@@ -33,9 +33,32 @@ import { normalizeSearchQuery } from '../searchState';
 import type { ContentCardData, ContentType } from '../types';
 
 const parseType = (value?: string): ContentType | 'all' =>
-  ['recipe', 'food-item'].includes(value ?? '')
+  ['all', 'recipe', 'food-item', 'post', 'video'].includes(value ?? '')
     ? (value as ContentType | 'all')
-    : 'recipe';
+    : 'all';
+
+const mixedTypeOrder: ContentType[] = ['recipe', 'post', 'food-item', 'video'];
+
+function mixContentTypes(items: ContentCardData[]) {
+  const buckets = new Map(
+    mixedTypeOrder.map((contentType) => [
+      contentType,
+      items.filter((item) => (item.type ?? 'recipe') === contentType),
+    ])
+  );
+  const mixed: ContentCardData[] = [];
+  let index = 0;
+
+  while (mixed.length < items.length) {
+    for (const contentType of mixedTypeOrder) {
+      const item = buckets.get(contentType)?.[index];
+      if (item) mixed.push(item);
+    }
+    index += 1;
+  }
+
+  return mixed;
+}
 
 export function SearchResultsScreen() {
   const router = useRouter();
@@ -57,7 +80,10 @@ export function SearchResultsScreen() {
     [allergenIds, filters, type]
   );
   const results = useSearchResults(submitted, type, apiFilters);
-  const content = results.data?.pages.flatMap((page) => page.data) ?? [];
+  const content =
+    results.data?.pages.flatMap((page) =>
+      type === 'all' ? mixContentTypes(page.data) : page.data
+    ) ?? [];
 
   useEffect(() => {
     setSubmitted(debouncedQuery);

@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSegments } from 'expo-router';
+import { usePathname, useSegments } from 'expo-router';
 
 import { AppIcon, AppInput, AppText, BottomSheet, Toggle } from '@/components';
 import {
@@ -41,6 +41,7 @@ const SUGGESTIONS = {
 
 export function AiChatWidget() {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
   const [rootSegment] = useSegments();
   const vi = useTranslation().locale === 'vi';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -69,6 +70,8 @@ export function AiChatWidget() {
     (rootSegment === '(tabs)'
       ? coreTokens.navigation.tabBarHeight + spacing.lg
       : spacing.lg);
+  const launcherHidden =
+    pathname.startsWith('/community') || pathname.startsWith('/search-results');
 
   useEffect(() => {
     setVisible(false);
@@ -93,7 +96,13 @@ export function AiChatWidget() {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [keyboard.overlap, keyboard.visible, visible]);
 
-  if (!isAuthenticated || !onboardingCompleted || isRestoringSession) return null;
+  if (
+    !isAuthenticated ||
+    !onboardingCompleted ||
+    isRestoringSession ||
+    launcherHidden
+  )
+    return null;
 
   const submitQuestion = async () => {
     const question =

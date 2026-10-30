@@ -3,7 +3,7 @@ import { collectPages } from '@/services/api/collectPages';
 import type { ContentCardData } from '@/features/recipes/types';
 
 export type EngagementTarget = 'recipe' | 'video';
-export type DiscussionTarget = 'recipe' | 'post' | 'video';
+export type DiscussionTarget = 'post' | 'video';
 export type ReactionType = 'like' | 'love' | 'helpful';
 export interface DiscussionComment {
   _id: string;

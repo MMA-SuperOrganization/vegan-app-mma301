@@ -27,7 +27,7 @@ export function SearchScreen() {
     if (q)
       router.push({
         pathname: '/(discover)/search-results',
-        params: { q, type: 'recipe' },
+        params: { q, type: 'all' },
       });
   };
 

@@ -14,6 +14,7 @@ import {
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { HomeCommunitySection } from '@/features/community/components/HomeCommunitySection';
 
 import { FeaturedRecipesSection } from '../components/FeaturedRecipesSection';
 import { QuickRecipesSection } from '../components/QuickRecipesSection';
@@ -26,7 +27,7 @@ type HomeFilter = 'all' | 'protein' | 'easy';
 export function DiscoveryHomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const profile = useProfileStore((state) => state.data);
   const home = useHomeFeed();
   const [filter, setFilter] = useState<HomeFilter>('all');
@@ -35,6 +36,7 @@ export function DiscoveryHomeScreen() {
   const cardWidth = Math.min(width - spacing.xl * 2 - spacing.md - 32, 320);
   const snapInterval = cardWidth + spacing.md;
   const featured = home.data?.featured.recipes ?? [];
+  const communityPosts = home.data?.featured.posts ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
     ? home.data.personalized.recipes
     : featured;
@@ -151,6 +153,16 @@ export function DiscoveryHomeScreen() {
         recipes={quickRecipes}
         cardWidth={cardWidth}
         onSelectRecipe={openRecipe}
+      />
+
+      <HomeCommunitySection
+        posts={communityPosts}
+        vi={locale === 'vi'}
+        onOpenPost={(post) =>
+          router.push({ pathname: '/community/post', params: { id: post._id } })
+        }
+        onViewAll={() => router.push('/community')}
+        onWritePost={() => router.push('/community/editor')}
       />
     </ScreenWrapper>
   );

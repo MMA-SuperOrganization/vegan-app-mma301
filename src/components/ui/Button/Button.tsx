@@ -1,7 +1,10 @@
+import { AppIcon } from '../AppIcon';
 import { AppText } from '../AppText';
 import React from 'react';
 import {
   Pressable,
+  StyleSheet,
+  View,
   type PressableProps,
   type StyleProp,
   type TextStyle,
@@ -15,8 +18,10 @@ import {
   containerStyle,
   interactionTokens,
   variantNode,
+  type AssetName,
 } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { inferButtonIcon } from './buttonIcon';
 export type ButtonVariant =
   'primary' | 'secondary' | 'outline' | 'ghost' | 'warning' | 'danger';
 export type ButtonState = 'default' | 'pressed' | 'loading' | 'disabled';
@@ -32,6 +37,8 @@ export interface ButtonProps extends Omit<PressableProps, 'style' | 'children'> 
   textStyle?: StyleProp<TextStyle>;
   preview?: boolean;
   preset?: ComponentPreset;
+  icon?: AssetName | false;
+  iconPosition?: 'start' | 'end';
 }
 export function Button({
   title,
@@ -46,6 +53,8 @@ export function Button({
   textStyle,
   preview = false,
   preset = 'master',
+  icon,
+  iconPosition = 'start',
   ...props
 }: ButtonProps) {
   const { t } = useTranslation();
@@ -57,6 +66,7 @@ export function Button({
         ? 'loading'
         : state;
   const blocked = current === 'disabled' || current === 'loading';
+  const visibleIcon = icon === false ? undefined : icon ?? inferButtonIcon(title);
   const token = (pressed: boolean) =>
     variantNode(
       'Button /',
@@ -86,17 +96,41 @@ export function Button({
         style,
       ]}
     >
-      {({ pressed }) => (
-        <AppText
-          style={[
-            child(token(pressed), 'Label').style,
-            interactionTokens.flexibleText,
-            textStyle,
-          ]}
-        >
-          {current === 'loading' ? `•••  ${visibleLoadingTitle}` : title}
-        </AppText>
-      )}
+      {({ pressed }) => {
+        const labelStyle = child(token(pressed), 'Label').style;
+        const iconColor = StyleSheet.flatten(labelStyle)?.color;
+        const iconNode =
+          visibleIcon && current !== 'loading' ? (
+            <AppIcon
+              name={visibleIcon}
+              size={20}
+              color={typeof iconColor === 'string' ? iconColor : undefined}
+              decorative
+            />
+          ) : null;
+        return (
+          <View style={styles.content}>
+            {iconPosition === 'start' ? iconNode : null}
+            <AppText
+              numberOfLines={2}
+              style={[labelStyle, interactionTokens.flexibleText, textStyle]}
+            >
+              {current === 'loading' ? `•••  ${visibleLoadingTitle}` : title}
+            </AppText>
+            {iconPosition === 'end' ? iconNode : null}
+          </View>
+        );
+      }}
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minWidth: 0,
+  },
+});

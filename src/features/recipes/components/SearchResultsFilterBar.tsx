@@ -8,8 +8,11 @@ import type { ContentType, SearchResultsFilterBarProps } from '../types';
 
 const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
   [
+    { value: 'all', labelKey: 'discover.filterAll' },
     { value: 'recipe', labelKey: 'discover.typeRecipe' },
+    { value: 'post', labelKey: 'discover.typePost' },
     { value: 'food-item', labelKey: 'discover.typeFood' },
+    { value: 'video', labelKey: 'discover.typeVideo' },
   ];
 
 export function SearchResultsFilterBar({

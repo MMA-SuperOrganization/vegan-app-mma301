@@ -150,11 +150,11 @@ export function ProfileScreen() {
           onPress={() => router.push('/recipes')}
         />
         <MenuItem
-          title={vi ? 'Chia sẻ theo công thức' : 'Recipe experiences'}
+          title={vi ? 'Bài viết cộng đồng' : 'Community posts'}
           subtitle={
             vi
-              ? 'Đọc và chia sẻ kinh nghiệm gắn với từng món'
-              : 'Read and share experiences tied to each dish'
+              ? 'Đọc hoặc đăng bài; có thể gắn công thức liên quan'
+              : 'Read or create posts with an optional linked recipe'
           }
           onPress={() => router.push('/community')}
         />

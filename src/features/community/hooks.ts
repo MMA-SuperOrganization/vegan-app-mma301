@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import { communityApi } from './communityApi';
 import { mediaApi } from '@/features/media/mediaApi';
@@ -10,9 +15,16 @@ import type {
 } from './types';
 export function useCommunityPosts(mine: boolean) {
   const userId = useAuthStore((state) => state.user?.id);
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['account', userId, 'community', 'posts', mine],
-    queryFn: () => communityApi.posts(mine),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => communityApi.posts(mine, pageParam, 10),
+    getNextPageParam: (lastPage) => {
+      const page = lastPage.meta?.page ?? 1;
+      return lastPage.meta && page < lastPage.meta.totalPages
+        ? page + 1
+        : undefined;
+    },
     enabled: Boolean(userId),
   });
 }

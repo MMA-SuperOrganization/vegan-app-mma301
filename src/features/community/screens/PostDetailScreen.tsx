@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Image, View } from 'react-native';
+import { Image, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
+  AppIcon,
   AppInput,
   AppText,
+  Badge,
   CustomHeader,
   ScreenWrapper,
   Surface,
@@ -19,6 +21,42 @@ import { postStatusLabel } from '../status';
 import type { PostComment } from '../types';
 import { ContentResultCard } from '@/features/recipes/components/ContentResultCard';
 import { useRecipeDetail } from '@/features/recipes/hooks';
+import type { AssetName } from '@/theme';
+
+function PostReactionButton({
+  icon,
+  label,
+  selected,
+  disabled,
+  onPress,
+}: {
+  icon: AssetName;
+  label: string;
+  selected: boolean;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected, disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.reactionPill,
+        selected && styles.reactionPillSelected,
+        pressed && styles.actionPressed,
+        disabled && styles.actionDisabled,
+      ]}
+    >
+      <AppIcon name={icon} size={19} color={colors.primary[700]} decorative />
+      <AppText variant="bodyStrong" color={colors.primary[700]} numberOfLines={1}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
 
 export function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +78,6 @@ export function PostDetailScreen() {
   const mine = post?.authorId === userId;
   const published = post?.status === 'published';
   const busy =
-    actions.submit.isPending ||
     actions.remove.isPending ||
     actions.comment.isPending ||
     actions.editComment.isPending ||
@@ -50,7 +87,7 @@ export function PostDetailScreen() {
   return (
     <ScreenWrapper
       scrollable
-      contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
+      contentContainerStyle={styles.screenContent}
       header={
         <CustomHeader
           title={post?.title || (vi ? 'Bài viết' : 'Post')}
@@ -66,16 +103,48 @@ export function PostDetailScreen() {
       />
       {post ? (
         <>
-          <AppText variant="heading2">{post.title}</AppText>
-          <AppButton
-            title={vi ? 'Xem hồ sơ tác giả' : 'View author profile'}
-            variant="ghost"
-            onPress={() =>
-              router.push({ pathname: '/users/[id]', params: { id: post.authorId } })
-            }
-          />
-          <AppText>{postStatusLabel(post.status, vi)}</AppText>
-          <AppText selectable>{post.content}</AppText>
+          <Surface padding="lg" radius="xl" style={styles.articleCard}>
+            <View style={styles.articleBadges}>
+              <Badge
+                label={vi ? 'Bài viết cộng đồng' : 'Community post'}
+                variant="primary"
+                size="sm"
+              />
+              <Badge
+                label={postStatusLabel(post.status, vi)}
+                variant={published ? 'success' : 'neutral'}
+                size="sm"
+              />
+            </View>
+            <AppText variant="heading2">{post.title}</AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={vi ? 'Xem hồ sơ tác giả' : 'View author profile'}
+              onPress={() =>
+                router.push({ pathname: '/users/[id]', params: { id: post.authorId } })
+              }
+              style={({ pressed }) => [styles.authorRow, pressed && styles.actionPressed]}
+            >
+              <View style={styles.authorAvatar}>
+                <AppIcon name="user" size={20} color={colors.primary[700]} decorative />
+              </View>
+              <View style={styles.authorCopy}>
+                <AppText variant="bodyStrong">
+                  {vi ? 'Tác giả bài viết' : 'Post author'}
+                </AppText>
+                <AppText variant="caption" color={colors.text.secondary}>
+                  {vi ? 'Chạm để xem hồ sơ' : 'Tap to view profile'}
+                </AppText>
+              </View>
+              <AppText variant="bodyStrong" color={colors.primary[700]}>
+                →
+              </AppText>
+            </Pressable>
+            <View style={styles.articleDivider} />
+            <AppText selectable style={styles.articleBody}>
+              {post.content}
+            </AppText>
+          </Surface>
           {actions.media.data?.map((asset) =>
             asset.downloadUrl ? (
               <Image
@@ -88,7 +157,7 @@ export function PostDetailScreen() {
           )}
           <FeatureState error={actions.media.error} />
           {post.recipeId ? (
-            <Surface bordered padding="lg" radius="lg" style={{ gap: spacing.md }}>
+            <Surface bordered padding="lg" radius="xl" style={styles.linkedRecipeCard}>
               <AppText variant="heading3">
                 {vi ? 'Công thức trong bài viết' : 'Recipe in this post'}
               </AppText>
@@ -128,14 +197,6 @@ export function PostDetailScreen() {
                   router.push({ pathname: '/community/editor', params: { id } })
                 }
               />
-              {['draft', 'rejected'].includes(post.status) ? (
-                <AppButton
-                  title={vi ? 'Gửi duyệt' : 'Submit for review'}
-                  loading={actions.submit.isPending}
-                  disabled={busy}
-                  onPress={() => actions.submit.mutate(post)}
-                />
-              ) : null}
             </>
           ) : null}
           {mine ? (
@@ -168,52 +229,95 @@ export function PostDetailScreen() {
           ) : null}
           {published ? (
             <>
-              <View
-                style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}
-              >
-                {(['like', 'love', 'helpful'] as const).map((type) => (
-                  <AppButton
-                    key={type}
-                    title={
-                      type === 'like'
-                        ? vi
-                          ? 'Thích'
-                          : 'Like'
-                        : type === 'love'
+              <Surface padding="md" radius="xl" style={styles.engagementCard}>
+                <View style={styles.reactions}>
+                  {(['like', 'love', 'helpful'] as const).map((type) => (
+                    <PostReactionButton
+                      key={type}
+                      icon={
+                        type === 'like'
+                          ? 'thumb-up'
+                          : type === 'love'
+                            ? 'heart'
+                            : 'lightbulb'
+                      }
+                      label={
+                        type === 'like'
                           ? vi
-                            ? 'Yêu thích'
-                            : 'Love'
-                          : vi
-                            ? 'Hữu ích'
-                            : 'Helpful'
-                    }
+                            ? 'Thích'
+                            : 'Like'
+                          : type === 'love'
+                            ? vi
+                              ? 'Yêu'
+                              : 'Love'
+                            : vi
+                              ? 'Hữu ích'
+                              : 'Helpful'
+                      }
+                      selected={reaction === type}
+                      disabled={busy}
+                      onPress={() =>
+                        actions.react.mutate({ remove: reaction === type, type })
+                      }
+                    />
+                  ))}
+                </View>
+                <View style={styles.engagementDivider} />
+                <View style={styles.secondaryActions}>
+                  <AppButton
+                    title={vi ? 'Chia sẻ' : 'Share'}
+                    variant="ghost"
                     fullWidth={false}
-                    variant={reaction === type ? 'primary' : 'outline'}
-                    disabled={busy}
+                    style={styles.secondaryActionButton}
                     onPress={() =>
-                      actions.react.mutate({ remove: reaction === type, type })
+                      void Share.share({ message: `${post.title}\n\n${post.content}` })
                     }
                   />
-                ))}
+                  <AppButton
+                    title={vi ? 'Báo cáo' : 'Report'}
+                    variant="ghost"
+                    fullWidth={false}
+                    style={styles.secondaryActionButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/community/report',
+                        params: { targetType: 'post', targetId: id },
+                      })
+                    }
+                  />
+                </View>
+              </Surface>
+              <Surface padding="lg" radius="xl" style={styles.commentsCard}>
+              <View style={styles.sectionTitle}>
+                <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
+                <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
               </View>
-              <AppButton
-                title={vi ? 'Báo cáo bài viết' : 'Report post'}
-                variant="ghost"
-                onPress={() =>
-                  router.push({
-                    pathname: '/community/report',
-                    params: { targetType: 'post', targetId: id },
-                  })
-                }
-              />
-              <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
               <FeatureState
                 loading={actions.comments.isLoading}
                 error={actions.comments.error}
                 retry={() => void actions.comments.refetch()}
               />
               {actions.comments.data?.data.length === 0 ? (
-                <AppText>{vi ? 'Chưa có bình luận.' : 'No comments yet.'}</AppText>
+                <View style={styles.emptyComments}>
+                  <View style={styles.emptyCommentIcon}>
+                    <AppIcon
+                      name="comment"
+                      size={22}
+                      color={colors.primary[700]}
+                      decorative
+                    />
+                  </View>
+                  <View style={styles.emptyCommentCopy}>
+                    <AppText variant="bodyStrong">
+                      {vi ? 'Chưa có bình luận' : 'No comments yet'}
+                    </AppText>
+                    <AppText variant="caption" color={colors.text.secondary}>
+                      {vi
+                        ? 'Hãy bắt đầu cuộc trò chuyện.'
+                        : 'Start the conversation.'}
+                    </AppText>
+                  </View>
+                </View>
               ) : null}
               {actions.comments.data?.data.map((comment) => (
                 <View
@@ -226,49 +330,55 @@ export function PostDetailScreen() {
                   }}
                 >
                   <AppText>{comment.content}</AppText>
-                  {!comment.parentCommentId ? (
-                    <AppButton
-                      title={vi ? 'Trả lời' : 'Reply'}
-                      variant="ghost"
-                      disabled={busy}
-                      onPress={() => {
-                        setReplyingTo(comment);
-                        setEditingComment(null);
-                        setCommentText('');
-                      }}
-                    />
-                  ) : null}
-                  {comment.authorId === userId ? (
-                    <>
+                  <View style={styles.commentActions}>
+                    {!comment.parentCommentId ? (
                       <AppButton
-                        title={vi ? 'Sửa bình luận' : 'Edit comment'}
+                        title={vi ? 'Trả lời' : 'Reply'}
                         variant="ghost"
+                        fullWidth={false}
                         disabled={busy}
                         onPress={() => {
-                          setEditingComment(comment);
-                          setReplyingTo(null);
-                          setCommentText(comment.content);
+                          setReplyingTo(comment);
+                          setEditingComment(null);
+                          setCommentText('');
                         }}
                       />
+                    ) : null}
+                    {comment.authorId === userId ? (
+                      <>
+                        <AppButton
+                          title={vi ? 'Sửa' : 'Edit'}
+                          variant="ghost"
+                          fullWidth={false}
+                          disabled={busy}
+                          onPress={() => {
+                            setEditingComment(comment);
+                            setReplyingTo(null);
+                            setCommentText(comment.content);
+                          }}
+                        />
+                        <AppButton
+                          title={vi ? 'Xóa' : 'Delete'}
+                          variant="ghost"
+                          fullWidth={false}
+                          disabled={busy}
+                          onPress={() => setDeletingComment(comment._id)}
+                        />
+                      </>
+                    ) : (
                       <AppButton
-                        title={vi ? 'Xóa bình luận' : 'Delete comment'}
+                        title={vi ? 'Báo cáo' : 'Report'}
                         variant="ghost"
-                        disabled={busy}
-                        onPress={() => setDeletingComment(comment._id)}
+                        fullWidth={false}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/community/report',
+                            params: { targetType: 'comment', targetId: comment._id },
+                          })
+                        }
                       />
-                    </>
-                  ) : (
-                    <AppButton
-                      title={vi ? 'Báo cáo bình luận' : 'Report comment'}
-                      variant="ghost"
-                      onPress={() =>
-                        router.push({
-                          pathname: '/community/report',
-                          params: { targetType: 'comment', targetId: comment._id },
-                        })
-                      }
-                    />
-                  )}
+                    )}
+                  </View>
                   {deletingComment === comment._id ? (
                     <>
                       <AppButton
@@ -344,13 +454,13 @@ export function PostDetailScreen() {
                   }}
                 />
               ) : null}
+              </Surface>
             </>
           ) : null}
         </>
       ) : null}
       <FeatureState
         error={
-          actions.submit.error ||
           actions.remove.error ||
           actions.comment.error ||
           actions.editComment.error ||
@@ -361,3 +471,132 @@ export function PostDetailScreen() {
     </ScreenWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  screenContent: {
+    padding: spacing.xl,
+    paddingBottom: 132,
+    gap: spacing.md,
+  },
+  articleCard: {
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  articleBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.selected,
+  },
+  authorAvatar: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.surface,
+  },
+  authorCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  articleDivider: {
+    height: 1,
+    backgroundColor: colors.border.subtle,
+  },
+  articleBody: {
+    lineHeight: 25,
+  },
+  linkedRecipeCard: {
+    gap: spacing.md,
+  },
+  engagementCard: {
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  reactions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  reactionPill: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
+  },
+  reactionPillSelected: {
+    backgroundColor: colors.background.selected,
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+  },
+  actionPressed: {
+    opacity: 0.72,
+  },
+  actionDisabled: {
+    opacity: 0.5,
+  },
+  engagementDivider: {
+    height: 1,
+    backgroundColor: colors.border.subtle,
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  secondaryActionButton: {
+    flex: 1,
+    minWidth: 0,
+  },
+  commentsCard: {
+    gap: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  sectionTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyComments: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.muted,
+  },
+  emptyCommentIcon: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.surface,
+  },
+  emptyCommentCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: spacing.xs,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+});

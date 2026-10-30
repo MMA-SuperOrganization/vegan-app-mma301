@@ -16,14 +16,19 @@ export interface ContentCardData {
   totalMinutes?: number;
   ratingAverage?: number;
   ratingCount?: number;
-  reactionCount?: number;
-  commentCount?: number;
-  reacted?: string | null;
   allergenIds?: string[];
   nutritionPerServing?: NutritionFacts;
   nutritionPer100g?: NutritionFacts;
   nutritionDataQuality?: 'verified' | 'estimated' | 'unavailable';
   sourceAttribution?: SourceAttribution;
+}
+
+export interface PostCardData extends ContentCardData {
+  type?: 'post';
+  reactionCount?: number;
+  commentCount?: number;
+  reacted?: string | null;
+  recipeId?: string | null;
 }
 
 export interface SourceAttribution {
@@ -201,7 +206,7 @@ export interface HomeFeed {
   featured: {
     recipes: ContentCardData[];
     videos: ContentCardData[];
-    posts: ContentCardData[];
+    posts: PostCardData[];
   };
   personalized: {
     recipes: ContentCardData[];

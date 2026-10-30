@@ -406,7 +406,7 @@ export const vi = {
   'home.greeting': 'Xin chào, {{name}}',
   'home.question': 'Hôm nay bạn muốn ăn gì?',
   'home.explore': 'Khám phá',
-  'home.searchPlaceholder': 'Tìm công thức theo món hoặc nguyên liệu…',
+  'home.searchPlaceholder': 'Tìm món, công thức, bài viết hoặc nguyên liệu…',
   'home.filterAll': 'Tất cả',
   'home.filterProtein': 'Giàu đạm',
   'home.filterEasy': 'Dễ nấu',
@@ -568,8 +568,8 @@ export const vi = {
 
   'discover.search': 'Tìm kiếm',
   'discover.searchSubtitle':
-    'Tìm công thức trước, lọc theo nguyên liệu và nhu cầu của bạn',
-  'discover.searchPlaceholder': 'Bún chay',
+    'Tìm đồng thời công thức, bài viết cộng đồng và nguyên liệu liên quan',
+  'discover.searchPlaceholder': 'Bún chay, đậu hũ, salad…',
   'discover.suggestions': 'Gợi ý',
   'discover.loadingSuggestions': 'Đang tìm gợi ý…',
   'discover.suggestionError': 'Không thể tải gợi ý. Bạn vẫn có thể nhấn tìm kiếm.',
@@ -1316,7 +1316,7 @@ export const en: Record<TranslationKey, string> = {
   'home.greeting': 'Hello, {{name}}',
   'home.question': 'What would you like to eat today?',
   'home.explore': 'Explore',
-  'home.searchPlaceholder': 'Find recipes by dish or ingredient…',
+  'home.searchPlaceholder': 'Find dishes, recipes, posts or ingredients…',
   'home.filterAll': 'All',
   'home.filterProtein': 'High protein',
   'home.filterEasy': 'Easy',
@@ -1475,8 +1475,8 @@ export const en: Record<TranslationKey, string> = {
   'language.saveError': 'Unable to save the language preference. Please try again.',
   'discover.search': 'Search',
   'discover.searchSubtitle':
-    'Find recipes first, then filter by ingredients and your needs',
-  'discover.searchPlaceholder': 'Vegan noodles',
+    'Search recipes, community posts and related ingredients together',
+  'discover.searchPlaceholder': 'Vegan noodles, tofu, salad…',
   'discover.suggestions': 'Suggestions',
   'discover.loadingSuggestions': 'Finding suggestions…',
   'discover.suggestionError':

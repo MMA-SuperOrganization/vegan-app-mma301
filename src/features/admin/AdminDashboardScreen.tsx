@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AppButton,
@@ -15,6 +16,7 @@ import { adminApi, type AdminUser } from './adminApi';
 import { MasterDataPanel } from './MasterDataPanel';
 
 export function AdminDashboardScreen() {
+  const router = useRouter();
   const vi = useTranslation().locale === 'vi';
   const client = useQueryClient();
   const [searchText, setSearchText] = useState('');
@@ -100,6 +102,25 @@ export function AdminDashboardScreen() {
         />
       }
     >
+      <View style={card}>
+        <AppText variant="heading2">
+          {vi ? 'Trung tâm quản trị' : 'Administration center'}
+        </AppText>
+        <AppText color={colors.text.secondary}>
+          {vi
+            ? 'Quản lý tài khoản, dữ liệu nền, nội dung chờ duyệt, báo cáo và hoạt động hệ thống.'
+            : 'Manage accounts, master data, pending content, reports, and system activity.'}
+        </AppText>
+        <AppButton
+          title={vi ? 'Duyệt bài viết và công thức' : 'Review posts and recipes'}
+          onPress={() => router.push('/moderation')}
+        />
+        <AppButton
+          title={vi ? 'Giám sát AI' : 'AI monitoring'}
+          variant="outline"
+          onPress={() => router.push('/ai/monitoring')}
+        />
+      </View>
       <FeatureState
         loading={summary.isLoading}
         error={summary.error}

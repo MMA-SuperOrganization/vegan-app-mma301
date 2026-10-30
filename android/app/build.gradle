@@ -167,6 +167,14 @@ android {
             def enablePngCrunchInRelease = findProperty('android.enablePngCrunchInReleaseBuilds') ?: 'true'
             crunchPngs enablePngCrunchInRelease.toBoolean()
         }
+        internal {
+            // Standalone CI APK: bundle production JS but use the shared
+            // development certificate. Store releases still require the
+            // private upload key configured by the release build type above.
+            initWith release
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+        }
     }
     packagingOptions {
         jniLibs {

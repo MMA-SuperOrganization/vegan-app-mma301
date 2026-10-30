@@ -126,8 +126,24 @@ test('Android release builds require a dedicated upload key', () => {
   assert.match(buildGradle, /VEGETA_UPLOAD_STORE_PASSWORD/);
   assert.match(buildGradle, /VEGETA_UPLOAD_KEY_ALIAS/);
   assert.match(buildGradle, /VEGETA_UPLOAD_KEY_PASSWORD/);
-  assert.equal(
-    (buildGradle.match(/signingConfig signingConfigs\.debug/g) ?? []).length,
-    1
+  assert.match(
+    buildGradle,
+    /buildTypes\s*\{[\s\S]*?release\s*\{\s*signingConfig signingConfigs\.findByName\('release'\)/
+  );
+  assert.doesNotMatch(
+    buildGradle,
+    /buildTypes\s*\{[\s\S]*?release\s*\{\s*signingConfig signingConfigs\.debug/
+  );
+});
+
+test('Android CI build is standalone without weakening release signing', () => {
+  const buildGradle = readFileSync(
+    new URL('../android/app/build.gradle', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(
+    buildGradle,
+    /internal\s*\{[\s\S]*?initWith release[\s\S]*?signingConfig signingConfigs\.debug[\s\S]*?matchingFallbacks = \['release'\]/
   );
 });

@@ -82,7 +82,8 @@ test('Android workflow builds on develop with repository variables and uploads a
   assert.match(workflow, /gradle\/actions\/setup-gradle@v4/);
   assert.match(workflow, /socketTimeout=300000/);
   assert.match(workflow, /for attempt in 1 2 3/);
-  assert.match(workflow, /\.\/gradlew assembleRelease/);
+  assert.match(workflow, /\.\/gradlew assembleInternal/);
+  assert.match(workflow, /apk\/internal\/app-internal\.apk/);
   assert.match(workflow, /actions\/upload-artifact@v4/);
   assert.doesNotMatch(workflow, /CLOUDFLARE_R2_SECRET|FIREBASE_PRIVATE_KEY/);
 });

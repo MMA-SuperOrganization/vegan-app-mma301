@@ -12,6 +12,7 @@ import {
   type DiscussionTarget,
   type ReactionType,
 } from './engagementApi';
+import { ReactionButtons } from './ReactionButtons';
 
 export function DiscussionPanel({
   targetType,
@@ -65,30 +66,12 @@ export function DiscussionPanel({
   return (
     <Surface bordered padding="lg" radius="lg" style={{ gap: spacing.md }}>
       <AppText variant="heading4">{vi ? 'Tương tác' : 'Discussion'}</AppText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-        {(['like', 'love', 'helpful'] as const).map((type) => (
-          <AppButton
-            key={type}
-            title={
-              type === 'like'
-                ? vi
-                  ? 'Thích'
-                  : 'Like'
-                : type === 'love'
-                  ? vi
-                    ? 'Yêu thích'
-                    : 'Love'
-                  : vi
-                    ? 'Hữu ích'
-                    : 'Helpful'
-            }
-            fullWidth={false}
-            variant={reaction === type ? 'primary' : 'outline'}
-            disabled={saveReaction.isPending}
-            onPress={() => saveReaction.mutate(type)}
-          />
-        ))}
-      </View>
+      <ReactionButtons
+        selected={reaction}
+        disabled={saveReaction.isPending}
+        vi={vi}
+        onPress={(type) => saveReaction.mutate(type)}
+      />
       <AppText variant="heading4">{vi ? 'Bình luận' : 'Comments'}</AppText>
       <FeatureState
         loading={comments.isLoading}

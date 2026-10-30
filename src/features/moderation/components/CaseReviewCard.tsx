@@ -6,6 +6,7 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import { postStatusLabel as reportStatusLabel } from '@/features/community/status';
 import type { ModerationCase } from '../moderationApi';
 import { useModeration } from '../hooks';
+import { ReportTargetPreview } from './ReportTargetPreview';
 import { colors, radius, spacing } from '@/theme';
 export function CaseReviewCard({ item, vi }: { item: ModerationCase; vi: boolean }) {
   const actions = useModeration();
@@ -44,7 +45,7 @@ export function CaseReviewCard({ item, vi }: { item: ModerationCase; vi: boolean
       <AppText variant="bodyStrong">
         {item.targetType} · {reportStatusLabel(item.status, vi)}
       </AppText>
-      <AppText selectable>{item.targetId}</AppText>
+      <ReportTargetPreview targetType={item.targetType} targetId={item.targetId} vi={vi} />
       <AppText>
         {vi ? 'Báo cáo liên kết' : 'Linked reports'}: {item.reportIds.length}
       </AppText>

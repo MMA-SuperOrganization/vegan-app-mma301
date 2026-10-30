@@ -35,12 +35,13 @@ test('shared buttons provide semantic action icons across the app', () => {
 
 test('post detail groups article, engagement and comments without overlay clutter', () => {
   const post = read('../src/features/community/screens/PostDetailScreen.tsx');
+  const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const header = read('../src/components/layout/CustomHeader.tsx');
   const aiWidget = read('../src/features/ai/components/AiChatWidget.tsx');
 
   assert.match(post, /style={styles\.articleCard}/);
-  assert.match(post, /PostReactionButton/);
-  assert.match(post, /style={styles\.reactions}/);
+  assert.match(post, /<ReactionButtons/);
+  assert.match(reactions, /style={styles\.reactions}/);
   assert.match(post, /style={styles\.engagementCard}/);
   assert.match(post, /style={styles\.commentsCard}/);
   assert.match(post, /style={styles\.commentActions}/);

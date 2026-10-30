@@ -12,16 +12,18 @@ import {
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { isLocalIsoDate } from '@/features/tracking/trackingState';
 import { startOfWeek } from '@/features/meal-plan/mealPlanState';
-import { SavedMealPlans } from '../components/SavedMealPlans';
 import { useTranslation } from '@/i18n';
 import { spacing, colors } from '@/theme';
-import { useMealProposal } from '../hooks';
+import { AI_ROUTES, AI_TRANSLATION_KEYS } from '../aiConstants';
 import { ProposalMealEditor } from '../components/ProposalMealEditor';
-import type { MealProposal } from '../types';
+import { SavedMealPlans } from '../components/SavedMealPlans';
+import { useMealProposal } from '../hooks';
 import { reviewMealProposal } from '../proposalState';
+import type { MealProposal } from '../types';
 
 export function AiMealPlannerScreen() {
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.MEAL_PLANNER;
   const router = useRouter();
   const [startDate, setStartDate] = useState(startOfWeek(new Date()));
   const [days, setDays] = useState('7');
@@ -42,43 +44,36 @@ export function AiMealPlannerScreen() {
         day.meals.length > 0 &&
         day.meals.every((meal) => meal.servings > 0 && meal.servings <= 20)
     );
+
   return (
     <ScreenWrapper
       scrollable
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader
-          title={vi ? 'Lập thực đơn AI' : 'AI meal planner'}
+          title={t(keys.TITLE)}
           showBack
-          backFallbackHref="/(tabs)/profile"
+          backFallbackHref={AI_ROUTES.BACK_FALLBACK}
         />
       }
     >
-      <AppText color={colors.text.secondary}>
-        {vi
-          ? 'Xem và chỉnh đề xuất trước khi xác nhận. Chưa có thực đơn nào được lưu khi tạo đề xuất.'
-          : 'Review and edit the proposal before confirming. Generating a proposal does not save a meal plan.'}
-      </AppText>
+      <AppText color={colors.text.secondary}>{t(keys.DESCRIPTION)}</AppText>
       <AppInput
-        label={vi ? 'Ngày bắt đầu (YYYY-MM-DD)' : 'Start date (YYYY-MM-DD)'}
+        label={t(keys.START_DATE_LABEL)}
         value={startDate}
         onChangeText={setStartDate}
         editable={!busy && !proposal}
       />
-      <AppText>
-        {vi
-          ? 'Chọn thứ Hai để thực đơn khớp với lịch tuần và danh sách mua sắm.'
-          : 'Choose a Monday so the plan matches the weekly calendar and grocery list.'}
-      </AppText>
+      <AppText>{t(keys.MONDAY_HINT)}</AppText>
       <AppInput
-        label={vi ? 'Số ngày (1–7)' : 'Days (1–7)'}
+        label={t(keys.DAYS_LABEL)}
         value={days}
         onChangeText={setDays}
         keyboardType="number-pad"
         editable={!busy && !proposal}
       />
       <AppInput
-        label={vi ? 'Sở thích' : 'Preferences'}
+        label={t(keys.PREFERENCES_LABEL)}
         value={preferences}
         onChangeText={setPreferences}
         multiline
@@ -86,14 +81,14 @@ export function AiMealPlannerScreen() {
         editable={!busy}
       />
       <Toggle
-        label={vi ? 'Sử dụng hồ sơ dinh dưỡng của tôi' : 'Use my nutrition profile'}
+        label={t(keys.USE_PROFILE_LABEL)}
         value={useProfile}
         onValueChange={setUseProfile}
         disabled={busy}
       />
       {!proposal ? (
         <AppButton
-          title={vi ? 'Tạo đề xuất' : 'Generate proposal'}
+          title={t(keys.GENERATE_ACTION)}
           disabled={!valid || busy}
           loading={actions.generate.isPending}
           onPress={() =>
@@ -106,7 +101,7 @@ export function AiMealPlannerScreen() {
       ) : (
         <>
           <AppInput
-            label={vi ? 'Tên thực đơn' : 'Plan title'}
+            label={t(keys.PLAN_TITLE_LABEL)}
             value={proposal.title}
             maxLength={160}
             onChangeText={(title) => setProposal({ ...proposal, title })}
@@ -161,30 +156,28 @@ export function AiMealPlannerScreen() {
               ))}
               {!day.meals.length ? (
                 <AppText color={colors.status.danger}>
-                  {vi
-                    ? 'Mỗi ngày cần ít nhất một món. Tạo đề xuất mới nếu cần.'
-                    : 'Each day requires at least one meal. Generate a new proposal if needed.'}
+                  {t(keys.EMPTY_DAY_ERROR)}
                 </AppText>
               ) : null}
             </View>
           ))}
           <AppText>{proposal.disclaimer}</AppText>
           <AppButton
-            title={vi ? 'Xác nhận và lưu thực đơn' : 'Confirm and save plan'}
+            title={t(keys.CONFIRM_ACTION)}
             loading={actions.confirm.isPending}
             disabled={!validProposal || busy}
             onPress={() =>
               actions.confirm.mutate(proposal, {
                 onSuccess: (result) =>
                   router.replace({
-                    pathname: '/(tabs)/meal-plan',
+                    pathname: AI_ROUTES.MEAL_PLAN_TAB,
                     params: { planId: result.resource._id, date: startDate },
                   }),
               })
             }
           />
           <AppButton
-            title={vi ? 'Bỏ đề xuất' : 'Discard proposal'}
+            title={t(keys.DISCARD_ACTION)}
             variant="outline"
             disabled={busy}
             onPress={() => {

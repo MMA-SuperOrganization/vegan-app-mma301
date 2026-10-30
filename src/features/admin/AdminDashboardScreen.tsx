@@ -13,114 +13,123 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { adminApi, type AdminUser } from './adminApi';
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_ROUTES,
+  ADMIN_TRANSLATION_KEYS,
+  ADMIN_USER_ROLE_LABEL_KEYS,
+  ADMIN_USER_STATUS_LABEL_KEYS,
+  AdminUserRole,
+  AdminUserStatus,
+} from './adminConstants';
 import { MasterDataPanel } from './MasterDataPanel';
 
 export function AdminDashboardScreen() {
   const router = useRouter();
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const keys = ADMIN_TRANSLATION_KEYS.DASHBOARD;
   const client = useQueryClient();
   const [searchText, setSearchText] = useState('');
   const [search, setSearch] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
   const summary = useQuery({
-    queryKey: ['admin', 'summary'],
+    queryKey: ADMIN_QUERY_KEYS.SUMMARY,
     queryFn: adminApi.summary,
   });
   const users = useQuery({
-    queryKey: ['admin', 'users', search],
+    queryKey: ADMIN_QUERY_KEYS.USERS(search),
     queryFn: () => adminApi.users(search),
   });
   const userDetail = useQuery({
-    queryKey: ['admin', 'user', selectedUserId],
+    queryKey: ADMIN_QUERY_KEYS.USER_DETAIL(selectedUserId),
     queryFn: () => adminApi.userDetail(selectedUserId!),
     enabled: Boolean(selectedUserId),
   });
   const contentTrends = useQuery({
-    queryKey: ['admin', 'content-trends'],
+    queryKey: ADMIN_QUERY_KEYS.CONTENT_TRENDS,
     queryFn: adminApi.contentTrends,
   });
   const userTrends = useQuery({
-    queryKey: ['admin', 'user-trends'],
+    queryKey: ADMIN_QUERY_KEYS.USER_TRENDS,
     queryFn: adminApi.userTrends,
   });
   const logs = useQuery({
-    queryKey: ['admin', 'audit'],
+    queryKey: ADMIN_QUERY_KEYS.AUDIT_LOGS,
     queryFn: adminApi.auditLogs,
   });
+
+  const invalidateAdmin = () =>
+    client.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.ROOT });
+
   const status = useMutation({
     mutationFn: adminApi.setStatus,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+    onSuccess: invalidateAdmin,
   });
   const role = useMutation({
     mutationFn: adminApi.changeRole,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+    onSuccess: invalidateAdmin,
   });
   const removeUser = useMutation({
     mutationFn: adminApi.deleteUser,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+    onSuccess: invalidateAdmin,
   });
   const restoreUser = useMutation({
     mutationFn: adminApi.restoreUser,
-    onSuccess: () => client.invalidateQueries({ queryKey: ['admin'] }),
+    onSuccess: invalidateAdmin,
   });
+
   const changeStatus = (user: AdminUser) => {
-    const activate = user.status === 'suspended';
+    const activate = user.status === AdminUserStatus.SUSPENDED;
     Alert.alert(
-      activate
-        ? vi
-          ? 'Kích hoạt tài khoản?'
-          : 'Activate account?'
-        : vi
-          ? 'Tạm khóa tài khoản?'
-          : 'Suspend account?',
+      activate ? t(keys.ACTIVATE_TITLE) : t(keys.SUSPEND_TITLE),
       user.displayName || user.name || user.email,
       [
-        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+        { text: t(keys.CANCEL), style: 'cancel' },
         {
-          text: vi ? 'Xác nhận' : 'Confirm',
+          text: t(keys.CONFIRM),
           style: activate ? 'default' : 'destructive',
           onPress: () => status.mutate(user),
         },
       ]
     );
   };
+
   const card = {
     padding: spacing.lg,
     gap: spacing.sm,
     borderRadius: radius.lg,
     backgroundColor: colors.background.surface,
   } as const;
+
   return (
     <ScreenWrapper
       scrollable
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader
-          title={vi ? 'Quản trị hệ thống' : 'Administration'}
+          title={t(keys.TITLE)}
           showBack
-          backFallbackHref="/(tabs)/profile"
+          backFallbackHref={ADMIN_ROUTES.BACK_FALLBACK}
         />
       }
     >
       <View style={card}>
-        <AppText variant="heading2">
-          {vi ? 'Trung tâm quản trị' : 'Administration center'}
-        </AppText>
+        <AppText variant="heading2">{t(keys.CENTER_TITLE)}</AppText>
         <AppText color={colors.text.secondary}>
-          {vi
-            ? 'Quản lý tài khoản, dữ liệu nền, nội dung chờ duyệt, báo cáo và hoạt động hệ thống.'
-            : 'Manage accounts, master data, pending content, reports, and system activity.'}
+          {t(keys.CENTER_DESCRIPTION)}
         </AppText>
         <AppButton
-          title={vi ? 'Duyệt bài viết và công thức' : 'Review posts and recipes'}
-          onPress={() => router.push('/moderation')}
+          title={t(keys.REVIEW_CONTENT)}
+          onPress={() => router.push(ADMIN_ROUTES.MODERATION)}
         />
         <AppButton
-          title={vi ? 'Giám sát AI' : 'AI monitoring'}
+          title={t(keys.AI_MONITORING)}
           variant="outline"
-          onPress={() => router.push('/ai/monitoring')}
+          onPress={() => router.push(ADMIN_ROUTES.AI_MONITORING)}
         />
       </View>
+
       <FeatureState
         loading={summary.isLoading}
         error={summary.error}
@@ -128,32 +137,33 @@ export function AdminDashboardScreen() {
       />
       {summary.data ? (
         <View style={card}>
-          <AppText variant="heading3">{vi ? 'Tổng quan' : 'Overview'}</AppText>
+          <AppText variant="heading3">{t(keys.OVERVIEW)}</AppText>
           <AppText>
-            {vi ? 'Người dùng' : 'Users'}: {summary.data.users.total}
+            {t(keys.USERS)}: {summary.data.users.total}
           </AppText>
           <AppText>
-            {vi ? 'Hoạt động' : 'Active'}: {summary.data.users.active}
+            {t(keys.ACTIVE)}: {summary.data.users.active}
           </AppText>
           <AppText>
-            {vi ? 'Tạm khóa' : 'Suspended'}: {summary.data.users.suspended}
+            {t(keys.SUSPENDED)}: {summary.data.users.suspended}
           </AppText>
           {Object.entries(summary.data.content).map(([type, value]) => (
             <AppText key={type}>
-              {type}: {value.pending} {vi ? 'chờ duyệt' : 'pending'} · {value.hidden}{' '}
-              {vi ? 'đã ẩn' : 'hidden'}
+              {type}: {value.pending} {t(keys.PENDING)} · {value.hidden}{' '}
+              {t(keys.HIDDEN)}
             </AppText>
           ))}
         </View>
       ) : null}
-      <AppText variant="heading2">{vi ? 'Tài khoản' : 'Accounts'}</AppText>
+
+      <AppText variant="heading2">{t(keys.ACCOUNTS)}</AppText>
       <AppInput
-        label={vi ? 'Tìm tên hoặc email' : 'Search name or email'}
+        label={t(keys.SEARCH_LABEL)}
         value={searchText}
         onChangeText={setSearchText}
       />
       <AppButton
-        title={vi ? 'Tìm kiếm' : 'Search'}
+        title={t(keys.SEARCH_ACTION)}
         variant="outline"
         onPress={() => setSearch(searchText.trim())}
       />
@@ -162,100 +172,99 @@ export function AdminDashboardScreen() {
         error={users.error || status.error || removeUser.error || restoreUser.error}
         retry={() => void users.refetch()}
       />
-      {users.data?.data.map((user) => (
-        <View key={user._id} style={card}>
-          <AppText variant="heading4">
-            {user.displayName || user.name || user.email || user._id}
-          </AppText>
-          <AppText>{user.email}</AppText>
-          <AppText>
-            {user.role} · {user.status}
-          </AppText>
-          {user.status !== 'deleted' ? (
-            <>
+      {users.data?.data.map((user) => {
+        const roleLabel =
+          t(ADMIN_USER_ROLE_LABEL_KEYS[user.role as AdminUserRole]) || user.role;
+        const statusLabel =
+          t(ADMIN_USER_STATUS_LABEL_KEYS[user.status as AdminUserStatus]) ||
+          user.status;
+        return (
+          <View key={user._id} style={card}>
+            <AppText variant="heading4">
+              {user.displayName || user.name || user.email || user._id}
+            </AppText>
+            <AppText>{user.email}</AppText>
+            <AppText>
+              {roleLabel} · {statusLabel}
+            </AppText>
+            {user.status !== AdminUserStatus.DELETED ? (
+              <>
+                <AppButton
+                  title={
+                    user.status === AdminUserStatus.SUSPENDED
+                      ? t(keys.ACTIVATE)
+                      : t(keys.SUSPEND)
+                  }
+                  variant="outline"
+                  loading={status.isPending && status.variables?._id === user._id}
+                  disabled={status.isPending || role.isPending}
+                  onPress={() => changeStatus(user)}
+                />
+                <AppButton
+                  title={
+                    user.role === AdminUserRole.ADMIN
+                      ? t(keys.MAKE_USER)
+                      : t(keys.MAKE_ADMIN)
+                  }
+                  variant="outline"
+                  disabled={status.isPending || role.isPending}
+                  onPress={() => role.mutate(user)}
+                />
+                <AppButton
+                  title={t(keys.VIEW_DETAILS)}
+                  variant="ghost"
+                  onPress={() => setSelectedUserId(user._id)}
+                />
+                <AppButton
+                  title={t(keys.DELETE_ACCOUNT)}
+                  variant="ghost"
+                  disabled={
+                    removeUser.isPending || status.isPending || role.isPending
+                  }
+                  onPress={() =>
+                    Alert.alert(
+                      t(keys.DELETE_CONFIRM_TITLE),
+                      t(keys.DELETE_CONFIRM_BODY),
+                      [
+                        { text: t(keys.CANCEL), style: 'cancel' },
+                        {
+                          text: t(keys.DELETE_ACTION),
+                          style: 'destructive',
+                          onPress: () => removeUser.mutate(user),
+                        },
+                      ]
+                    )
+                  }
+                />
+              </>
+            ) : (
               <AppButton
-                title={
-                  user.status === 'suspended'
-                    ? vi
-                      ? 'Kích hoạt'
-                      : 'Activate'
-                    : vi
-                      ? 'Tạm khóa'
-                      : 'Suspend'
-                }
+                title={t(keys.RESTORE_ACCOUNT)}
                 variant="outline"
-                loading={status.isPending && status.variables?._id === user._id}
-                disabled={status.isPending || role.isPending}
-                onPress={() => changeStatus(user)}
+                disabled={restoreUser.isPending}
+                onPress={() => restoreUser.mutate(user)}
               />
-              <AppButton
-                title={
-                  user.role === 'admin'
-                    ? vi
-                      ? 'Chuyển thành người dùng'
-                      : 'Make user'
-                    : vi
-                      ? 'Cấp quyền admin'
-                      : 'Make admin'
-                }
-                variant="outline"
-                disabled={status.isPending || role.isPending}
-                onPress={() => role.mutate(user)}
-              />
-              <AppButton
-                title={vi ? 'Xem chi tiết' : 'View details'}
-                variant="ghost"
-                onPress={() => setSelectedUserId(user._id)}
-              />
-              <AppButton
-                title={vi ? 'Xóa tài khoản' : 'Delete account'}
-                variant="ghost"
-                disabled={removeUser.isPending || status.isPending || role.isPending}
-                onPress={() =>
-                  Alert.alert(
-                    vi ? 'Xóa tài khoản?' : 'Delete account?',
-                    vi
-                      ? 'Tài khoản sẽ bị vô hiệu hóa và có thể khôi phục bởi quản trị viên.'
-                      : 'The account will be disabled and can be restored by an administrator.',
-                    [
-                      { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
-                      {
-                        text: vi ? 'Xóa' : 'Delete',
-                        style: 'destructive',
-                        onPress: () => removeUser.mutate(user),
-                      },
-                    ]
-                  )
-                }
-              />
-            </>
-          ) : (
-            <AppButton
-              title={vi ? 'Khôi phục tài khoản' : 'Restore account'}
-              variant="outline"
-              disabled={restoreUser.isPending}
-              onPress={() => restoreUser.mutate(user)}
-            />
-          )}
-        </View>
-      ))}
+            )}
+          </View>
+        );
+      })}
+
       {selectedUserId ? (
         <View style={card}>
-          <AppText variant="heading3">
-            {vi ? 'Chi tiết tài khoản' : 'Account details'}
-          </AppText>
+          <AppText variant="heading3">{t(keys.ACCOUNT_DETAILS)}</AppText>
           <FeatureState loading={userDetail.isLoading} error={userDetail.error} />
           {userDetail.data ? (
             <AppText selectable>{JSON.stringify(userDetail.data, null, 2)}</AppText>
           ) : null}
           <AppButton
-            title={vi ? 'Đóng' : 'Close'}
+            title={t(keys.CLOSE)}
             variant="ghost"
             onPress={() => setSelectedUserId(null)}
           />
         </View>
       ) : null}
-      <AppText variant="heading2">{vi ? 'Xu hướng' : 'Trends'}</AppText>
+
+      <AppText variant="heading2">{t(keys.TRENDS)}</AppText>
       <FeatureState
         loading={contentTrends.isLoading || userTrends.isLoading}
         error={contentTrends.error || userTrends.error}
@@ -266,8 +275,10 @@ export function AdminDashboardScreen() {
       {userTrends.data ? (
         <AppText selectable>{JSON.stringify(userTrends.data, null, 2)}</AppText>
       ) : null}
+
       <MasterDataPanel />
-      <AppText variant="heading2">Audit log</AppText>
+
+      <AppText variant="heading2">{t(keys.AUDIT_LOG)}</AppText>
       <FeatureState
         loading={logs.isLoading}
         error={logs.error}

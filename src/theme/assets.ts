@@ -108,6 +108,14 @@ export const assetRegistry = {
     id: 'core:reply', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 8L4 12L9 16V13C15 13 18 15 20 19C19.5 12 16 9 9 9V8Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   },
+  attach: {
+    id: 'core:attach', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.44 11.05L12.25 20.24C10.69 21.8 8.16 21.8 6.59 20.24C5.03 18.68 5.03 16.15 6.59 14.59L15.78 5.4C16.82 4.36 18.51 4.36 19.55 5.4C20.59 6.44 20.59 8.13 19.55 9.17L10.36 18.36C9.84 18.88 9 18.88 8.48 18.36C7.96 17.84 7.96 17 8.48 16.48L16.96 8" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  history: {
+    id: 'core:history', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12L15 15M21 12A9 9 0 1 1 18.36 5.64L21 3V9H15" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
   image: {
     id: 'core:image', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="#16583D" stroke-width="2"/><circle cx="8.5" cy="9" r="1.5" stroke="#16583D" stroke-width="2"/><path d="M4 18L9 13L12 16L15 12L20 18" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/></svg>',

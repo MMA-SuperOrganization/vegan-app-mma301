@@ -21,6 +21,7 @@ const actionRules: ReadonlyArray<{
   { terms: ['binh luan', 'comment'], icon: 'comment' },
   { terms: ['tra loi', 'reply'], icon: 'reply' },
   { terms: ['xem ho so', 'view profile'], icon: 'user' },
+  { terms: ['tro chuyen moi', 'new conversation', 'new chat'], icon: 'plus' },
   // Cancellation must win over nested actions such as "Hủy sửa" or "Hủy xóa".
   { terms: ['huy', 'dong', 'cancel', 'close'], icon: 'close' },
   { terms: ['xoa', 'delete', 'remove'], icon: 'trash' },

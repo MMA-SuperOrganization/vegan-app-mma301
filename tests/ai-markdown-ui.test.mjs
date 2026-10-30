@@ -63,6 +63,6 @@ test('user messages remain plain text instead of executing Markdown formatting',
   assert.match(widget, /fromUser \? \([\s\S]*?<AppText selectable/);
   assert.match(
     screen,
-    /message\.role === 'assistant' \? \([\s\S]*?<AiMarkdownMessage/
+    /message\.role === AiMessageRole\.ASSISTANT \? \([\s\S]*?<AiMarkdownMessage/
   );
 });

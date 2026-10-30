@@ -1,73 +1,165 @@
-import { Image, StyleSheet, View } from 'react-native';
-import { AppButton, AppText } from '@/components';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon, AppText } from '@/components';
+import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import type { ImagePickerAsset } from 'expo-image-picker';
+import { AI_TRANSLATION_KEYS } from '../aiConstants';
 
 interface AiImageAttachmentPickerProps {
   asset: ImagePickerAsset | null;
   busy: boolean;
-  vi: boolean;
   onChoose: () => void;
   onClear: () => void;
+  compact?: boolean;
 }
 
 export function AiImageAttachmentPicker({
   asset,
   busy,
-  vi,
   onChoose,
   onClear,
+  compact = false,
 }: AiImageAttachmentPickerProps) {
-  return (
-    <View style={styles.container}>
-      {asset ? (
-        <View style={styles.previewRow}>
-          <Image
-            source={{ uri: asset.uri }}
-            accessibilityLabel={vi ? 'Ảnh đính kèm cho AI' : 'Image attached for AI'}
-            style={styles.preview}
-            resizeMode="cover"
-          />
-          <View style={styles.previewCopy}>
-            <AppText variant="bodyStrong">
-              {vi ? 'Ảnh đã sẵn sàng' : 'Image ready'}
-            </AppText>
-            <AppText color={colors.text.secondary} numberOfLines={1}>
-              {asset.fileName || (vi ? 'Ảnh đã chọn' : 'Selected image')}
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.ATTACHMENT;
+
+  if (asset) {
+    return (
+      <View style={styles.previewRow}>
+        <Image
+          source={{ uri: asset.uri }}
+          accessibilityLabel={t(keys.PREVIEW_A11Y)}
+          style={styles.preview}
+          resizeMode="cover"
+        />
+        <View style={styles.previewCopy}>
+          <View style={styles.previewBadgeRow}>
+            <AppIcon name="image" size={14} color={colors.primary[700]} decorative />
+            <AppText variant="bodyStrong" color={colors.primary[800]}>
+              {t(keys.ATTACHED_TITLE)}
             </AppText>
           </View>
-          <AppButton
-            title={vi ? 'Bỏ' : 'Remove'}
-            variant="ghost"
-            fullWidth={false}
-            disabled={busy}
-            onPress={onClear}
-          />
+          <AppText variant="caption" color={colors.text.secondary} numberOfLines={1}>
+            {asset.fileName || t(keys.READY_HINT)}
+          </AppText>
         </View>
-      ) : (
-        <AppButton
-          title={vi ? 'Đính kèm hình ảnh' : 'Attach image'}
-          variant="outline"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(keys.REMOVE_A11Y)}
           disabled={busy}
-          onPress={onChoose}
-        />
-      )}
-    </View>
+          onPress={onClear}
+          hitSlop={8}
+          style={({ pressed }) => [
+            styles.removeButton,
+            pressed && styles.pressed,
+            busy && styles.disabled,
+          ]}
+        >
+          <AppIcon name="close" size={16} color={colors.text.secondary} decorative />
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={t(keys.ATTACH_A11Y)}
+      disabled={busy}
+      onPress={onChoose}
+      hitSlop={compact ? 4 : 0}
+      style={({ pressed }) => [
+        compact ? styles.iconButton : styles.attachChip,
+        pressed && styles.pressed,
+        busy && styles.disabled,
+      ]}
+    >
+      <AppIcon
+        name="attach"
+        size={compact ? 22 : 18}
+        color={colors.primary[700]}
+        decorative
+      />
+      {!compact ? (
+        <AppText
+          variant="bodySmall"
+          color={colors.primary[800]}
+          style={styles.chipLabel}
+        >
+          {t(keys.ATTACH_LABEL)}
+        </AppText>
+      ) : null}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { gap: spacing.sm },
+  attachChip: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+    backgroundColor: colors.primary[50],
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+  },
+  compactButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+  },
+  chipLabel: { fontWeight: '600' },
   previewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border.default,
+    borderColor: colors.primary[300],
     borderRadius: radius.lg,
-    backgroundColor: colors.background.surface,
+    backgroundColor: colors.primary[50],
   },
-  preview: { width: 64, height: 64, borderRadius: radius.md },
-  previewCopy: { flex: 1, minWidth: 0 },
+  preview: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    backgroundColor: colors.background.muted,
+  },
+  previewCopy: { flex: 1, minWidth: 0, gap: 2 },
+  previewBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  removeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.surface,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  pressed: { opacity: 0.75 },
+  disabled: { opacity: 0.45 },
 });

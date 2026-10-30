@@ -1,5 +1,5 @@
-import { GroceryListsScreen } from '@/features/grocery';
+import { InventoryScreen } from '@/features/inventory/screens/InventoryScreen';
 
 export default function GroceryRoute() {
-  return <GroceryListsScreen />;
+  return <InventoryScreen initialTab="grocery" />;
 }

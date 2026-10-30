@@ -1,7 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import DateTimePicker, {
-  type DateTimePickerEvent,
+import { useMemo, useState, type ComponentType } from 'react';
+import {
+  Platform,
+  StyleSheet,
+  TurboModuleRegistry,
+  View,
+} from 'react-native';
+import type {
+  AndroidNativeProps,
+  DateTimePickerEvent,
+  IOSNativeProps,
 } from '@react-native-community/datetimepicker';
 import { useTranslation } from '@/i18n';
 import { formatDateInput } from '@/utils/dateInput';
@@ -30,6 +37,18 @@ export function DateInputField({
     () => parseDateInput(value) ?? defaultBirthDate(),
     [value]
   );
+  const DateTimePicker = useMemo<
+    ComponentType<AndroidNativeProps | IOSNativeProps> | null
+  >(() => {
+    if (Platform.OS !== 'web' && !TurboModuleRegistry.get('RNCDatePicker')) {
+      return null;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('@react-native-community/datetimepicker') as {
+      default?: ComponentType<AndroidNativeProps | IOSNativeProps>;
+    };
+    return mod.default ?? null;
+  }, []);
 
   const chooseDate = (event: DateTimePickerEvent, selected?: Date) => {
     if (Platform.OS === 'android') setPickerVisible(false);
@@ -49,14 +68,16 @@ export function DateInputField({
         error={error}
         disabled={disabled}
       />
-      <Button
-        title={t('tracking.day.chooseDate')}
-        variant="outline"
-        fullWidth={false}
-        disabled={disabled}
-        onPress={() => setPickerVisible(true)}
-      />
-      {pickerVisible ? (
+      {DateTimePicker ? (
+        <Button
+          title={t('tracking.day.chooseDate')}
+          variant="outline"
+          fullWidth={false}
+          disabled={disabled}
+          onPress={() => setPickerVisible(true)}
+        />
+      ) : null}
+      {pickerVisible && DateTimePicker ? (
         <View style={styles.picker}>
           <DateTimePicker
             value={pickerValue}

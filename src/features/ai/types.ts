@@ -1,4 +1,22 @@
 import type { MealType } from '@/features/tracking/types';
+import {
+  AiFeatureType,
+  AiFeedbackRating,
+  AiMessageRole,
+  AiRunStatus,
+  AiSafetyNoticeCode,
+  AiSafetySeverity,
+} from './aiConstants';
+
+export {
+  AiFeatureType,
+  AiFeedbackRating,
+  AiMessageRole,
+  AiRunStatus,
+  AiSafetyNoticeCode,
+  AiSafetySeverity,
+};
+
 export interface Conversation {
   _id: string;
   title: string;
@@ -6,13 +24,13 @@ export interface Conversation {
   updatedAt?: string;
 }
 export interface AiSafetyNotice {
-  code: 'ALLERGEN_CAUTION';
-  severity: 'warning';
+  code: `${AiSafetyNoticeCode}`;
+  severity: `${AiSafetySeverity}`;
   message: string;
 }
 export interface AiMessage {
   _id: string;
-  role: 'user' | 'assistant';
+  role: `${AiMessageRole}`;
   content: string;
   createdAt?: string;
   mediaId?: string;
@@ -55,10 +73,10 @@ export interface VideoSummary {
 }
 export interface AiRun {
   _id: string;
-  feature: 'chat' | 'meal_plan' | 'ingredient_recognition' | 'video_summary';
+  feature: `${AiFeatureType}`;
   provider?: string;
   model?: string;
-  status: 'pending' | 'completed' | 'failed' | 'blocked';
+  status: `${AiRunStatus}`;
   latencyMs: number;
   errorCode?: string;
   createdAt: string;

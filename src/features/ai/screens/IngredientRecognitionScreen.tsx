@@ -9,13 +9,15 @@ import { mediaApi } from '@/features/media/mediaApi';
 import { isLocalIsoDate } from '@/features/tracking/trackingState';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
-import { useIngredientRecognition } from '../hooks';
 import { IngredientReviewEditor } from '@/features/pantry/components/IngredientReviewEditor';
-import type { PantryProposal } from '../types';
+import { AI_ROUTES, AI_TRANSLATION_KEYS, AiErrorCode } from '../aiConstants';
+import { useIngredientRecognition } from '../hooks';
 import { reviewPantryProposal } from '../proposalState';
+import type { PantryProposal } from '../types';
 
 export function IngredientRecognitionScreen() {
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.RECOGNITION;
   const router = useRouter();
   const [asset, setAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [proposal, setProposal] = useState<PantryProposal | null>(null);
@@ -27,7 +29,9 @@ export function IngredientRecognitionScreen() {
     mutationFn: async (camera: boolean) => {
       if (camera) {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!permission.granted) throw new Error('CAMERA_PERMISSION_REQUIRED');
+        if (!permission.granted) {
+          throw new Error(AiErrorCode.CAMERA_PERMISSION_REQUIRED);
+        }
       }
       const result = camera
         ? await ImagePicker.launchCameraAsync({
@@ -72,30 +76,27 @@ export function IngredientRecognitionScreen() {
       /* Mutation error is displayed below. */
     }
   };
+
   return (
     <ScreenWrapper
       scrollable
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader
-          title={vi ? 'Nhận diện nguyên liệu' : 'Recognize ingredients'}
+          title={t(keys.TITLE)}
           showBack
-          backFallbackHref="/pantry"
+          backFallbackHref={AI_ROUTES.PANTRY}
         />
       }
     >
-      <AppText color={colors.text.secondary}>
-        {vi
-          ? 'Chụp hoặc chọn ảnh. Kiểm tra tên, lượng và đơn vị trước khi lưu vào kho.'
-          : 'Take or choose a photo. Verify the foods, quantities, and units before saving to your pantry.'}
-      </AppText>
+      <AppText color={colors.text.secondary}>{t(keys.DESCRIPTION)}</AppText>
       <AppButton
-        title={vi ? 'Chụp ảnh' : 'Take photo'}
+        title={t(keys.TAKE_PHOTO)}
         disabled={busy}
         onPress={() => choose.mutate(true)}
       />
       <AppButton
-        title={vi ? 'Chọn ảnh' : 'Choose photo'}
+        title={t(keys.CHOOSE_PHOTO)}
         variant="outline"
         disabled={busy}
         onPress={() => choose.mutate(false)}
@@ -103,16 +104,14 @@ export function IngredientRecognitionScreen() {
       {asset ? (
         <Image
           source={{ uri: asset.uri }}
-          accessibilityLabel={
-            vi ? 'Ảnh nguyên liệu đã chọn' : 'Selected ingredient photo'
-          }
+          accessibilityLabel={t(keys.SELECTED_PHOTO_A11Y)}
           style={{ width: '100%', height: 220 }}
           resizeMode="contain"
         />
       ) : null}
       {asset && !proposal ? (
         <AppButton
-          title={vi ? 'Nhận diện' : 'Recognize'}
+          title={t(keys.RECOGNIZE_ACTION)}
           disabled={busy}
           loading={upload.isPending || actions.recognize.isPending}
           onPress={() => void run()}
@@ -150,12 +149,12 @@ export function IngredientRecognitionScreen() {
           ))}
           <AppText>{proposal.disclaimer}</AppText>
           <AppButton
-            title={vi ? 'Xác nhận thêm vào kho' : 'Confirm pantry additions'}
+            title={t(keys.CONFIRM_ACTION)}
             loading={actions.confirm.isPending}
             disabled={!valid || busy}
             onPress={() =>
               actions.confirm.mutate(proposal, {
-                onSuccess: () => router.replace('/pantry'),
+                onSuccess: () => router.replace(AI_ROUTES.PANTRY),
               })
             }
           />

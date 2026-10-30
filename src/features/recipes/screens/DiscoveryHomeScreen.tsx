@@ -85,7 +85,12 @@ export function DiscoveryHomeScreen() {
         onPress={() => router.push('/(discover)/search')}
         style={({ pressed }) => [styles.search, pressed && styles.pressed]}
       >
-        <AppText color={colors.text.secondary}>
+        <AppText
+          color={colors.text.secondary}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={styles.searchPlaceholder}
+        >
           {t('home.searchPlaceholder')}
         </AppText>
         <View style={styles.searchButton}>
@@ -176,20 +181,26 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border.default,
     backgroundColor: colors.background.surface,
-    borderRadius: radius.xl,
+    borderRadius: radius.full,
     paddingLeft: spacing.lg,
-    paddingRight: spacing.sm,
+    paddingRight: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  searchPlaceholder: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
   searchButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary[700],
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pressed: { opacity: 0.72 },

@@ -8,6 +8,7 @@ import { appConfig } from '@/config';
 import { AppError } from '@/services/errors';
 import { translate } from '@/i18n';
 import { useAuthStore } from '../store/authStore';
+import { getPostAuthRoute } from '../authNavigation';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -47,9 +48,7 @@ export function useGoogleSignIn() {
   const finishLogin = async (idToken: string, requestUri: string) => {
     if (!(await loginWithGoogle(idToken, requestUri))) return;
     const user = useAuthStore.getState().user;
-    router.replace(
-      user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
-    );
+    router.replace(getPostAuthRoute(user));
   };
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Redirect, Stack } from 'expo-router';
 import { LoadingScreen } from '@/components';
-import { useAuthStore } from '@/features/auth';
+import { getPostAuthRoute, useAuthStore } from '@/features/auth';
 import { useOnboardingStore } from '@/features/onboarding/onboardingStore';
 import { useTranslation } from '@/i18n';
 
@@ -21,7 +21,8 @@ export default function OnboardingLayout() {
     return <LoadingScreen message={t('onboarding.preparing')} />;
   }
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
-  if (user?.onboardingCompleted) return <Redirect href="/(tabs)" />;
+  if (user?.role === 'admin' || user?.onboardingCompleted)
+    return <Redirect href={getPostAuthRoute(user)} />;
   return (
     <Stack initialRouteName="diet-goals" screenOptions={{ headerShown: false }}>
       <Stack.Screen name="diet-goals" />

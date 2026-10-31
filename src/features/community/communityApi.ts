@@ -99,6 +99,7 @@ export const communityApi = {
     mediaIds?: string[];
     categoryIds?: string[];
     tags?: string[];
+    foodItemIds?: string[];
     recipeId?: string | null;
     visibility?: 'public' | 'private';
   }) =>
@@ -118,6 +119,7 @@ export const communityApi = {
       mediaIds?: string[];
       categoryIds?: string[];
       tags?: string[];
+      foodItemIds?: string[];
       recipeId?: string | null;
       visibility?: 'public' | 'private';
     }

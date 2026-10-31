@@ -21,9 +21,7 @@ export function useCommunityPosts(mine: boolean, limit = 10) {
     queryFn: ({ pageParam }) => communityApi.posts(mine, pageParam, limit),
     getNextPageParam: (lastPage) => {
       const page = lastPage.meta?.page ?? 1;
-      return lastPage.meta && page < lastPage.meta.totalPages
-        ? page + 1
-        : undefined;
+      return lastPage.meta && page < lastPage.meta.totalPages ? page + 1 : undefined;
     },
     enabled: Boolean(userId),
   });
@@ -72,6 +70,7 @@ export function useCommunityPost(id?: string) {
         mediaIds,
         categoryIds,
         tags,
+        foodItemIds,
         recipeId,
         visibility,
         previous,
@@ -81,6 +80,7 @@ export function useCommunityPost(id?: string) {
         mediaIds?: string[];
         categoryIds?: string[];
         tags?: string[];
+        foodItemIds?: string[];
         recipeId?: string | null;
         visibility?: 'public' | 'private';
         previous?: CommunityPost;
@@ -92,6 +92,7 @@ export function useCommunityPost(id?: string) {
               mediaIds,
               categoryIds,
               tags,
+              foodItemIds,
               recipeId,
               visibility,
             })
@@ -101,6 +102,7 @@ export function useCommunityPost(id?: string) {
               mediaIds,
               categoryIds,
               tags,
+              foodItemIds,
               recipeId,
               visibility,
             }),

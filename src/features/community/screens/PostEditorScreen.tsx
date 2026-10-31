@@ -17,12 +17,12 @@ import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { mediaApi } from '@/features/media/mediaApi';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
+import { useContentCategories } from '@/features/recipes/hooks';
 import {
-  useContentCategories,
-  useExploreRecipes,
-  useRecipeDetail,
-} from '@/features/recipes/hooks';
-import { normalizeLinkedRecipeId } from '../postRelationship';
+  hasPostFoodRelationship,
+  normalizeLinkedRecipeId,
+} from '../postRelationship';
+import { PostFoodRelationshipFields } from '../components/PostFoodRelationshipFields';
 
 export function PostEditorScreen() {
   const { id, recipeId: routeRecipeId } = useLocalSearchParams<{
@@ -37,35 +37,10 @@ export function PostEditorScreen() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [tags, setTags] = useState('');
   const [recipeId, setRecipeId] = useState(routeRecipeId ?? '');
+  const [foodItemIds, setFoodItemIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const categories = useContentCategories('post');
-  const recipes = useExploreRecipes({ limit: 50, sort: 'newest' });
-  const selectedRecipe = useRecipeDetail(recipeId);
-  const recipeOptions = [
-    {
-      value: '',
-      label: vi ? 'Không liên kết công thức' : 'No linked recipe',
-    },
-    ...(recipes.data?.pages.flatMap((page) =>
-      page.data.map((recipe) => ({
-        value: recipe._id,
-        label: recipe.title ?? (vi ? 'Công thức chưa đặt tên' : 'Untitled recipe'),
-      }))
-    ) ?? []),
-  ];
-  if (
-    recipeId &&
-    selectedRecipe.data &&
-    !recipeOptions.some((option) => option.value === recipeId)
-  ) {
-    recipeOptions.splice(1, 0, {
-      value: recipeId,
-      label:
-        selectedRecipe.data.title ??
-        (vi ? 'Công thức chưa đặt tên' : 'Untitled recipe'),
-    });
-  }
   const upload = useMutation({
     mutationFn: () => mediaApi.uploadImage(image!, 'post'),
   });
@@ -76,6 +51,7 @@ export function PostEditorScreen() {
       setCategoryId(actions.post.data.categoryIds?.[0] ?? null);
       setTags((actions.post.data.tags || []).join(', '));
       setRecipeId(actions.post.data.recipeId || '');
+      setFoodItemIds(actions.post.data.foodItemIds ?? []);
       setVisibility(actions.post.data.visibility || 'public');
     }
   }, [actions.post.data]);
@@ -108,6 +84,7 @@ export function PostEditorScreen() {
           .map((tag) => tag.trim())
           .filter(Boolean),
         recipeId: normalizeLinkedRecipeId(recipeId),
+        foodItemIds,
         visibility,
         previous: actions.post.data,
       });
@@ -155,8 +132,8 @@ export function PostEditorScreen() {
         </AppText>
         <AppText color={colors.text.secondary}>
           {vi
-            ? 'Viết ngắn gọn, dễ đọc. Bạn có thể gắn một công thức, nhưng bài viết và công thức luôn là hai nội dung riêng.'
-            : 'Keep it clear and easy to read. You may link a recipe, but posts and recipes always remain separate.'}
+            ? 'Viết ngắn gọn, dễ đọc và gắn ít nhất một nguyên liệu hoặc công thức liên quan.'
+            : 'Keep it clear and link at least one related ingredient or recipe.'}
         </AppText>
       </Surface>
 
@@ -242,35 +219,22 @@ export function PostEditorScreen() {
           </View>
           <View style={styles.sectionCopy}>
             <AppText variant="heading3">
-              {vi ? 'Công thức liên quan' : 'Related recipe'}
+              {vi ? 'Liên kết món ăn' : 'Food relationship'}
             </AppText>
             <AppText variant="bodySmall" color={colors.text.secondary}>
               {vi
-                ? 'Không bắt buộc. Post chỉ tham chiếu, không biến Recipe thành Post.'
-                : 'Optional. The post references a recipe without turning it into a post.'}
+                ? 'Bắt buộc chọn ít nhất một nguyên liệu hoặc một công thức.'
+                : 'Choose at least one ingredient or one recipe.'}
             </AppText>
           </View>
         </View>
-        <SelectionField
-          label={vi ? 'Chọn công thức' : 'Choose a recipe'}
-          placeholder={
-            recipes.isLoading
-              ? vi
-                ? 'Đang tải công thức…'
-                : 'Loading recipes…'
-              : vi
-                ? 'Không liên kết công thức'
-                : 'No linked recipe'
-          }
-          value={recipeId}
-          options={recipeOptions}
-          onChange={setRecipeId}
-        />
-        <FeatureState
-          error={recipes.error || (recipeId ? selectedRecipe.error : null)}
-          retry={() =>
-            void (recipes.error ? recipes.refetch() : selectedRecipe.refetch())
-          }
+        <PostFoodRelationshipFields
+          recipeId={recipeId}
+          foodItemIds={foodItemIds}
+          disabled={!editable || busy}
+          showValidation
+          onRecipeChange={setRecipeId}
+          onFoodItemsChange={setFoodItemIds}
         />
       </Surface>
 
@@ -345,7 +309,13 @@ export function PostEditorScreen() {
                 : 'Publish post'
           }
           loading={busy}
-          disabled={!editable || !title.trim() || !content.trim() || busy}
+          disabled={
+            !editable ||
+            !title.trim() ||
+            !content.trim() ||
+            !hasPostFoodRelationship(recipeId, foodItemIds) ||
+            busy
+          }
           onPress={() => void save()}
         />
       </Surface>

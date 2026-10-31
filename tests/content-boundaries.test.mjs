@@ -51,8 +51,8 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(community, /onEndReached/);
   assert.match(community, /CommunityPostCard/);
   assert.match(composer, /Nội dung bài viết/);
-  assert.match(composer, /Công thức liên quan/);
-  assert.match(composer, /Không bắt buộc/);
+  assert.match(composer, /Liên kết món ăn/);
+  assert.match(composer, /Bắt buộc chọn ít nhất một nguyên liệu/);
   assert.match(composer, /Bài viết công khai sẽ xuất hiện ngay/);
   assert.match(composer, /'Đăng bài'/);
   assert.doesNotMatch(composer, /Gửi quản trị viên duyệt/);

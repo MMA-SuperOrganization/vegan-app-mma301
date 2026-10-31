@@ -60,6 +60,13 @@ export function HomeCommunitySection({
                     {vi ? 'Có công thức liên quan' : 'Linked recipe'}
                   </AppText>
                 ) : null}
+                {post.foodItemIds?.length ? (
+                  <AppText variant="caption" color={colors.primary[700]}>
+                    {vi
+                      ? `${post.foodItemIds.length} nguyên liệu liên quan`
+                      : `${post.foodItemIds.length} linked ingredients`}
+                  </AppText>
+                ) : null}
                 <AppText variant="caption" color={colors.text.secondary}>
                   {post.reactionCount ?? 0} {vi ? 'lượt thích' : 'reactions'} ·{' '}
                   {post.commentCount ?? 0} {vi ? 'bình luận' : 'comments'}

@@ -51,6 +51,17 @@ export function CommunityPostCard({
               size="sm"
             />
           ) : null}
+          {post.foodItemIds?.length ? (
+            <Badge
+              label={
+                vi
+                  ? `${post.foodItemIds.length} nguyên liệu`
+                  : `${post.foodItemIds.length} ingredients`
+              }
+              variant="secondary"
+              size="sm"
+            />
+          ) : null}
         </View>
 
         <AppText variant="heading3" numberOfLines={2}>

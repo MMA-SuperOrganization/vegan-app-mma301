@@ -6,6 +6,7 @@ export interface CommunityPost {
   mediaIds?: string[];
   categoryIds?: string[];
   tags?: string[];
+  foodItemIds?: string[];
   recipeId?: string | null;
   visibility?: 'public' | 'private';
   media?: Array<{

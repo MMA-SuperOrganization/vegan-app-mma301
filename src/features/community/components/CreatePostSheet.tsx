@@ -1,21 +1,9 @@
 import { useState } from 'react';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 
-import {
-  AppButton,
-  AppIcon,
-  AppInput,
-  AppText,
-  BottomSheet,
-} from '@/components';
+import { AppButton, AppIcon, AppInput, AppText, BottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { mediaApi } from '@/features/media/mediaApi';
@@ -23,6 +11,8 @@ import { recipeKeys, useContentCategories } from '@/features/recipes/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
+import { PostFoodRelationshipFields } from './PostFoodRelationshipFields';
+import { hasPostFoodRelationship } from '../postRelationship';
 
 type Visibility = 'public' | 'private';
 
@@ -41,6 +31,8 @@ export function CreatePostSheet({
   const [content, setContent] = useState('');
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<Visibility>('public');
+  const [recipeId, setRecipeId] = useState('');
+  const [foodItemIds, setFoodItemIds] = useState<string[]>([]);
   const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   const upload = useMutation({
@@ -64,6 +56,8 @@ export function CreatePostSheet({
     setContent('');
     setCategoryId(null);
     setVisibility('public');
+    setRecipeId('');
+    setFoodItemIds([]);
     setImage(null);
     upload.reset();
     actions.save.reset();
@@ -81,6 +75,8 @@ export function CreatePostSheet({
         content: normalizedContent,
         mediaIds: mediaId ? [mediaId] : [],
         categoryIds: categoryId ? [categoryId] : [],
+        recipeId: recipeId || null,
+        foodItemIds,
         visibility,
       });
       await queryClient.invalidateQueries({ queryKey: recipeKeys.home(userId) });
@@ -92,7 +88,10 @@ export function CreatePostSheet({
   };
 
   const busy = actions.save.isPending || upload.isPending;
-  const canPublish = Boolean(content.trim()) && !busy;
+  const canPublish =
+    Boolean(content.trim()) &&
+    hasPostFoodRelationship(recipeId, foodItemIds) &&
+    !busy;
 
   return (
     <BottomSheet
@@ -143,7 +142,12 @@ export function CreatePostSheet({
               onPress={() => setImage(null)}
               style={styles.removeImage}
             >
-              <AppIcon name="close" size={18} color={colors.text.inverse} decorative />
+              <AppIcon
+                name="close"
+                size={18}
+                color={colors.text.inverse}
+                decorative
+              />
             </Pressable>
           </View>
         ) : null}
@@ -164,6 +168,15 @@ export function CreatePostSheet({
             {content.length}/30000
           </AppText>
         </View>
+
+        <PostFoodRelationshipFields
+          recipeId={recipeId}
+          foodItemIds={foodItemIds}
+          disabled={busy}
+          showValidation={Boolean(content.trim())}
+          onRecipeChange={setRecipeId}
+          onFoodItemsChange={setFoodItemIds}
+        />
 
         {(categories.data?.data.length ?? 0) > 0 ? (
           <View style={styles.optionGroup}>

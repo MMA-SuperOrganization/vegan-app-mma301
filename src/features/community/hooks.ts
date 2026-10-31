@@ -13,12 +13,12 @@ import type {
   ReportReason,
   ReportTarget,
 } from './types';
-export function useCommunityPosts(mine: boolean) {
+export function useCommunityPosts(mine: boolean, limit = 10) {
   const userId = useAuthStore((state) => state.user?.id);
   return useInfiniteQuery({
-    queryKey: ['account', userId, 'community', 'posts', mine],
+    queryKey: ['account', userId, 'community', 'posts', mine, limit],
     initialPageParam: 1,
-    queryFn: ({ pageParam }) => communityApi.posts(mine, pageParam, 10),
+    queryFn: ({ pageParam }) => communityApi.posts(mine, pageParam, limit),
     getNextPageParam: (lastPage) => {
       const page = lastPage.meta?.page ?? 1;
       return lastPage.meta && page < lastPage.meta.totalPages

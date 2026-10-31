@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, View, type ReactNode } from 'react-native';
+import type { ReactNode } from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { AppButton, AppIcon, AppText, ScreenWrapper } from '@/components';

@@ -12,7 +12,8 @@ export interface IngredientReviewValue {
 
 export interface PantryItem {
   itemId: string;
-  foodItemId: string;
+  foodItemId?: string;
+  personalIngredientId?: string;
   foodNameSnapshot: string;
   quantity: number;
   unit: PantryUnit;
@@ -30,7 +31,8 @@ export interface Pantry {
 }
 
 export interface PantryItemInput {
-  foodItemId: string;
+  foodItemId?: string;
+  personalIngredientId?: string;
   quantity: number;
   unit: PantryUnit;
   expiresAt?: string | null;

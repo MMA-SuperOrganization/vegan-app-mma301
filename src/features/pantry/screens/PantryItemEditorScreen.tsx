@@ -63,7 +63,12 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
   const goBack = useSafeBack('/pantry');
   const actions = usePantryActions();
   const [food, setFood] = useState(
-    item ? { id: item.foodItemId, name: item.foodNameSnapshot } : null
+    item
+      ? {
+          id: item.foodItemId ?? item.personalIngredientId ?? '',
+          name: item.foodNameSnapshot,
+        }
+      : null
   );
   const [quantity, setQuantity] = useState(item ? String(item.quantity) : '1');
   const [unit, setUnit] = useState<PantryUnit>(item?.unit ?? 'g');

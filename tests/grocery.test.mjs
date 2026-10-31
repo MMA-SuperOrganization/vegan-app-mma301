@@ -2,11 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   groceryProgress,
+  groceryTransferSummary,
   groceryDateRange,
   groupGroceryItems,
   parseGroceryQuantity,
   updateItemChecked,
 } from '../src/features/grocery/groceryState.ts';
+import {
+  hasExactIngredientName,
+  normalizeIngredientName,
+} from '../src/features/grocery/ingredientState.ts';
 
 test('grocery range accepts a subset of the selected week and rejects rollover and reversed dates', () => {
   assert.deepEqual(groceryDateRange('20/10/2026', '22/10/2026', '2026-10-19'), {
@@ -74,6 +79,23 @@ test('grocery progress counts checked items', () => {
   assert.deepEqual(groceryProgress({ items }), { checked: 1, total: 4 });
 });
 
+test('pantry transfer includes only checked items linked to catalog or personal ingredients', () => {
+  const summary = groceryTransferSummary([
+    { ...items[0], foodItemId: 'catalog-food' },
+    { ...items[1], checked: true, personalIngredientId: 'personal-food' },
+    { ...items[2], checked: true },
+    items[3],
+  ]);
+  assert.deepEqual(
+    summary.eligible.map((item) => item.itemId),
+    ['tomato', 'pepper']
+  );
+  assert.deepEqual(
+    summary.skipped.map((item) => item.itemId),
+    ['carrot']
+  );
+});
+
 test('grocery quantities accept decimal comma and reject invalid values', () => {
   assert.equal(parseGroceryQuantity('1,5'), 1.5);
   assert.equal(parseGroceryQuantity('.5'), 0.5);
@@ -92,4 +114,24 @@ test('optimistic checkbox update is immutable and only changes its target', () =
     updated.items.find((item) => item.itemId === 'pepper').checked,
     false
   );
+});
+
+test('ingredient names compare accent-insensitively before offering a personal duplicate', () => {
+  assert.equal(normalizeIngredientName('  Đậu   hũ ký  '), 'dau hu ky');
+  assert.equal(
+    hasExactIngredientName(
+      [
+        {
+          id: 'catalog',
+          source: 'catalog',
+          name: 'Đậu hũ ky',
+          defaultUnit: 'g',
+          foodItemId: 'catalog',
+        },
+      ],
+      'dau hu ky'
+    ),
+    true
+  );
+  assert.equal(hasExactIngredientName([], 'Đậu hũ ky'), false);
 });

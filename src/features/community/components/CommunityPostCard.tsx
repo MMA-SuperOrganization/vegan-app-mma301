@@ -1,11 +1,12 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppIcon, AppText, Badge, Surface } from '@/components';
+import { AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
 
 import { postStatusLabel } from '../status';
 import type { CommunityPost } from '../types';
 import { PostFoodSummary } from './PostFoodSummary';
+import { PostLikeIcon } from './PostLikeIcon';
 
 const statusVariant = (status: CommunityPost['status']) => {
   if (status === 'published') return 'success' as const;
@@ -117,18 +118,9 @@ export function CommunityPostCard({
         }
         accessibilityState={{ selected: liked }}
         onPress={onReact}
-        style={({ pressed }) => [
-          styles.likeAction,
-          liked && styles.likeActionSelected,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.likeAction, pressed && styles.pressed]}
       >
-        <AppIcon
-          name="heart"
-          size={20}
-          color={liked ? colors.primary[700] : colors.text.secondary}
-          decorative
-        />
+        <PostLikeIcon liked={liked} />
         <AppText
           variant="bodyStrong"
           color={liked ? colors.primary[700] : colors.text.secondary}
@@ -178,10 +170,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
-    borderRadius: radius.lg,
+    gap: spacing.none,
+    borderRadius: radius.full,
   },
-  likeActionSelected: { backgroundColor: colors.background.selected },
   dot: {
     width: 4,
     height: 4,

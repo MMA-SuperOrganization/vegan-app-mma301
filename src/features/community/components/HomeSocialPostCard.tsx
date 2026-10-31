@@ -6,6 +6,7 @@ import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 import { PostFoodSummary } from './PostFoodSummary';
+import { PostLikeIcon } from './PostLikeIcon';
 
 type HomePost = PostCardData & {
   content?: string;
@@ -85,18 +86,9 @@ export function HomeSocialPostCard({
           accessibilityLabel={liked ? t('home.liked') : t('home.like')}
           accessibilityState={{ selected: liked }}
           onPress={onReact}
-          style={({ pressed }) => [
-            styles.action,
-            liked && styles.actionSelected,
-            pressed && styles.actionPressed,
-          ]}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
-          <AppIcon
-            name="heart"
-            size={20}
-            color={liked ? colors.primary[700] : colors.text.secondary}
-            decorative
-          />
+          <PostLikeIcon liked={liked} />
           <AppText variant="caption" color={liked ? colors.primary[700] : undefined}>
             {liked ? t('home.liked') : t('home.like')}
           </AppText>
@@ -151,6 +143,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
+    gap: spacing.xs,
   },
   action: {
     flex: 1,
@@ -158,8 +151,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
+    gap: spacing.none,
+    borderRadius: radius.full,
   },
-  actionSelected: { backgroundColor: colors.background.selected },
   actionPressed: { opacity: 0.68 },
 });

@@ -46,6 +46,7 @@ test('post cards apply reactions optimistically without a loading-only heart sta
   const communityCard = read(
     '../src/features/community/components/CommunityPostCard.tsx'
   );
+  const likeIcon = read('../src/features/community/components/PostLikeIcon.tsx');
 
   assert.match(hooks, /onMutate:/);
   assert.match(hooks, /updatePostReactionCache/);
@@ -54,6 +55,10 @@ test('post cards apply reactions optimistically without a loading-only heart sta
   assert.match(homeCard, /accessibilityState=\{\{ selected: liked \}\}/);
   assert.match(communityCard, /onPress={onReact}/);
   assert.doesNotMatch(homeCard, /disabled=.*isPending/);
+  assert.match(homeCard, /<PostLikeIcon liked={liked}/);
+  assert.match(communityCard, /<PostLikeIcon liked={liked}/);
+  assert.match(likeIcon, /containerSelected/);
+  assert.doesNotMatch(homeCard, /actionSelected/);
 });
 
 test('community uses an infinite newsfeed and publishes posts without admin review', () => {

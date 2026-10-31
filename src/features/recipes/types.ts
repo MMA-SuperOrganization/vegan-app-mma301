@@ -29,6 +29,7 @@ export interface PostCardData extends ContentCardData {
   commentCount?: number;
   reacted?: string | null;
   recipeId?: string | null;
+  foodItemIds?: string[];
 }
 
 export interface SourceAttribution {

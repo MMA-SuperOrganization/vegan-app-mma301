@@ -13,8 +13,9 @@ const CONFIG: Record<string, { key: TranslationKey; icon: AssetName }> = {
   users: { key: 'admin.tabs.users', icon: 'profile' },
   'master-data': { key: 'admin.tabs.masterData', icon: 'pantry' },
   audit: { key: 'admin.tabs.audit', icon: 'spark' },
+  settings: { key: 'profile.settingsSection', icon: 'profile' },
 };
-const ORDER = ['index', 'moderation', 'users', 'master-data', 'audit'];
+const ORDER = ['index', 'moderation', 'users', 'settings'];
 
 export function AdminTabBar({ state, descriptors, navigation }: Props) {
   const insets = useSafeAreaInsets();

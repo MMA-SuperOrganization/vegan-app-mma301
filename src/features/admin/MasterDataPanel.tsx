@@ -19,11 +19,12 @@ import {
   MasterResourceType,
 } from './adminConstants';
 
-const number = (value: string) => Number(value.replace(',', '.')) || 0;
+const parseNumericInput = (value: string) => Number(value.replace(',', '.')) || 0;
 type MasterSection = 'categories' | 'allergens' | 'foods';
 
 export function MasterDataPanel() {
   const { t } = useTranslation();
+  const keys = ADMIN_TRANSLATION_KEYS.MASTER;
   const [activeSection, setActiveSection] = useState<MasterSection>('categories');
   const client = useQueryClient();
 
@@ -135,7 +136,7 @@ export function MasterDataPanel() {
     records.map((record) => (
       <View key={record._id} style={card}>
         <AppText variant="bodyStrong">{record.name}</AppText>
-        <AppText>{[record.type, record.status].filter(Boolean).join(' · ')}</AppText>
+        <AppText>{formatRecordMeta(record)}</AppText>
         <View style={{ flexDirection: 'row', gap: spacing.sm }}>
           <AppButton
             title={t('admin.master.edit')}
@@ -200,7 +201,7 @@ export function MasterDataPanel() {
         label={t('admin.master.type')}
         placeholder=""
         value={category.type || 'recipe'}
-        options={(['food', 'recipe', 'post'] as const).map((value) => ({
+        options={MASTER_CATEGORY_TYPES.map((value) => ({
           value,
           label: t(MASTER_CATEGORY_TYPE_LABEL_KEYS[value]),
         }))}
@@ -217,7 +218,7 @@ export function MasterDataPanel() {
           categorySave.mutate(category as MasterRecord & { name: string })
         }
       />
-      {list(categories.data?.data || [], 'categories', setCategory)}
+      {renderRecordList(categories.data?.data || [], 'categories', setCategory)}
       </> : null}
       {activeSection === 'allergens' ? <>
       <AppText variant="heading3">{t('admin.master.allergens')}</AppText>
@@ -237,7 +238,7 @@ export function MasterDataPanel() {
           allergenSave.mutate(allergen as MasterRecord & { name: string })
         }
       />
-      {list(allergens.data?.data || [], 'allergens', setAllergen)}
+      {renderRecordList(allergens.data?.data || [], 'allergens', setAllergen)}
       </> : null}
       {activeSection === 'foods' ? <>
       <AppText variant="heading3">{t('admin.master.foods')}</AppText>
@@ -319,7 +320,7 @@ export function MasterDataPanel() {
           })
         }
       />
-      {list(foods.data?.data || [], 'food-items', (record) => {
+      {renderRecordList(foods.data?.data || [], 'food-items', (record) => {
         setFood(record);
         setServing(String(record.defaultServing?.amount || 100));
         setCalories(String(record.nutritionPer100g?.caloriesKcal || 0));

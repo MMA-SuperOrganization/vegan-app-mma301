@@ -16,6 +16,7 @@ import { HomeSocialHeader } from '@/features/community/components/HomeSocialHead
 import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
 import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
 import { useCommunityPosts } from '@/features/community/hooks';
+import { CreateRecipeSheet } from '../components/CreateRecipeSheet';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
 
@@ -23,6 +24,7 @@ export function DiscoveryHomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [postComposerOpen, setPostComposerOpen] = useState(false);
+  const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const home = useHomeFeed();
   const posts = useCommunityPosts(false, 3);
   const featured = home.data?.featured.recipes ?? [];
@@ -79,7 +81,7 @@ export function DiscoveryHomeScreen() {
 
             <HomeRecipeStories
               recipes={recommendations}
-              onCreateRecipe={() => router.push('/recipes/editor')}
+              onCreateRecipe={() => setRecipeComposerOpen(true)}
               onSelect={openRecipe}
             />
 
@@ -139,6 +141,10 @@ export function DiscoveryHomeScreen() {
       <CreatePostSheet
         visible={postComposerOpen}
         onClose={() => setPostComposerOpen(false)}
+      />
+      <CreateRecipeSheet
+        visible={recipeComposerOpen}
+        onClose={() => setRecipeComposerOpen(false)}
       />
     </ScreenWrapper>
   );

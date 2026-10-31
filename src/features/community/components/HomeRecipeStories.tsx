@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   list: { paddingRight: spacing.xl },
   createStorySpacing: { marginRight: spacing.sm },
-  createStory: { width: 116, height: 172, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.primary[200] },
+  createStory: { width: 116, height: 172, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.primary[300] },
   createIcon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary[700] },
   createLabel: { textAlign: 'center' },
   story: { width: 116, height: 172, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.background.selected, position: 'relative' },

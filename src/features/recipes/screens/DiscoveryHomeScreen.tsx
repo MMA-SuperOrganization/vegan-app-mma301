@@ -40,7 +40,7 @@ export function DiscoveryHomeScreen() {
       contentContainerStyle={styles.screen}
     >
       <HomeSocialHeader
-        onCreatePost={() => router.push('/recipes/editor')}
+        onCreatePost={() => router.push('/community/editor')}
         onSearch={() => router.push('/(discover)/search')}
       />
 
@@ -64,7 +64,11 @@ export function DiscoveryHomeScreen() {
         />
       ) : null}
 
-      <HomeRecipeStories recipes={recommendations} onSelect={openRecipe} />
+      <HomeRecipeStories
+        recipes={recommendations}
+        onCreateRecipe={() => router.push('/recipes/editor')}
+        onSelect={openRecipe}
+      />
 
       <View style={styles.feedHeading}>
         <AppText variant="heading3">{t('home.socialFeed')}</AppText>

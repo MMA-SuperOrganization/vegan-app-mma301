@@ -22,17 +22,17 @@ export function HomeSocialHeader({
           <AppText style={styles.brand}>Vegata</AppText>
         </View>
         <View style={styles.actions}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Create" onPress={onCreatePost} style={styles.action}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('home.createPost')} onPress={onCreatePost} style={styles.action}>
             <AppIcon name="plus" size={23} color={colors.text.primary} decorative />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Search" onPress={onSearch} style={styles.action}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('home.search')} onPress={onSearch} style={styles.action}>
             <AppIcon name="search" size={23} color={colors.text.primary} decorative />
           </Pressable>
         </View>
       </View>
 
       <Pressable accessibilityRole="button" onPress={onCreatePost} style={styles.composer}>
-        <AppText color={colors.text.secondary} style={styles.composerText}>{t('home.createRecipePrompt')}</AppText>
+        <AppText color={colors.text.secondary} style={styles.composerText}>{t('home.createPostPrompt')}</AppText>
         <AppIcon name="image" size={24} color={colors.primary[700]} decorative />
       </Pressable>
     </View>

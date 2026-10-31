@@ -1,14 +1,21 @@
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText } from '@/components';
+import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 
-export function HomeRecipeStories({ recipes, onSelect }: { recipes: ContentCardData[]; onSelect: (recipe: ContentCardData) => void }) {
+export function HomeRecipeStories({
+  recipes,
+  onCreateRecipe,
+  onSelect,
+}: {
+  recipes: ContentCardData[];
+  onCreateRecipe: () => void;
+  onSelect: (recipe: ContentCardData) => void;
+}) {
   const { t } = useTranslation();
-  if (!recipes.length) return null;
   return (
     <View style={styles.section}>
       <View style={styles.headingRow}>
@@ -21,6 +28,22 @@ export function HomeRecipeStories({ recipes, onSelect }: { recipes: ContentCardD
         keyExtractor={(item) => item._id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('home.addRecipe')}
+            onPress={onCreateRecipe}
+            style={({ pressed }) => [styles.createStory, pressed && styles.pressed]}
+          >
+            <View style={styles.createIcon}>
+              <AppIcon name="plus" size={28} color={colors.common.white} decorative />
+            </View>
+            <AppText variant="bodyStrong" color={colors.primary[800]} style={styles.createLabel}>
+              {t('home.addRecipe')}
+            </AppText>
+          </Pressable>
+        }
+        ListHeaderComponentStyle={styles.createStorySpacing}
         ItemSeparatorComponent={() => <View style={{ width: spacing.sm }} />}
         renderItem={({ item }) => (
           <Pressable accessibilityRole="button" onPress={() => onSelect(item)} style={({ pressed }) => [styles.story, pressed && styles.pressed]}>
@@ -37,6 +60,10 @@ const styles = StyleSheet.create({
   section: { gap: spacing.md },
   headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   list: { paddingRight: spacing.xl },
+  createStorySpacing: { marginRight: spacing.sm },
+  createStory: { width: 116, height: 172, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.primary[200] },
+  createIcon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary[700] },
+  createLabel: { textAlign: 'center' },
   story: { width: 116, height: 172, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.background.selected, position: 'relative' },
   image: { width: '100%', height: '100%', borderRadius: 0 },
   storyLabel: { position: 'absolute', left: spacing.sm, right: spacing.sm, bottom: spacing.sm },

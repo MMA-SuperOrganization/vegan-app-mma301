@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import { aiApi } from './aiApi';
+import { AiFeedbackRating } from './aiConstants';
+
 export function useSavedMealPlans() {
   const userId = useAuthStore((state) => state.user?.id);
   return useQuery({
@@ -51,7 +53,10 @@ export function useAiChat(conversationId?: string) {
   });
   const feedback = useMutation({
     mutationFn: ({ runId, helpful }: { runId: string; helpful: boolean }) =>
-      aiApi.feedback(runId, helpful ? 'helpful' : 'not_helpful'),
+      aiApi.feedback(
+        runId,
+        helpful ? AiFeedbackRating.HELPFUL : AiFeedbackRating.NOT_HELPFUL
+      ),
   });
   return { conversations, messages, create, send, feedback };
 }

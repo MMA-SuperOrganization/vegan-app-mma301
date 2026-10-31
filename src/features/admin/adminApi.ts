@@ -1,5 +1,24 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
+import {
+  ADMIN_ACTION_REASONS,
+  AdminUserRole,
+  AdminUserStatus,
+  MASTER_RECORD_STATUSES,
+  MasterCategoryType,
+  MasterRecordStatus,
+  MasterResourcePath,
+  MasterResourceType,
+} from './adminConstants';
+
+export {
+  AdminUserRole,
+  AdminUserStatus,
+  MasterCategoryType,
+  MasterRecordStatus,
+  MasterResourcePath,
+  MasterResourceType,
+};
 
 export interface AdminSummary {
   users: { total: number; active: number; suspended: number; newInRange: number };
@@ -16,8 +35,8 @@ export interface AdminUser {
   displayName?: string;
   name?: string;
   email?: string;
-  status: 'active' | 'suspended' | 'deleted';
-  role: 'user' | 'admin';
+  status: `${AdminUserStatus}`;
+  role: `${AdminUserRole}`;
   createdAt?: string;
 }
 export interface AuditLog {
@@ -31,8 +50,8 @@ export interface AuditLog {
 export interface MasterRecord {
   _id: string;
   name: string;
-  status?: 'active' | 'inactive';
-  type?: 'food' | 'recipe' | 'post';
+  status?: `${MasterRecordStatus}`;
+  type?: `${MasterCategoryType}`;
   categoryId?: string;
   defaultServing?: { amount: number; unit: string; gramEquivalent: number };
   nutritionPer100g?: Record<string, number>;
@@ -40,11 +59,9 @@ export interface MasterRecord {
   isVegetarian?: boolean;
 }
 
-const collectMasterRecords = async (
-  path: '/categories' | '/allergens' | '/food-items'
-) => {
+const collectMasterRecords = async (path: `${MasterResourcePath}`) => {
   const [active, inactive] = await Promise.all(
-    (['active', 'inactive'] as const).map((status) =>
+    MASTER_RECORD_STATUSES.map((status) =>
       collectPages((page) =>
         unwrapApiPageRequest<MasterRecord>(() =>
           apiClient.get(path, { params: { page, limit: 100, status } })
@@ -86,16 +103,19 @@ export const adminApi = {
     ),
   setStatus: (user: AdminUser) =>
     unwrapApiRequest<AdminUser>(() =>
-      user.status === 'suspended'
+      user.status === AdminUserStatus.SUSPENDED
         ? apiClient.post(`/admin/users/${user._id}/activate`, {})
         : apiClient.post(`/admin/users/${user._id}/suspend`, {
-            reason: 'Administrative action from VEGETA mobile app',
+            reason: ADMIN_ACTION_REASONS.MOBILE_ADMIN_ACTION,
           })
     ),
   changeRole: (user: AdminUser) =>
     unwrapApiRequest<AdminUser>(() =>
       apiClient.patch(`/admin/users/${user._id}/role`, {
-        role: user.role === 'admin' ? 'user' : 'admin',
+        role:
+          user.role === AdminUserRole.ADMIN
+            ? AdminUserRole.USER
+            : AdminUserRole.ADMIN,
       })
     ),
   contentTrends: () =>
@@ -106,40 +126,42 @@ export const adminApi = {
     unwrapApiRequest<Record<string, unknown>>(() =>
       apiClient.get('/admin/dashboard/user-trends')
     ),
-  categories: () => collectMasterRecords('/categories'),
-  allergens: () => collectMasterRecords('/allergens'),
-  foods: () => collectMasterRecords('/food-items'),
+  categories: () => collectMasterRecords(MasterResourcePath.CATEGORIES),
+  allergens: () => collectMasterRecords(MasterResourcePath.ALLERGENS),
+  foods: () => collectMasterRecords(MasterResourcePath.FOOD_ITEMS),
   saveCategory: (record: Partial<MasterRecord> & { name: string }) =>
     unwrapApiRequest<MasterRecord>(() =>
       record._id
-        ? apiClient.patch(`/categories/${record._id}`, {
+        ? apiClient.patch(`${MasterResourcePath.CATEGORIES}/${record._id}`, {
             name: record.name,
             type: record.type,
           })
-        : apiClient.post('/categories', {
+        : apiClient.post(MasterResourcePath.CATEGORIES, {
             name: record.name,
-            type: record.type ?? 'recipe',
+            type: record.type ?? MasterCategoryType.RECIPE,
           })
     ),
   saveAllergen: (record: Partial<MasterRecord> & { name: string }) =>
     unwrapApiRequest<MasterRecord>(() =>
       record._id
-        ? apiClient.patch(`/allergens/${record._id}`, { name: record.name })
-        : apiClient.post('/allergens', { name: record.name })
+        ? apiClient.patch(`${MasterResourcePath.ALLERGENS}/${record._id}`, {
+            name: record.name,
+          })
+        : apiClient.post(MasterResourcePath.ALLERGENS, { name: record.name })
     ),
   saveFood: (record: Partial<MasterRecord> & { name: string }) =>
     unwrapApiRequest<MasterRecord>(() => {
       const { _id, ...body } = record;
       return _id
-        ? apiClient.patch(`/food-items/${_id}`, body)
-        : apiClient.post('/food-items', body);
+        ? apiClient.patch(`${MasterResourcePath.FOOD_ITEMS}/${_id}`, body)
+        : apiClient.post(MasterResourcePath.FOOD_ITEMS, body);
     }),
-  removeMaster: (type: 'categories' | 'allergens' | 'food-items', id: string) =>
+  removeMaster: (type: `${MasterResourceType}`, id: string) =>
     unwrapApiRequest(() => apiClient.delete(`/${type}/${id}`)),
   setMasterStatus: (
-    type: 'categories' | 'allergens' | 'food-items',
+    type: `${MasterResourceType}`,
     record: MasterRecord,
-    status: 'active' | 'inactive'
+    status: `${MasterRecordStatus}`
   ) =>
     unwrapApiRequest<MasterRecord>(() =>
       apiClient.patch(`/${type}/${record._id}`, { status })

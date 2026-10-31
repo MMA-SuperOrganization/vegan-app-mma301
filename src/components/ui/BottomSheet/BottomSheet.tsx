@@ -111,7 +111,10 @@ export function BottomSheet({
               edges={['bottom']}
               style={[styles.sheet, tall && styles.fill]}
             >
-              <Pressable style={[styles.body, tall && styles.fill]}>
+              <Pressable
+                style={[styles.body, tall && styles.fill]}
+                onPress={(e) => e.stopPropagation()}
+              >
                 <View style={styles.dragArea} {...panResponder.panHandlers}>
                   <View style={styles.dragHandle} />
                 </View>

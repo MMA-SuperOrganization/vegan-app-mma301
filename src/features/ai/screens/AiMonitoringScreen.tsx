@@ -2,6 +2,7 @@ import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
+import { AI_ROUTES, AI_TRANSLATION_KEYS } from '../aiConstants';
 import { useAiMonitoring } from '../hooks';
 
 const percent = (value: number | null) =>
@@ -10,21 +11,23 @@ const percent = (value: number | null) =>
     : new Intl.NumberFormat(undefined, { style: 'percent' }).format(value);
 
 export function AiMonitoringScreen() {
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.MONITORING;
   const monitoring = useAiMonitoring();
   const metrics = monitoring.metrics.data;
   const retry = () => {
     void monitoring.metrics.refetch();
     void monitoring.runs.refetch();
   };
+
   return (
     <ScreenWrapper
       scrollable
       header={
         <CustomHeader
-          title={vi ? 'Giám sát AI' : 'AI monitoring'}
+          title={t(keys.TITLE)}
           showBack
-          backFallbackHref="/admin"
+          backFallbackHref={AI_ROUTES.BACK_FALLBACK}
         />
       }
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
@@ -36,37 +39,33 @@ export function AiMonitoringScreen() {
       />
       {metrics ? (
         <>
-          <AppText variant="heading2">{vi ? 'Tổng quan' : 'Overview'}</AppText>
+          <AppText variant="heading2">{t(keys.OVERVIEW_TITLE)}</AppText>
           <AppText>
-            {vi ? 'Tổng lượt chạy' : 'Total runs'}: {metrics.runs.total}
+            {t(keys.TOTAL_RUNS)}: {metrics.runs.total}
           </AppText>
           <AppText>
-            {vi ? 'Thành công' : 'Success rate'}: {percent(metrics.successRate)}
+            {t(keys.SUCCESS_RATE)}: {percent(metrics.successRate)}
           </AppText>
           <AppText>
-            {vi ? 'Schema hợp lệ' : 'Schema valid'}:{' '}
-            {percent(metrics.schemaValidRate)}
+            {t(keys.SCHEMA_VALID)}: {percent(metrics.schemaValidRate)}
           </AppText>
           <AppText>
-            {vi ? 'Độ trễ trung bình' : 'Average latency'}:{' '}
+            {t(keys.AVERAGE_LATENCY)}:{' '}
             {metrics.averageLatencyMs == null
               ? '—'
               : `${Math.round(metrics.averageLatencyMs)} ms`}
           </AppText>
           <AppText>
-            {vi ? 'Phản hồi hữu ích' : 'Helpful feedback'}:{' '}
-            {percent(metrics.feedback.helpfulRate)}
+            {t(keys.HELPFUL_FEEDBACK)}: {percent(metrics.feedback.helpfulRate)}
           </AppText>
           <AppText>
-            {vi ? 'Tổng token' : 'Total tokens'}: {metrics.usage.totalTokens}
+            {t(keys.TOTAL_TOKENS)}: {metrics.usage.totalTokens}
           </AppText>
         </>
       ) : null}
-      <AppText variant="heading2">
-        {vi ? 'Lượt chạy gần đây' : 'Recent runs'}
-      </AppText>
+      <AppText variant="heading2">{t(keys.RECENT_RUNS_TITLE)}</AppText>
       {monitoring.runs.data?.data.length === 0 ? (
-        <AppText>{vi ? 'Chưa có dữ liệu AI.' : 'No AI runs yet.'}</AppText>
+        <AppText>{t(keys.EMPTY_RUNS)}</AppText>
       ) : null}
       {monitoring.runs.data?.data.map((run) => (
         <AppButton
@@ -76,11 +75,7 @@ export function AiMonitoringScreen() {
           title={`${run.feature} · ${run.status} · ${run.latencyMs || 0} ms`}
         />
       ))}
-      <AppText color={colors.text.secondary}>
-        {vi
-          ? 'Trang này không hiển thị prompt, nội dung người dùng hoặc khóa dịch vụ.'
-          : 'This page does not expose prompts, user content, or service credentials.'}
-      </AppText>
+      <AppText color={colors.text.secondary}>{t(keys.PRIVACY_NOTICE)}</AppText>
     </ScreenWrapper>
   );
 }

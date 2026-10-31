@@ -1,6 +1,7 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
 import type { MealPlan } from '@/features/meal-plan/types';
+import { AiFeedbackRating } from './aiConstants';
 import { mealConfirmationInput } from './proposalState';
 import type {
   AiMessage,
@@ -89,7 +90,7 @@ export const aiApi = {
         })),
       })
     ),
-  feedback: (runId: string, rating: 'helpful' | 'not_helpful') =>
+  feedback: (runId: string, rating: `${AiFeedbackRating}`) =>
     unwrapApiRequest(() => apiClient.put(`/ai/runs/${runId}/feedback`, { rating })),
   summarizeVideo: (mediaId: string, transcript: string) =>
     unwrapApiRequest<VideoSummary>(() =>

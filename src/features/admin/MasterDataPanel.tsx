@@ -7,6 +7,17 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { adminApi, type MasterRecord } from './adminApi';
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_TRANSLATION_KEYS,
+  MASTER_CATEGORY_TYPE_LABEL_KEYS,
+  MASTER_CATEGORY_TYPES,
+  MASTER_FOOD_DEFAULTS,
+  MASTER_RECORD_STATUS_LABEL_KEYS,
+  MasterCategoryType,
+  MasterRecordStatus,
+  MasterResourceType,
+} from './adminConstants';
 
 const number = (value: string) => Number(value.replace(',', '.')) || 0;
 type MasterSection = 'categories' | 'allergens' | 'foods';
@@ -15,37 +26,44 @@ export function MasterDataPanel() {
   const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<MasterSection>('categories');
   const client = useQueryClient();
+
   const categories = useQuery({
-    queryKey: ['admin', 'master', 'categories'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_CATEGORIES,
     queryFn: adminApi.categories,
   });
   const allergens = useQuery({
-    queryKey: ['admin', 'master', 'allergens'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_ALLERGENS,
     queryFn: adminApi.allergens,
   });
   const foods = useQuery({
-    queryKey: ['admin', 'master', 'foods'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_FOODS,
     queryFn: adminApi.foods,
   });
+
   const [category, setCategory] = useState<Partial<MasterRecord>>({
-    type: 'recipe',
+    type: MasterCategoryType.RECIPE,
   });
   const [allergen, setAllergen] = useState<Partial<MasterRecord>>({});
   const [food, setFood] = useState<Partial<MasterRecord>>({
-    isVegan: true,
-    isVegetarian: true,
+    isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+    isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
   });
-  const [serving, setServing] = useState('100');
-  const [calories, setCalories] = useState('0');
-  const [protein, setProtein] = useState('0');
-  const [carbs, setCarbs] = useState('0');
-  const [fat, setFat] = useState('0');
-  const [fiber, setFiber] = useState('0');
-  const refresh = () => client.invalidateQueries({ queryKey: ['admin', 'master'] });
+  const [serving, setServing] = useState<string>(MASTER_FOOD_DEFAULTS.SERVING_G);
+  const [calories, setCalories] = useState<string>(
+    MASTER_FOOD_DEFAULTS.ZERO_MACRO
+  );
+  const [protein, setProtein] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [carbs, setCarbs] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fat, setFat] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fiber, setFiber] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+
+  const refresh = () =>
+    client.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.MASTER_ROOT });
+
   const categorySave = useMutation({
     mutationFn: adminApi.saveCategory,
     onSuccess: async () => {
-      setCategory({ type: 'recipe' });
+      setCategory({ type: MasterCategoryType.RECIPE });
       await refresh();
     },
   });
@@ -59,7 +77,10 @@ export function MasterDataPanel() {
   const foodSave = useMutation({
     mutationFn: adminApi.saveFood,
     onSuccess: async () => {
-      setFood({ isVegan: true, isVegetarian: true });
+      setFood({
+        isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+        isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
+      });
       await refresh();
     },
   });
@@ -70,9 +91,9 @@ export function MasterDataPanel() {
       status,
       record,
     }: {
-      type: Parameters<typeof adminApi.setMasterStatus>[0];
+      type: `${MasterResourceType}`;
       id: string;
-      status: 'active' | 'inactive';
+      status: `${MasterRecordStatus}`;
       record: MasterRecord;
     }) => adminApi.setMasterStatus(type, { ...record, _id: id }, status),
     onSuccess: refresh,
@@ -95,9 +116,20 @@ export function MasterDataPanel() {
     borderRadius: radius.md,
     backgroundColor: colors.background.surface,
   } as const;
-  const list = (
+
+  const formatRecordMeta = (record: MasterRecord): string => {
+    const typeLabel = record.type
+      ? t(MASTER_CATEGORY_TYPE_LABEL_KEYS[record.type as MasterCategoryType])
+      : undefined;
+    const statusLabel = record.status
+      ? t(MASTER_RECORD_STATUS_LABEL_KEYS[record.status as MasterRecordStatus])
+      : undefined;
+    return [typeLabel, statusLabel].filter(Boolean).join(' · ');
+  };
+
+  const renderRecordList = (
     records: MasterRecord[],
-    type: 'categories' | 'allergens' | 'food-items',
+    type: `${MasterResourceType}`,
     edit: (record: MasterRecord) => void
   ) =>
     records.map((record) => (
@@ -170,7 +202,7 @@ export function MasterDataPanel() {
         value={category.type || 'recipe'}
         options={(['food', 'recipe', 'post'] as const).map((value) => ({
           value,
-          label: value,
+          label: t(MASTER_CATEGORY_TYPE_LABEL_KEYS[value]),
         }))}
         onChange={(type) => setCategory((value) => ({ ...value, type }))}
       />
@@ -219,7 +251,7 @@ export function MasterDataPanel() {
         placeholder={t('admin.master.chooseCategory')}
         value={food.categoryId || null}
         options={(categories.data?.data || [])
-          .filter((item) => item.type === 'food')
+          .filter((item) => item.type === MasterCategoryType.FOOD)
           .map((item) => ({ value: item._id, label: item.name }))}
         onChange={(categoryId) => setFood((value) => ({ ...value, categoryId }))}
       />
@@ -230,7 +262,7 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label="kcal / 100g"
+        label={t(keys.KCAL_PER_100G)}
         value={calories}
         onChangeText={setCalories}
         keyboardType="decimal-pad"
@@ -242,7 +274,7 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label="Carbs / 100g"
+        label={t(keys.CARBS_PER_100G)}
         value={carbs}
         onChangeText={setCarbs}
         keyboardType="decimal-pad"
@@ -271,19 +303,19 @@ export function MasterDataPanel() {
             ...food,
             name: food.name!.trim(),
             defaultServing: {
-              amount: number(serving),
-              unit: 'g',
-              gramEquivalent: number(serving),
+              amount: parseNumericInput(serving),
+              unit: MASTER_FOOD_DEFAULTS.UNIT_GRAM,
+              gramEquivalent: parseNumericInput(serving),
             },
             nutritionPer100g: {
-              caloriesKcal: number(calories),
-              proteinG: number(protein),
-              carbsG: number(carbs),
-              fatG: number(fat),
-              fiberG: number(fiber),
+              caloriesKcal: parseNumericInput(calories),
+              proteinG: parseNumericInput(protein),
+              carbsG: parseNumericInput(carbs),
+              fatG: parseNumericInput(fat),
+              fiberG: parseNumericInput(fiber),
             },
-            isVegan: true,
-            isVegetarian: true,
+            isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+            isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
           })
         }
       />

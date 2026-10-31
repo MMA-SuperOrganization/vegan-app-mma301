@@ -8,7 +8,6 @@ import {
   LoadingSpinner,
   ScreenWrapper,
 } from '@/components';
-import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
@@ -20,10 +19,7 @@ import type { ContentCardData } from '../types';
 export function DiscoveryHomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const profile = useProfileStore((state) => state.data);
   const home = useHomeFeed();
-  const firstName =
-    profile?.user.name.trim().split(/\s+/).at(-1) || t('common.youLower');
   const featured = home.data?.featured.recipes ?? [];
   const communityPosts = home.data?.featured.posts ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
@@ -44,9 +40,7 @@ export function DiscoveryHomeScreen() {
       contentContainerStyle={styles.screen}
     >
       <HomeSocialHeader
-        name={firstName}
-        avatarUrl={profile?.user.avatarUrl}
-        onCreatePost={() => router.push('/community/editor')}
+        onCreatePost={() => router.push('/recipes/editor')}
         onSearch={() => router.push('/(discover)/search')}
       />
 

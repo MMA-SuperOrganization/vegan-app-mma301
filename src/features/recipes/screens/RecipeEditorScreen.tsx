@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
+  AppIcon,
   AppInput,
   AppText,
   CustomHeader,
@@ -16,7 +17,7 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import { usePantryFoodOptions } from '@/features/pantry/hooks';
 import { useRecipeCategories } from '../hooks';
 import { useTranslation } from '@/i18n';
-import { spacing } from '@/theme';
+import { colors, radius, spacing } from '@/theme';
 import { recipeApi } from '../recipeApi';
 import type { RecipeAuthorInput, RecipeDetail, RecipeDifficulty } from '../types';
 import { mediaApi } from '@/features/media/mediaApi';
@@ -39,7 +40,8 @@ export function RecipeEditorScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const client = useQueryClient();
-  const vi = useTranslation().locale === 'vi';
+  const { locale, t } = useTranslation();
+  const vi = locale === 'vi';
   const [title, setTitle] = useState('');
   const [summary, setSummary] = useState('');
   const [servings, setServings] = useState('2');
@@ -203,26 +205,30 @@ export function RecipeEditorScreen() {
             : 'This recipe is under review and cannot be edited yet.'}
         </AppText>
       ) : null}
-      <AppInput
-        label={vi ? 'Tên công thức' : 'Recipe title'}
-        value={title}
-        onChangeText={setTitle}
-        editable={editable}
-      />
-      {cover?.uri || recipe.data?.coverImageUrl ? (
-        <Image
-          source={{ uri: cover?.uri || recipe.data?.coverImageUrl }}
-          style={{ width: '100%', height: 220, borderRadius: 12 }}
-        />
-      ) : null}
-      <AppButton
-        title={vi ? 'Chọn ảnh bìa' : 'Choose cover image'}
-        variant="outline"
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('recipe.chooseCover')}
         disabled={!editable || save.isPending}
         onPress={() => void chooseCover()}
-      />
+        style={({ pressed }) => [styles.storyCover, pressed && styles.pressed]}
+      >
+        {cover?.uri || recipe.data?.coverImageUrl ? (
+          <Image source={{ uri: cover?.uri || recipe.data?.coverImageUrl }} style={styles.storyCoverImage} />
+        ) : (
+          <View style={styles.storyCoverEmpty}>
+            <AppIcon name="image" size={34} color={colors.primary[700]} decorative />
+            <AppText variant="heading4" color={colors.primary[700]}>{t('recipe.createStoryTitle')}</AppText>
+            <AppText variant="bodySmall" color={colors.text.secondary}>{t('recipe.createStoryHint')}</AppText>
+          </View>
+        )}
+        <View style={styles.storyCoverAction}>
+          <AppIcon name="image" size={18} color={colors.common.white} decorative />
+          <AppText variant="caption" color={colors.common.white}>{t('recipe.chooseCover')}</AppText>
+        </View>
+      </Pressable>
+      <AppInput label={t('recipe.titleLabel')} value={title} onChangeText={setTitle} editable={editable} />
       <AppInput
-        label={vi ? 'Giới thiệu' : 'Summary'}
+        label={t('recipe.summaryLabel')}
         value={summary}
         onChangeText={setSummary}
         multiline
@@ -467,3 +473,11 @@ export function RecipeEditorScreen() {
     </ScreenWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  storyCover: { minHeight: 260, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.border.default },
+  storyCoverImage: { width: '100%', height: 260 },
+  storyCoverEmpty: { flex: 1, minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
+  storyCoverAction: { position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md, minHeight: 42, borderRadius: radius.full, backgroundColor: 'rgba(24, 60, 43, 0.88)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  pressed: { opacity: 0.78 },
+});

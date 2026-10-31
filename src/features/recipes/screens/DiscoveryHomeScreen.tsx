@@ -1,28 +1,20 @@
 import { getUserErrorMessage } from '@/services/errors';
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
-  AppIcon,
   AppText,
   EmptyState,
-  FilterChip,
   LoadingSpinner,
   ScreenWrapper,
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
-import { HomeCommunitySection } from '@/features/community/components/HomeCommunitySection';
-
-import { FeaturedRecipesSection } from '../components/FeaturedRecipesSection';
-import { QuickRecipesSection } from '../components/QuickRecipesSection';
-import { UserRecommendationsSection } from '../components/UserRecommendationsSection';
+import { colors, spacing } from '@/theme';
+import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
+import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
-
-type HomeFilter = 'all' | 'protein' | 'easy';
 
 export function DiscoveryHomeScreen() {
   const router = useRouter();
@@ -30,33 +22,13 @@ export function DiscoveryHomeScreen() {
   const { t, locale } = useTranslation();
   const profile = useProfileStore((state) => state.data);
   const home = useHomeFeed();
-  const [filter, setFilter] = useState<HomeFilter>('all');
   const firstName =
     profile?.user.name.trim().split(/\s+/).at(-1) || t('common.youLower');
-  const cardWidth = Math.min(width - spacing.xl * 2 - spacing.md - 32, 320);
-  const snapInterval = cardWidth + spacing.md;
   const featured = home.data?.featured.recipes ?? [];
   const communityPosts = home.data?.featured.posts ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
     ? home.data.personalized.recipes
     : featured;
-  const filteredRecipes = useMemo(
-    () =>
-      recommendations.filter((recipe) => {
-        if (filter === 'protein')
-          return (recipe.nutritionPerServing?.proteinG ?? 0) >= 10;
-        if (filter === 'easy') return recipe.difficulty === 'easy';
-        return true;
-      }),
-    [filter, recommendations]
-  );
-  const quickRecipes = useMemo(
-    () =>
-      recommendations.filter(
-        (recipe) => recipe.totalMinutes != null && recipe.totalMinutes <= 30
-      ),
-    [recommendations]
-  );
 
   const openRecipe = (recipe: ContentCardData) =>
     router.push({
@@ -71,49 +43,12 @@ export function DiscoveryHomeScreen() {
       edges={['top', 'left', 'right']}
       contentContainerStyle={styles.screen}
     >
-      <View style={styles.hero}>
-        <AppText variant="heading1">
-          {t('home.greeting', { name: firstName })}
-        </AppText>
-        <AppText variant="bodyLarge" color={colors.text.secondary}>
-          {t('home.question')}
-        </AppText>
-      </View>
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push('/(discover)/search')}
-        style={({ pressed }) => [styles.search, pressed && styles.pressed]}
-      >
-        <AppText
-          color={colors.text.secondary}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-          style={styles.searchPlaceholder}
-        >
-          {t('home.searchPlaceholder')}
-        </AppText>
-        <View style={styles.searchButton}>
-          <AppIcon name="search" size={20} color="#FFFFFF" decorative />
-        </View>
-      </Pressable>
-
-      <View style={styles.filters}>
-        {(
-          [
-            ['all', t('home.filterAll')],
-            ['protein', t('home.filterProtein')],
-            ['easy', t('home.filterEasy')],
-          ] as const
-        ).map(([value, label]) => (
-          <FilterChip
-            key={value}
-            label={label}
-            selected={filter === value}
-            onPress={() => setFilter(value)}
-          />
-        ))}
-      </View>
+      <HomeSocialHeader
+        name={firstName}
+        avatarUrl={profile?.user.avatarUrl}
+        onCreatePost={() => router.push('/community/editor')}
+        onSearch={() => router.push('/(discover)/search')}
+      />
 
       {home.isLoading ? (
         <LoadingSpinner text={t('home.loadingSuggestions')} />
@@ -135,73 +70,24 @@ export function DiscoveryHomeScreen() {
         />
       ) : null}
 
-      <FeaturedRecipesSection
-        recipes={featured}
-        cardWidth={cardWidth}
-        snapInterval={snapInterval}
-        onSelectRecipe={openRecipe}
-      />
+      <HomeRecipeStories recipes={recommendations} onSelect={openRecipe} />
 
-      <UserRecommendationsSection
-        userName={firstName}
-        recipes={filteredRecipes}
-        cardWidth={cardWidth}
-        onSelectRecipe={openRecipe}
-        onViewAll={() => router.push('/(discover)/explore')}
-        hasRecommendations={Boolean(recommendations.length)}
-        isLoading={home.isLoading}
-        isError={home.isError}
-        onResetFilter={() => setFilter('all')}
-      />
-
-      <QuickRecipesSection
-        recipes={quickRecipes}
-        cardWidth={cardWidth}
-        onSelectRecipe={openRecipe}
-      />
-
-      <HomeCommunitySection
-        posts={communityPosts}
-        vi={locale === 'vi'}
-        onOpenPost={(post) =>
-          router.push({ pathname: '/community/post', params: { id: post._id } })
-        }
-        onViewAll={() => router.push('/community')}
-        onWritePost={() => router.push('/community/editor')}
-      />
+      <View style={styles.feedHeading}>
+        <AppText variant="heading3">Bài viết mới nhất</AppText>
+        <AppText variant="caption" color={colors.text.secondary}>{communityPosts.length} bài viết</AppText>
+      </View>
+      {communityPosts.length ? communityPosts.slice(0, 3).map((post) => (
+        <View key={post._id} style={styles.legacyPost}>
+          <AppText variant="heading4">{post.title}</AppText>
+          <AppText color={colors.text.secondary} numberOfLines={3}>{post.excerpt ?? post.description}</AppText>
+        </View>
+      )) : <AppText color={colors.text.secondary}>Chưa có bài viết mới.</AppText>}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.xl },
-  hero: { gap: spacing.xs, paddingTop: spacing.md },
-  search: {
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: colors.border.default,
-    backgroundColor: colors.background.surface,
-    borderRadius: radius.full,
-    paddingLeft: spacing.lg,
-    paddingRight: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    overflow: 'hidden',
-  },
-  searchPlaceholder: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary[700],
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-  },
-  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  pressed: { opacity: 0.72 },
+  screen: { padding: spacing.md, paddingBottom: spacing['4xl'], gap: spacing.lg, backgroundColor: colors.background.base },
+  feedHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: spacing.sm },
+  legacyPost: { backgroundColor: colors.background.surface, borderRadius: 18, padding: spacing.lg, gap: spacing.sm },
 });

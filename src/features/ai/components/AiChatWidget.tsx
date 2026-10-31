@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, useRouter, useSegments } from 'expo-router';
@@ -34,15 +36,24 @@ import {
 } from '../aiConstants';
 import { useAiChat } from '../hooks';
 import { useAiImageAttachment } from '../useAiImageAttachment';
+import {
+  clampAiWidgetPosition,
+  getAiWidgetBounds,
+  snapAiWidgetToNearestEdge,
+  type AiWidgetPosition,
+} from '../aiWidgetPosition';
 import { AiImageAttachmentPicker } from './AiImageAttachmentPicker';
 import { AiMarkdownMessage } from './AiMarkdownMessage';
 import { AiProcessingStatus } from './AiProcessingStatus';
 import { AiMedicalDisclaimer, AiSafetyNotices } from './AiSafetyNotices';
 
 const WIDGET_SIZE = 64;
+const WIDGET_EDGE_MARGIN = spacing.sm;
+const DRAG_ACTIVATION_DISTANCE = 6;
 
 export function AiChatWidget() {
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
   const router = useRouter();
   const pathname = usePathname();
   const [rootSegment] = useSegments();
@@ -72,6 +83,71 @@ export function AiChatWidget() {
   const attachment = useAiImageAttachment();
   const conversations = chat.conversations.data?.data ?? [];
 
+  const launcherBottom =
+    Math.max(insets.bottom, spacing.lg) +
+    (rootSegment === '(tabs)'
+      ? coreTokens.navigation.tabBarHeight + spacing.lg
+      : spacing.lg);
+  const launcherBounds = getAiWidgetBounds(
+    window,
+    insets,
+    WIDGET_SIZE,
+    launcherBottom,
+    WIDGET_EDGE_MARGIN
+  );
+  const launcherBoundsRef = useRef(launcherBounds);
+  launcherBoundsRef.current = launcherBounds;
+  const launcherPositionRef = useRef<AiWidgetPosition>({
+    x: launcherBounds.maxX,
+    y: launcherBounds.maxY,
+  });
+  const launcherDragStartRef = useRef(launcherPositionRef.current);
+  const launcherPosition = useRef(
+    new Animated.ValueXY(launcherPositionRef.current)
+  ).current;
+
+  const settleLauncher = (position: AiWidgetPosition) => {
+    const snappedPosition = snapAiWidgetToNearestEdge(
+      position,
+      launcherBoundsRef.current
+    );
+    launcherPositionRef.current = snappedPosition;
+    Animated.spring(launcherPosition, {
+      toValue: snappedPosition,
+      useNativeDriver: false,
+      speed: 24,
+      bounciness: 4,
+    }).start();
+  };
+
+  const launcherDragResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.hypot(gesture.dx, gesture.dy) >= DRAG_ACTIVATION_DISTANCE,
+      onMoveShouldSetPanResponderCapture: (_, gesture) =>
+        Math.hypot(gesture.dx, gesture.dy) >= DRAG_ACTIVATION_DISTANCE,
+      onPanResponderGrant: () => {
+        launcherDragStartRef.current = launcherPositionRef.current;
+        launcherPosition.stopAnimation();
+      },
+      onPanResponderMove: (_, gesture) => {
+        const nextPosition = clampAiWidgetPosition(
+          {
+            x: launcherDragStartRef.current.x + gesture.dx,
+            y: launcherDragStartRef.current.y + gesture.dy,
+          },
+          launcherBoundsRef.current
+        );
+        launcherPositionRef.current = nextPosition;
+        launcherPosition.setValue(nextPosition);
+      },
+      onPanResponderRelease: () => settleLauncher(launcherPositionRef.current),
+      onPanResponderTerminate: () => settleLauncher(launcherPositionRef.current),
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
+
   const swipeResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -97,11 +173,6 @@ export function AiChatWidget() {
     attachment.choose.isPending ||
     attachment.upload.isPending;
   const messages = chat.messages.data?.data ?? [];
-  const launcherBottom =
-    Math.max(insets.bottom, spacing.lg) +
-    (rootSegment === '(tabs)'
-      ? coreTokens.navigation.tabBarHeight + spacing.lg
-      : spacing.lg);
   const launcherHidden =
     pathname.startsWith('/ai') ||
     pathname.startsWith('/community') ||
@@ -129,6 +200,21 @@ export function AiChatWidget() {
     if (!visible || !keyboard.visible) return;
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [keyboard.overlap, keyboard.visible, visible]);
+
+  useEffect(() => {
+    const nextPosition = clampAiWidgetPosition(
+      launcherPositionRef.current,
+      launcherBounds
+    );
+    launcherPositionRef.current = nextPosition;
+    launcherPosition.setValue(nextPosition);
+  }, [
+    launcherBounds.maxX,
+    launcherBounds.maxY,
+    launcherBounds.minX,
+    launcherBounds.minY,
+    launcherPosition,
+  ]);
 
   if (
     !isAuthenticated ||
@@ -315,22 +401,26 @@ export function AiChatWidget() {
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t(widgetKeys.OPEN_A11Y)}
-        accessibilityHint={t(widgetKeys.OPEN_HINT)}
-        onPress={() => setVisible(true)}
-        style={({ pressed }) => [
-          styles.launcher,
-          { bottom: launcherBottom },
-          pressed && styles.launcherPressed,
-        ]}
+      <Animated.View
+        {...launcherDragResponder.panHandlers}
+        style={[styles.launcherPosition, launcherPosition.getLayout()]}
       >
-        <AppIcon name="mam-companion" size={54} decorative />
-        <View style={styles.aiBadge}>
-          <AppText style={styles.aiBadgeText}>{t(commonKeys.BADGE)}</AppText>
-        </View>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(widgetKeys.OPEN_A11Y)}
+          accessibilityHint={t(widgetKeys.OPEN_HINT)}
+          onPress={() => setVisible(true)}
+          style={({ pressed }) => [
+            styles.launcher,
+            pressed && styles.launcherPressed,
+          ]}
+        >
+          <AppIcon name="mam-companion" size={54} decorative />
+          <View style={styles.aiBadge}>
+            <AppText style={styles.aiBadgeText}>{t(commonKeys.BADGE)}</AppText>
+          </View>
+        </Pressable>
+      </Animated.View>
 
       <BottomSheet
         visible={visible}
@@ -754,12 +844,15 @@ export function AiChatWidget() {
 
 const styles = StyleSheet.create({
   semiBold: { fontWeight: '600' },
-  launcher: {
+  launcherPosition: {
     position: 'absolute',
-    right: spacing.xl,
     zIndex: 20,
     width: WIDGET_SIZE,
     height: WIDGET_SIZE,
+  },
+  launcher: {
+    width: '100%',
+    height: '100%',
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

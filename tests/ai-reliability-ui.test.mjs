@@ -15,6 +15,11 @@ import {
   AiProgressStage,
   AiSafetyNoticeCode,
 } from '../src/features/ai/aiConstants.ts';
+import {
+  clampAiWidgetPosition,
+  getAiWidgetBounds,
+  snapAiWidgetToNearestEdge,
+} from '../src/features/ai/aiWidgetPosition.ts';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
@@ -109,6 +114,34 @@ test('both AI chat surfaces upload an image before sending its media ID', () => 
     assert.match(source, /uploadIfNeeded\(\)/);
     assert.match(source, /mediaId/);
   }
+});
+
+test('AI launcher stays draggable inside the safe screen and snaps to an edge', () => {
+  const bounds = getAiWidgetBounds(
+    { width: 390, height: 844 },
+    { top: 47, right: 0, bottom: 34, left: 0 },
+    64,
+    110,
+    8
+  );
+
+  assert.deepEqual(bounds, { minX: 8, maxX: 318, minY: 55, maxY: 670 });
+  assert.deepEqual(clampAiWidgetPosition({ x: -20, y: 900 }, bounds), {
+    x: 8,
+    y: 670,
+  });
+  assert.deepEqual(snapAiWidgetToNearestEdge({ x: 100, y: 300 }, bounds), {
+    x: 8,
+    y: 300,
+  });
+  assert.deepEqual(snapAiWidgetToNearestEdge({ x: 250, y: 300 }, bounds), {
+    x: 318,
+    y: 300,
+  });
+
+  const widget = read('../src/features/ai/components/AiChatWidget.tsx');
+  assert.match(widget, /launcherDragResponder\.panHandlers/);
+  assert.match(widget, /DRAG_ACTIVATION_DISTANCE/);
 });
 
 test('Android app uses the VEGETA adaptive icon assets', () => {

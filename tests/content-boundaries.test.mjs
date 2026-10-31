@@ -17,12 +17,12 @@ test('recipe detail has no post social controls', () => {
 
 test('home remains recipe-first and adds community posts afterwards', () => {
   const home = read('../src/features/recipes/screens/DiscoveryHomeScreen.tsx');
-  const quickRecipes = home.indexOf('<QuickRecipesSection');
-  const community = home.indexOf('<HomeCommunitySection');
+  const recipeStories = home.indexOf('<HomeRecipeStories');
+  const community = home.indexOf('<HomeSocialPostCard');
 
-  assert.ok(quickRecipes >= 0);
-  assert.ok(community > quickRecipes);
-  assert.match(home, /onWritePost=.*community\/editor/);
+  assert.ok(recipeStories >= 0);
+  assert.ok(community > recipeStories);
+  assert.match(home, /onCreatePost=\{/);
 });
 
 test('post owns share, reactions and comments while admin routes are guarded', () => {

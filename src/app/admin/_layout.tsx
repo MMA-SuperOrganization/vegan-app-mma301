@@ -20,6 +20,7 @@ export default function AdminLayout() {
       <Tabs.Screen name="users" />
       <Tabs.Screen name="master-data" />
       <Tabs.Screen name="audit" />
+      <Tabs.Screen name="settings" />
     </Tabs>
   );
 }

@@ -1,3 +1,8 @@
+import type {
+  RelatedFoodItemSummary,
+  RelatedRecipeSummary,
+} from '@/features/recipes/types';
+
 export interface CommunityPost {
   _id: string;
   title: string;
@@ -8,6 +13,8 @@ export interface CommunityPost {
   tags?: string[];
   foodItemIds?: string[];
   recipeId?: string | null;
+  relatedRecipe?: RelatedRecipeSummary | null;
+  relatedFoodItems?: RelatedFoodItemSummary[];
   visibility?: 'public' | 'private';
   media?: Array<{
     _id?: string;

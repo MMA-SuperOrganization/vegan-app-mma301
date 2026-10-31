@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppButton, AppText, Surface } from '@/components';
 import type { PostCardData } from '@/features/recipes/types';
 import { colors, spacing } from '@/theme';
+import { PostFoodSummary } from './PostFoodSummary';
 
 export function HomeCommunitySection({
   posts,
@@ -54,6 +55,13 @@ export function HomeCommunitySection({
                   {post.excerpt}
                 </AppText>
               ) : null}
+              <PostFoodSummary
+                compact
+                recipeId={post.recipeId}
+                foodItemIds={post.foodItemIds}
+                relatedRecipe={post.relatedRecipe}
+                relatedFoodItems={post.relatedFoodItems}
+              />
               <View style={styles.metadata}>
                 {post.recipeId ? (
                   <AppText variant="caption" color={colors.primary[700]}>

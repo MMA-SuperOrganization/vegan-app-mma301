@@ -30,6 +30,22 @@ export interface PostCardData extends ContentCardData {
   reacted?: string | null;
   recipeId?: string | null;
   foodItemIds?: string[];
+  relatedRecipe?: RelatedRecipeSummary | null;
+  relatedFoodItems?: RelatedFoodItemSummary[];
+}
+
+export interface RelatedRecipeSummary {
+  _id: string;
+  title: string;
+  slug?: string;
+  coverImageUrl?: string;
+}
+
+export interface RelatedFoodItemSummary {
+  _id: string;
+  name: string;
+  slug?: string;
+  imageUrl?: string;
 }
 
 export interface SourceAttribution {

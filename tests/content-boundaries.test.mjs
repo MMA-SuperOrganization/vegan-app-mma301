@@ -57,6 +57,7 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(composer, /'Đăng bài'/);
   assert.doesNotMatch(composer, /Gửi quản trị viên duyệt/);
   assert.match(postCard, /Có công thức/);
+  assert.match(postCard, /PostFoodSummary/);
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);
 });
 

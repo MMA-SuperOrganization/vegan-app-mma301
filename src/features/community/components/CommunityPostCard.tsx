@@ -5,6 +5,7 @@ import { colors, radius, shadows, spacing } from '@/theme';
 
 import { postStatusLabel } from '../status';
 import type { CommunityPost } from '../types';
+import { PostFoodSummary } from './PostFoodSummary';
 
 const statusVariant = (status: CommunityPost['status']) => {
   if (status === 'published') return 'success' as const;
@@ -70,6 +71,13 @@ export function CommunityPostCard({
         <AppText color={colors.text.secondary} numberOfLines={4}>
           {post.content}
         </AppText>
+
+        <PostFoodSummary
+          recipeId={post.recipeId}
+          foodItemIds={post.foodItemIds}
+          relatedRecipe={post.relatedRecipe}
+          relatedFoodItems={post.relatedFoodItems}
+        />
 
         {visibleTags?.length ? (
           <View style={styles.tags}>

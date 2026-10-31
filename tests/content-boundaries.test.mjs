@@ -38,6 +38,24 @@ test('post owns share, reactions and comments while admin routes are guarded', (
   assert.match(adminLayout, /role !== 'admin'/);
 });
 
+test('post cards apply reactions optimistically without a loading-only heart state', () => {
+  const hooks = read('../src/features/community/hooks.ts');
+  const homeCard = read(
+    '../src/features/community/components/HomeSocialPostCard.tsx'
+  );
+  const communityCard = read(
+    '../src/features/community/components/CommunityPostCard.tsx'
+  );
+
+  assert.match(hooks, /onMutate:/);
+  assert.match(hooks, /updatePostReactionCache/);
+  assert.match(hooks, /onError:/);
+  assert.match(homeCard, /onPress={onReact}/);
+  assert.match(homeCard, /accessibilityState=\{\{ selected: liked \}\}/);
+  assert.match(communityCard, /onPress={onReact}/);
+  assert.doesNotMatch(homeCard, /disabled=.*isPending/);
+});
+
 test('community uses an infinite newsfeed and publishes posts without admin review', () => {
   const community = read('../src/features/community/screens/CommunityScreen.tsx');
   const composer = read('../src/features/community/screens/PostEditorScreen.tsx');

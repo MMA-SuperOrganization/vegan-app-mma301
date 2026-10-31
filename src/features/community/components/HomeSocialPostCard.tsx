@@ -15,11 +15,14 @@ type HomePost = PostCardData & {
 export function HomeSocialPostCard({
   post,
   onPress,
+  onReact,
 }: {
   post: HomePost;
   onPress: () => void;
+  onReact: () => void;
 }) {
   const { t } = useTranslation();
+  const liked = post.reacted === 'like';
   const copy = post.excerpt ?? post.description ?? post.content;
   const imageUrl =
     post.coverImageUrl ?? post.media?.[0]?.downloadUrl ?? post.media?.[0]?.url;
@@ -58,17 +61,45 @@ export function HomeSocialPostCard({
         ) : null}
       </Pressable>
       <View style={styles.stats}>
-        <AppText variant="caption" color={colors.text.secondary}>
-          ♡ {post.reactionCount ?? 0}
-        </AppText>
+        <View style={styles.statMetric}>
+          <AppIcon
+            name="heart"
+            size={14}
+            color={liked ? colors.primary[700] : colors.text.secondary}
+            decorative
+          />
+          <AppText
+            variant="caption"
+            color={liked ? colors.primary[700] : colors.text.secondary}
+          >
+            {t('home.likeCount', { count: post.reactionCount ?? 0 })}
+          </AppText>
+        </View>
         <AppText variant="caption" color={colors.text.secondary}>
           {post.commentCount ?? 0} {t('home.comments')}
         </AppText>
       </View>
       <View style={styles.actions}>
-        <Pressable style={styles.action}>
-          <AppIcon name="heart" size={20} color={colors.text.secondary} decorative />
-          <AppText variant="caption">{t('home.like')}</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={liked ? t('home.liked') : t('home.like')}
+          accessibilityState={{ selected: liked }}
+          onPress={onReact}
+          style={({ pressed }) => [
+            styles.action,
+            liked && styles.actionSelected,
+            pressed && styles.actionPressed,
+          ]}
+        >
+          <AppIcon
+            name="heart"
+            size={20}
+            color={liked ? colors.primary[700] : colors.text.secondary}
+            decorative
+          />
+          <AppText variant="caption" color={liked ? colors.primary[700] : undefined}>
+            {liked ? t('home.liked') : t('home.like')}
+          </AppText>
         </Pressable>
         <Pressable style={styles.action} onPress={onPress}>
           <AppIcon
@@ -113,6 +144,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xs,
   },
+  statMetric: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   actions: {
     borderTopWidth: 1,
     borderTopColor: colors.border.subtle,
@@ -128,4 +160,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
+  actionSelected: { backgroundColor: colors.background.selected },
+  actionPressed: { opacity: 0.68 },
 });

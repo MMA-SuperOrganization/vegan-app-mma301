@@ -17,7 +17,7 @@ import { colors, radius, spacing } from '@/theme';
 
 import { communityApi } from '../communityApi';
 import { CommunityPostCard } from '../components/CommunityPostCard';
-import { useCommunityPosts, useCommunityVideos } from '../hooks';
+import { useCommunityPosts, useCommunityVideos, usePostReaction } from '../hooks';
 import { postStatusLabel } from '../status';
 import type { CommunityPost, CommunityVideo } from '../types';
 
@@ -59,6 +59,7 @@ export function CommunityScreen() {
   const [mine, setMine] = useState(false);
   const [contentType, setContentType] = useState<ContentType>('posts');
   const posts = useCommunityPosts(mine);
+  const postReaction = usePostReaction();
   const videos = useCommunityVideos(mine);
   const client = useQueryClient();
   const refresh = () => client.invalidateQueries({ queryKey: ['account'] });
@@ -238,6 +239,12 @@ export function CommunityScreen() {
               post={item.value}
               mine={mine}
               vi={vi}
+              onReact={() =>
+                postReaction.mutate({
+                  postId: item.value._id,
+                  nextReaction: item.value.reacted === 'like' ? null : 'like',
+                })
+              }
               onOpen={() =>
                 router.push({
                   pathname: '/community/post',

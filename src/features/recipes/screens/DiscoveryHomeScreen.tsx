@@ -15,7 +15,7 @@ import { HomeRecipeStories } from '@/features/community/components/HomeRecipeSto
 import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
 import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
 import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
-import { useCommunityPosts } from '@/features/community/hooks';
+import { useCommunityPosts, usePostReaction } from '@/features/community/hooks';
 import { CreateRecipeSheet } from '../components/CreateRecipeSheet';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
@@ -27,6 +27,7 @@ export function DiscoveryHomeScreen() {
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const home = useHomeFeed();
   const posts = useCommunityPosts(false, 3);
+  const postReaction = usePostReaction();
   const featured = home.data?.featured.recipes ?? [];
   const communityPosts = posts.data?.pages.flatMap((page) => page.data) ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
@@ -110,6 +111,12 @@ export function DiscoveryHomeScreen() {
         renderItem={({ item: post }) => (
           <HomeSocialPostCard
             post={post}
+            onReact={() =>
+              postReaction.mutate({
+                postId: post._id,
+                nextReaction: post.reacted === 'like' ? null : 'like',
+              })
+            }
             onPress={() =>
               router.push({
                 pathname: '/community/post',

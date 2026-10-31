@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Surface } from '@/components';
+import { AppIcon, AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
 
 import { postStatusLabel } from '../status';
@@ -19,15 +19,18 @@ export function CommunityPostCard({
   mine,
   vi,
   onOpen,
+  onReact,
   onArchive,
 }: {
   post: CommunityPost;
   mine: boolean;
   vi: boolean;
   onOpen: () => void;
+  onReact: () => void;
   onArchive?: () => void;
 }) {
   const visibleTags = post.tags?.filter((tag) => !tag.startsWith('community-demo-'));
+  const liked = post.reacted === 'like';
   return (
     <Surface bordered padding="lg" radius="xl" style={styles.card}>
       <Pressable
@@ -107,6 +110,33 @@ export function CommunityPostCard({
         </View>
       </Pressable>
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          vi ? (liked ? 'Bỏ thích' : 'Thích') : liked ? 'Unlike' : 'Like'
+        }
+        accessibilityState={{ selected: liked }}
+        onPress={onReact}
+        style={({ pressed }) => [
+          styles.likeAction,
+          liked && styles.likeActionSelected,
+          pressed && styles.pressed,
+        ]}
+      >
+        <AppIcon
+          name="heart"
+          size={20}
+          color={liked ? colors.primary[700] : colors.text.secondary}
+          decorative
+        />
+        <AppText
+          variant="bodyStrong"
+          color={liked ? colors.primary[700] : colors.text.secondary}
+        >
+          {vi ? (liked ? 'Đã thích' : 'Thích') : liked ? 'Liked' : 'Like'}
+        </AppText>
+      </Pressable>
+
       {onArchive ? (
         <Pressable accessibilityRole="button" onPress={onArchive} hitSlop={8}>
           <AppText variant="caption" color={colors.text.secondary}>
@@ -143,6 +173,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   metrics: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  likeAction: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.lg,
+  },
+  likeActionSelected: { backgroundColor: colors.background.selected },
   dot: {
     width: 4,
     height: 4,

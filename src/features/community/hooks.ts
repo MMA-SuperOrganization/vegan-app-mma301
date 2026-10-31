@@ -13,6 +13,11 @@ import type {
   ReportReason,
   ReportTarget,
 } from './types';
+import {
+  type PostReactionChange,
+  type ReactionCacheSnapshot,
+  updatePostReactionCache,
+} from './reactionState';
 export function useCommunityPosts(mine: boolean, limit = 10) {
   const userId = useAuthStore((state) => state.user?.id);
   return useInfiniteQuery({
@@ -138,17 +143,45 @@ export function useCommunityPost(id?: string) {
       mutationFn: communityApi.removeComment,
       onSuccess: refresh,
     }),
-    react: useMutation({
-      mutationFn: ({
-        remove,
-        type,
-      }: {
-        remove: boolean;
-        type: 'like' | 'love' | 'helpful';
-      }) => communityApi.react(id!, remove, type),
-      onSuccess: refresh,
-    }),
   };
+}
+
+export function usePostReaction() {
+  const userId = useAuthStore((state) => state.user?.id);
+  const client = useQueryClient();
+  const communityRoot = ['account', userId, 'community'] as const;
+  const matchesPostCache = (queryKey: readonly unknown[], postId: string) => {
+    const underCommunityRoot = communityRoot.every(
+      (segment, index) => queryKey[index] === segment
+    );
+    const section = queryKey[3];
+    return (
+      underCommunityRoot &&
+      (section === 'posts' || (section === 'post' && queryKey[4] === postId))
+    );
+  };
+
+  return useMutation({
+    mutationFn: ({ postId, nextReaction }: PostReactionChange) =>
+      communityApi.react(postId, nextReaction === null, nextReaction ?? 'like'),
+    onMutate: async (change): Promise<ReactionCacheSnapshot> => {
+      const predicate = (query: { queryKey: readonly unknown[] }) =>
+        matchesPostCache(query.queryKey, change.postId);
+      await client.cancelQueries({ predicate });
+      const snapshots = client.getQueriesData({ predicate });
+
+      snapshots.forEach(([queryKey, cached]) => {
+        client.setQueryData(queryKey, updatePostReactionCache(cached, change));
+      });
+
+      return snapshots;
+    },
+    onError: (_error, _change, snapshots) => {
+      snapshots?.forEach(([queryKey, cached]) =>
+        client.setQueryData(queryKey, cached)
+      );
+    },
+  });
 }
 export function useReports() {
   const userId = useAuthStore((state) => state.user?.id);

@@ -15,7 +15,7 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { useCommunityPost } from '../hooks';
+import { useCommunityPost, usePostReaction } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { ReactionButtons } from '@/features/engagement/ReactionButtons';
 import { postStatusLabel } from '../status';
@@ -29,6 +29,7 @@ export function PostDetailScreen() {
   const vi = useTranslation().locale === 'vi';
   const userId = useAuthStore((state) => state.user?.id);
   const actions = useCommunityPost(id);
+  const postReaction = usePostReaction();
   const post = actions.post.data;
   const linkedRecipe = useRecipeDetail(post?.recipeId ?? '');
   useEffect(() => {
@@ -46,8 +47,7 @@ export function PostDetailScreen() {
     actions.remove.isPending ||
     actions.comment.isPending ||
     actions.editComment.isPending ||
-    actions.removeComment.isPending ||
-    actions.react.isPending;
+    actions.removeComment.isPending;
   const reaction = post?.reacted;
   return (
     <ScreenWrapper
@@ -197,9 +197,14 @@ export function PostDetailScreen() {
               <Surface padding="md" radius="xl" style={styles.engagementCard}>
                 <ReactionButtons
                   selected={reaction}
-                  disabled={busy}
+                  disabled={false}
                   vi={vi}
-                  onPress={(type, remove) => actions.react.mutate({ remove, type })}
+                  onPress={(type, remove) =>
+                    postReaction.mutate({
+                      postId: post._id,
+                      nextReaction: remove ? null : type,
+                    })
+                  }
                 />
                 <View style={styles.engagementDivider} />
                 <View style={styles.secondaryActions}>
@@ -404,7 +409,7 @@ export function PostDetailScreen() {
           actions.comment.error ||
           actions.editComment.error ||
           actions.removeComment.error ||
-          actions.react.error
+          postReaction.error
         }
       />
     </ScreenWrapper>

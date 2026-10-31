@@ -8,6 +8,8 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, useRouter, useSegments } from 'expo-router';
@@ -50,6 +52,7 @@ import { AiMedicalDisclaimer, AiSafetyNotices } from './AiSafetyNotices';
 const WIDGET_SIZE = 64;
 const WIDGET_EDGE_MARGIN = spacing.sm;
 const DRAG_ACTIVATION_DISTANCE = 6;
+const AUTO_SCROLL_THRESHOLD = 72;
 
 export function AiChatWidget() {
   const insets = useSafeAreaInsets();
@@ -79,6 +82,7 @@ export function AiChatWidget() {
     AiWidgetAction.SUBMIT
   );
   const scrollRef = useRef<ScrollView>(null);
+  const shouldAutoScrollRef = useRef(true);
   const keyboard = useKeyboardInsets();
   const chat = useAiChat(conversationId);
   const attachment = useAiImageAttachment();
@@ -149,25 +153,6 @@ export function AiChatWidget() {
     })
   ).current;
 
-  const swipeResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        Math.abs(gesture.dx) > 24 &&
-        Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3,
-      onMoveShouldSetPanResponderCapture: (_, gesture) =>
-        Math.abs(gesture.dx) > 24 &&
-        Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.3,
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dx < -40) {
-          setWidgetTab('history');
-        } else if (gesture.dx > 40) {
-          setWidgetTab('chat');
-        }
-      },
-    })
-  ).current;
   const busy =
     chat.create.isPending ||
     chat.send.isPending ||
@@ -193,12 +178,12 @@ export function AiChatWidget() {
   }, [chat.conversations.data?.data, conversationId]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !shouldAutoScrollRef.current) return;
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [messages.length, visible]);
 
   useEffect(() => {
-    if (!visible || !keyboard.visible) return;
+    if (!visible || !keyboard.visible || !shouldAutoScrollRef.current) return;
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [keyboard.overlap, keyboard.visible, visible]);
 
@@ -233,6 +218,7 @@ export function AiChatWidget() {
     if (!question || busy) return;
 
     setLastAction(AiWidgetAction.SUBMIT);
+    shouldAutoScrollRef.current = true;
     try {
       let targetConversationId = conversationId;
       if (!targetConversationId) {
@@ -289,6 +275,7 @@ export function AiChatWidget() {
 
   const startNewConversation = async () => {
     setLastAction(AiWidgetAction.NEW);
+    shouldAutoScrollRef.current = true;
     try {
       const conversation = await chat.create.mutateAsync(
         t(commonKeys.NEW_CONVERSATION)
@@ -309,6 +296,15 @@ export function AiChatWidget() {
   const chooseSuggestion = (suggestion: string) => {
     chat.send.reset();
     setContent(suggestion);
+  };
+
+  const trackMessageScrollPosition = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - layoutMeasurement.height - contentOffset.y;
+    shouldAutoScrollRef.current = distanceFromBottom <= AUTO_SCROLL_THRESHOLD;
   };
 
   const canSend = !busy && (Boolean(content.trim()) || Boolean(attachment.asset));
@@ -411,7 +407,10 @@ export function AiChatWidget() {
           accessibilityRole="button"
           accessibilityLabel={t(widgetKeys.OPEN_A11Y)}
           accessibilityHint={t(widgetKeys.OPEN_HINT)}
-          onPress={() => setVisible(true)}
+          onPress={() => {
+            shouldAutoScrollRef.current = true;
+            setVisible(true);
+          }}
           style={({ pressed }) => [
             styles.launcher,
             pressed && styles.launcherPressed,
@@ -433,7 +432,7 @@ export function AiChatWidget() {
         headerAction={headerActions}
         showFooterClose={false}
       >
-        <View style={styles.chatPanel} {...swipeResponder.panHandlers}>
+        <View style={styles.chatPanel}>
           <FeatureState
             loading={loadingChat}
             error={queryError}
@@ -494,6 +493,7 @@ export function AiChatWidget() {
                         key={item._id}
                         accessibilityRole="button"
                         onPress={() => {
+                          shouldAutoScrollRef.current = true;
                           setConversationId(item._id);
                           setContent('');
                           attachment.clear();
@@ -573,9 +573,11 @@ export function AiChatWidget() {
                 style={styles.messages}
                 contentContainerStyle={styles.messagesContent}
                 keyboardShouldPersistTaps="handled"
-                onContentSizeChange={() =>
-                  scrollRef.current?.scrollToEnd({ animated: true })
-                }
+                nestedScrollEnabled
+                directionalLockEnabled
+                showsVerticalScrollIndicator
+                scrollEventThrottle={16}
+                onScroll={trackMessageScrollPosition}
               >
             {!loadingChat && messages.length === 0 && !actionError ? (
               <View style={styles.welcome}>

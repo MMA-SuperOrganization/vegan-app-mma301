@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppIcon, AppText } from '@/components';
+import { AppIcon, AppText, BrandWordmark } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 
@@ -19,7 +19,7 @@ export function HomeSocialHeader({
           <View style={styles.brandIcon}>
             <AppIcon name="mam-companion" size={30} decorative />
           </View>
-          <AppText style={styles.brand}>Vegata</AppText>
+          <BrandWordmark size={26} />
         </View>
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" accessibilityLabel={t('home.createPost')} onPress={onCreatePost} style={styles.action}>
@@ -44,7 +44,6 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   brandIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  brand: { color: colors.primary[700], fontSize: 26, lineHeight: 32, fontWeight: '800', letterSpacing: -1, flexShrink: 0 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   action: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.background.muted, alignItems: 'center', justifyContent: 'center' },
   composer: { minHeight: 64, borderRadius: radius.xl, backgroundColor: colors.background.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border.subtle },

@@ -144,6 +144,20 @@ test('AI launcher stays draggable inside the safe screen and snaps to an edge', 
   assert.match(widget, /DRAG_ACTIVATION_DISTANCE/);
 });
 
+test('AI widget lets users scroll chat history without forced jumps', () => {
+  const widget = read('../src/features/ai/components/AiChatWidget.tsx');
+  const sheet = read('../src/components/ui/BottomSheet/BottomSheet.tsx');
+
+  assert.match(widget, /nestedScrollEnabled/);
+  assert.match(widget, /onScroll=\{trackMessageScrollPosition\}/);
+  assert.match(widget, /distanceFromBottom <= AUTO_SCROLL_THRESHOLD/);
+  assert.doesNotMatch(widget, /onContentSizeChange=/);
+  assert.doesNotMatch(widget, /swipeResponder\.panHandlers/);
+  assert.match(sheet, /style=\{StyleSheet\.absoluteFill\}/);
+  assert.match(sheet, /sheetMotion: \{ width: '100%', zIndex: 1 \}/);
+  assert.doesNotMatch(sheet, /onPress=\{\(e\) => e\.stopPropagation\(\)\}/);
+});
+
 test('Android app uses the VEGETA adaptive icon assets', () => {
   const config = JSON.parse(read('../app.json')).expo;
   assert.equal(config.name, 'VEGETA');

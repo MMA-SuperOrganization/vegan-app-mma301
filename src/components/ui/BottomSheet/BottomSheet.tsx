@@ -98,7 +98,13 @@ export function BottomSheet({
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Pressable style={styles.backdrop} onPress={onClose}>
+        <View style={styles.backdrop}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+          />
           <Animated.View
             style={[
               styles.sheetMotion,
@@ -111,10 +117,7 @@ export function BottomSheet({
               edges={['bottom']}
               style={[styles.sheet, tall && styles.fill]}
             >
-              <Pressable
-                style={[styles.body, tall && styles.fill]}
-                onPress={(e) => e.stopPropagation()}
-              >
+              <View style={[styles.body, tall && styles.fill]}>
                 <View style={styles.dragArea} {...panResponder.panHandlers}>
                   <View style={styles.dragHandle} />
                 </View>
@@ -132,10 +135,10 @@ export function BottomSheet({
                     onPress={onClose}
                   />
                 ) : null}
-              </Pressable>
+              </View>
             </SafeAreaView>
           </Animated.View>
-        </Pressable>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -148,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     backgroundColor: colors.overlay.modal,
   },
-  sheetMotion: { width: '100%' },
+  sheetMotion: { width: '100%', zIndex: 1 },
   sheet: {
     backgroundColor: colors.background.surface,
     borderTopLeftRadius: radius.xl,

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
+import { useDebouncedValue } from '@/hooks';
 import { groceryApi } from './groceryApi';
 import { updateItemChecked } from './groceryState';
 import type {
@@ -7,6 +8,7 @@ import type {
   GroceryItemUpdate,
   GroceryList,
   GroceryStatus,
+  GroceryUnit,
 } from './types';
 
 const groceryKeys = {
@@ -15,7 +17,33 @@ const groceryKeys = {
     [...groceryKeys.root(userId), 'lists', status] as const,
   list: (userId: string | undefined, id: string) =>
     [...groceryKeys.root(userId), 'list', id] as const,
+  ingredientSuggestions: (userId: string | undefined, query: string) =>
+    [...groceryKeys.root(userId), 'ingredient-suggestions', query] as const,
 };
+
+export function useIngredientSuggestions(query: string, enabled: boolean) {
+  const userId = useAuthStore((state) => state.user?.id);
+  const term = useDebouncedValue(query.trim(), 300);
+  const result = useQuery({
+    queryKey: groceryKeys.ingredientSuggestions(userId, term),
+    queryFn: () => groceryApi.ingredientSuggestions(term),
+    enabled: Boolean(userId && enabled && term),
+  });
+  return { ...result, term };
+}
+
+export function useCreatePersonalIngredient() {
+  const client = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
+  return useMutation({
+    mutationFn: (input: { name: string; defaultUnit: GroceryUnit }) =>
+      groceryApi.createPersonalIngredient(input),
+    onSuccess: () =>
+      client.invalidateQueries({
+        queryKey: [...groceryKeys.root(userId), 'ingredient-suggestions'],
+      }),
+  });
+}
 
 export function useGroceryLists(status: GroceryStatus = 'active') {
   const userId = useAuthStore((state) => state.user?.id);

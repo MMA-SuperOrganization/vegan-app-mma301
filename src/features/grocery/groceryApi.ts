@@ -4,6 +4,9 @@ import type {
   GroceryItemUpdate,
   GroceryList,
   GroceryStatus,
+  GroceryUnit,
+  IngredientSuggestion,
+  PersonalIngredient,
 } from './types';
 
 export const groceryApi = {
@@ -51,5 +54,15 @@ export const groceryApi = {
   clearChecked: (id: string) =>
     unwrapApiRequest<GroceryList>(() =>
       apiClient.post(`/grocery-lists/${id}/clear-checked`, {})
+    ),
+  ingredientSuggestions: (query: string) =>
+    unwrapApiRequest<IngredientSuggestion[]>(() =>
+      apiClient.get('/ingredients/suggestions', {
+        params: { q: query, limit: 30 },
+      })
+    ),
+  createPersonalIngredient: (input: { name: string; defaultUnit: GroceryUnit }) =>
+    unwrapApiRequest<PersonalIngredient>(() =>
+      apiClient.post('/personal-ingredients', input)
     ),
 };

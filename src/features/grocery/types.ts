@@ -1,19 +1,12 @@
 export type GroceryStatus = 'active' | 'completed' | 'archived';
 
 export type GroceryUnit =
-  | 'g'
-  | 'kg'
-  | 'ml'
-  | 'l'
-  | 'piece'
-  | 'tbsp'
-  | 'tsp'
-  | 'cup'
-  | 'serving';
+  'g' | 'kg' | 'ml' | 'l' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'serving';
 
 export interface GroceryItem {
   itemId: string;
   foodItemId?: string;
+  personalIngredientId?: string;
   nameSnapshot: string;
   quantity: number;
   unit: GroceryUnit;
@@ -34,7 +27,9 @@ export interface GroceryList {
 }
 
 export interface GroceryItemInput {
-  nameSnapshot: string;
+  foodItemId?: string;
+  personalIngredientId?: string;
+  nameSnapshot?: string;
   quantity: number;
   unit: GroceryUnit;
   note?: string;
@@ -42,3 +37,24 @@ export interface GroceryItemInput {
 }
 
 export type GroceryItemUpdate = Partial<GroceryItemInput>;
+
+export interface IngredientSuggestion {
+  id: string;
+  source: 'catalog' | 'personal';
+  name: string;
+  defaultUnit: GroceryUnit;
+  foodItemId?: string;
+  personalIngredientId?: string;
+}
+
+export interface PersonalIngredient {
+  _id: string;
+  name: string;
+  defaultUnit: GroceryUnit;
+  status: 'active' | 'inactive';
+}
+
+export type IngredientSelection = Pick<
+  IngredientSuggestion,
+  'id' | 'source' | 'name' | 'defaultUnit' | 'foodItemId' | 'personalIngredientId'
+>;

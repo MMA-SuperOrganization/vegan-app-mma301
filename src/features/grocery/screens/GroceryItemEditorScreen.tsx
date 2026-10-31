@@ -13,9 +13,10 @@ import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
+import { IngredientPickerSheet } from '../components/IngredientPickerSheet';
 import { parseGroceryQuantity } from '../groceryState';
 import { useGroceryActions, useGroceryList } from '../hooks';
-import type { GroceryUnit } from '../types';
+import type { GroceryUnit, IngredientSelection } from '../types';
 
 const units: GroceryUnit[] = [
   'g',
@@ -29,7 +30,7 @@ const units: GroceryUnit[] = [
   'serving',
 ];
 
-type FieldErrors = Partial<Record<'name' | 'quantity', string>>;
+type FieldErrors = Partial<Record<'ingredient' | 'quantity', string>>;
 
 export function GroceryItemEditorScreen() {
   const { id, itemId } = useLocalSearchParams<{ id?: string; itemId?: string }>();
@@ -40,7 +41,9 @@ export function GroceryItemEditorScreen() {
   const query = useGroceryList(id);
   const actions = useGroceryActions(id);
   const item = query.data?.items.find((candidate) => candidate.itemId === itemId);
-  const [name, setName] = useState('');
+  const [ingredient, setIngredient] = useState<IngredientSelection | null>(null);
+  const [ingredientPickerOpen, setIngredientPickerOpen] = useState(false);
+  const [ingredientSearch, setIngredientSearch] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [unit, setUnit] = useState<GroceryUnit>('piece');
   const [note, setNote] = useState('');
@@ -48,30 +51,46 @@ export function GroceryItemEditorScreen() {
 
   useEffect(() => {
     if (!item) return;
-    setName(item.nameSnapshot);
+    setIngredient({
+      id: item.personalIngredientId ?? item.foodItemId ?? item.itemId,
+      source: item.personalIngredientId ? 'personal' : 'catalog',
+      name: item.nameSnapshot,
+      defaultUnit: item.unit,
+      foodItemId: item.foodItemId,
+      personalIngredientId: item.personalIngredientId,
+    });
     setQuantity(String(item.quantity));
     setUnit(item.unit);
     setNote(item.note ?? '');
   }, [item]);
 
   const save = async () => {
-    const trimmedName = name.trim();
     const parsedQuantity = parseGroceryQuantity(quantity);
     const nextErrors: FieldErrors = {};
-    if (!trimmedName) nextErrors.name = t('grocery.itemNameRequired');
+    if (!ingredient) nextErrors.ingredient = t('grocery.ingredientRequired');
     if (!parsedQuantity) nextErrors.quantity = t('grocery.quantityInvalid');
     setErrors(nextErrors);
-    if (!trimmedName || !parsedQuantity || Object.keys(nextErrors).length) return;
+    if (!ingredient || !parsedQuantity || Object.keys(nextErrors).length) return;
 
     const input = {
-      nameSnapshot: trimmedName,
       quantity: parsedQuantity,
       unit,
       note: note.trim() || undefined,
     };
     try {
-      if (item) await actions.updateItem.mutateAsync({ itemId: item.itemId, input });
-      else await actions.addItem.mutateAsync(input);
+      if (item) {
+        await actions.updateItem.mutateAsync({ itemId: item.itemId, input });
+      } else {
+        await actions.addItem.mutateAsync({
+          ...input,
+          ...(ingredient.source === 'catalog'
+            ? { foodItemId: ingredient.foodItemId ?? ingredient.id }
+            : {
+                personalIngredientId:
+                  ingredient.personalIngredientId ?? ingredient.id,
+              }),
+        });
+      }
       goBack();
     } catch {
       // Keep the form values so the user can retry.
@@ -80,21 +99,25 @@ export function GroceryItemEditorScreen() {
 
   const confirmDelete = () => {
     if (!item) return;
-    Alert.alert(t('grocery.deleteItemConfirmTitle'), t('grocery.deleteItemConfirmBody'), [
-      { text: t('common.close'), style: 'cancel' },
-      {
-        text: t('grocery.deleteItem'),
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await actions.deleteItem.mutateAsync(item.itemId);
-            goBack();
-          } catch {
-            // Keep the editor open so deletion can be retried.
-          }
+    Alert.alert(
+      t('grocery.deleteItemConfirmTitle'),
+      t('grocery.deleteItemConfirmBody'),
+      [
+        { text: t('common.close'), style: 'cancel' },
+        {
+          text: t('grocery.deleteItem'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await actions.deleteItem.mutateAsync(item.itemId);
+              goBack();
+            } catch {
+              // Keep the editor open so deletion can be retried.
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const missingItem = Boolean(itemId && query.data && !item);
@@ -120,22 +143,28 @@ export function GroceryItemEditorScreen() {
           onRetry={() => void query.refetch()}
         />
         {missingItem ? (
-          <AppText color={colors.text.secondary}>{t('grocery.itemNotFound')}</AppText>
+          <AppText color={colors.text.secondary}>
+            {t('grocery.itemNotFound')}
+          </AppText>
         ) : null}
         {query.data && !missingItem ? (
           <>
             {readOnly ? (
-              <AppText color={colors.text.secondary}>{t('grocery.archivedReadOnly')}</AppText>
+              <AppText color={colors.text.secondary}>
+                {t('grocery.archivedReadOnly')}
+              </AppText>
             ) : null}
             <AppInput
-              label={t('grocery.itemName')}
-              value={name}
-              onChangeText={setName}
-              placeholder={t('grocery.itemNamePlaceholder')}
-              autoCapitalize="sentences"
-              maxLength={200}
-              error={errors.name}
-              disabled={readOnly}
+              type="select"
+              label={t('grocery.ingredientLabel')}
+              value={ingredient?.name ?? ''}
+              onChangeText={() => undefined}
+              onSelect={() => setIngredientPickerOpen(true)}
+              placeholder={t('grocery.ingredientChoose')}
+              error={errors.ingredient}
+              helper={item ? t('grocery.ingredientFixed') : undefined}
+              disabled={readOnly || Boolean(item)}
+              required
             />
             <AppInput
               label={t('grocery.quantityLabel')}
@@ -169,8 +198,12 @@ export function GroceryItemEditorScreen() {
               autoCapitalize="sentences"
               disabled={readOnly}
             />
-            {actions.addItem.error || actions.updateItem.error || actions.deleteItem.error ? (
-              <AppText color={colors.status.danger}>{t('grocery.saveError')}</AppText>
+            {actions.addItem.error ||
+            actions.updateItem.error ||
+            actions.deleteItem.error ? (
+              <AppText color={colors.status.danger}>
+                {t('grocery.saveError')}
+              </AppText>
             ) : null}
           </>
         ) : null}
@@ -192,14 +225,40 @@ export function GroceryItemEditorScreen() {
           ) : null}
         </View>
       ) : null}
+      <IngredientPickerSheet
+        visible={ingredientPickerOpen}
+        query={ingredientSearch}
+        defaultUnit={unit}
+        onQueryChange={setIngredientSearch}
+        onClose={() => {
+          if (actions.addItem.isPending) return;
+          setIngredientPickerOpen(false);
+        }}
+        onSelect={(selected) => {
+          setIngredient(selected);
+          setUnit(selected.defaultUnit);
+          setErrors((current) => ({ ...current, ingredient: undefined }));
+          setIngredientSearch('');
+          setIngredientPickerOpen(false);
+        }}
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flexGrow: 1, paddingBottom: spacing['4xl'] },
-  content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    gap: spacing.md,
+  },
   field: { gap: spacing.sm },
   units: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  footer: { marginTop: 'auto', paddingHorizontal: spacing.xl, paddingTop: spacing['2xl'], gap: spacing.md },
+  footer: {
+    marginTop: 'auto',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing['2xl'],
+    gap: spacing.md,
+  },
 });

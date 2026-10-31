@@ -7,6 +7,10 @@ import {
   parseGroceryQuantity,
   updateItemChecked,
 } from '../src/features/grocery/groceryState.ts';
+import {
+  hasExactIngredientName,
+  normalizeIngredientName,
+} from '../src/features/grocery/ingredientState.ts';
 
 test('grocery range accepts a subset of the selected week and rejects rollover and reversed dates', () => {
   assert.deepEqual(groceryDateRange('20/10/2026', '22/10/2026', '2026-10-19'), {
@@ -92,4 +96,24 @@ test('optimistic checkbox update is immutable and only changes its target', () =
     updated.items.find((item) => item.itemId === 'pepper').checked,
     false
   );
+});
+
+test('ingredient names compare accent-insensitively before offering a personal duplicate', () => {
+  assert.equal(normalizeIngredientName('  Đậu   hũ ký  '), 'dau hu ky');
+  assert.equal(
+    hasExactIngredientName(
+      [
+        {
+          id: 'catalog',
+          source: 'catalog',
+          name: 'Đậu hũ ky',
+          defaultUnit: 'g',
+          foodItemId: 'catalog',
+        },
+      ],
+      'dau hu ky'
+    ),
+    true
+  );
+  assert.equal(hasExactIngredientName([], 'Đậu hũ ky'), false);
 });

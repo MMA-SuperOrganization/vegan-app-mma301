@@ -55,6 +55,7 @@ export function AiChatWidget() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const userId = useAuthStore((state) => state.user?.id);
+  const userRole = useAuthStore((state) => state.user?.role);
   const onboardingCompleted = useAuthStore(
     (state) => state.user?.onboardingCompleted
   );
@@ -132,6 +133,7 @@ export function AiChatWidget() {
 
   if (
     !isAuthenticated ||
+    userRole === 'admin' ||
     !onboardingCompleted ||
     isRestoringSession ||
     launcherHidden

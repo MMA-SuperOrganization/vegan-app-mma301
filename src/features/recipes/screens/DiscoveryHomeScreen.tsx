@@ -1,5 +1,6 @@
 import { getUserErrorMessage } from '@/services/errors';
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -13,15 +14,19 @@ import { colors, spacing } from '@/theme';
 import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
 import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
 import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
+import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
+import { useCommunityPosts } from '@/features/community/hooks';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
 
 export function DiscoveryHomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const [postComposerOpen, setPostComposerOpen] = useState(false);
   const home = useHomeFeed();
+  const posts = useCommunityPosts(false, 3);
   const featured = home.data?.featured.recipes ?? [];
-  const communityPosts = home.data?.featured.posts ?? [];
+  const communityPosts = posts.data?.pages.flatMap((page) => page.data) ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
     ? home.data.personalized.recipes
     : featured;
@@ -34,54 +39,115 @@ export function DiscoveryHomeScreen() {
 
   return (
     <ScreenWrapper
-      scrollable
       keyboardAvoiding={false}
       edges={['top', 'left', 'right']}
-      contentContainerStyle={styles.screen}
     >
-      <HomeSocialHeader
-        onCreatePost={() => router.push('/community/editor')}
-        onSearch={() => router.push('/(discover)/search')}
+      <FlatList
+        data={communityPosts}
+        keyExtractor={(post) => post._id}
+        initialNumToRender={4}
+        maxToRenderPerBatch={5}
+        windowSize={7}
+        contentContainerStyle={styles.screen}
+        ItemSeparatorComponent={() => <View style={styles.feedSeparator} />}
+        ListHeaderComponent={
+          <View style={styles.headerContent}>
+            <HomeSocialHeader
+              onCreatePost={() => setPostComposerOpen(true)}
+              onSearch={() => router.push('/(discover)/search')}
+            />
+
+            {home.isLoading ? (
+              <LoadingSpinner text={t('home.loadingSuggestions')} />
+            ) : null}
+            {home.isError ? (
+              <EmptyState
+                title={t('home.suggestionError')}
+                description={getUserErrorMessage(home.error)}
+                actionLabel={t('common.retry')}
+                onAction={() => void home.refetch()}
+              />
+            ) : null}
+            {!home.isLoading && !home.isError && !recommendations.length ? (
+              <EmptyState
+                title={t('home.noSuggestions')}
+                description={t('home.noSuggestionsDescription')}
+                actionLabel={t('home.explore')}
+                onAction={() => router.push('/(discover)/explore')}
+              />
+            ) : null}
+
+            <HomeRecipeStories
+              recipes={recommendations}
+              onCreateRecipe={() => router.push('/recipes/editor')}
+              onSelect={openRecipe}
+            />
+
+            <View style={styles.feedHeading}>
+              <AppText variant="heading3">{t('home.socialFeed')}</AppText>
+            </View>
+
+            {posts.isLoading ? (
+              <LoadingSpinner text={t('home.loadingMorePosts')} />
+            ) : null}
+            {posts.isError ? (
+              <EmptyState
+                title={t('home.postFeedError')}
+                description={getUserErrorMessage(posts.error)}
+                actionLabel={t('common.retry')}
+                onAction={() => void posts.refetch()}
+              />
+            ) : null}
+            {!posts.isLoading && !posts.isError && !communityPosts.length ? (
+              <AppText color={colors.text.secondary}>
+                {t('home.socialEmptyFeed')}
+              </AppText>
+            ) : null}
+          </View>
+        }
+        renderItem={({ item: post }) => (
+          <HomeSocialPostCard
+            post={post}
+            onPress={() =>
+              router.push({
+                pathname: '/community/post',
+                params: { id: post._id },
+              })
+            }
+          />
+        )}
+        ListFooterComponent={
+          posts.isFetchingNextPage ? (
+            <View style={styles.feedFooter}>
+              <LoadingSpinner text={t('home.loadingMorePosts')} />
+            </View>
+          ) : null
+        }
+        refreshing={(home.isRefetching || posts.isRefetching) && !posts.isLoading}
+        onRefresh={() => {
+          void home.refetch();
+          void posts.refetch();
+        }}
+        onEndReachedThreshold={0.5}
+        onEndReached={() => {
+          if (posts.hasNextPage && !posts.isFetchingNextPage) {
+            void posts.fetchNextPage();
+          }
+        }}
       />
 
-      {home.isLoading ? (
-        <LoadingSpinner text={t('home.loadingSuggestions')} />
-      ) : null}
-      {home.isError ? (
-        <EmptyState
-          title={t('home.suggestionError')}
-          description={getUserErrorMessage(home.error)}
-          actionLabel={t('common.retry')}
-          onAction={() => void home.refetch()}
-        />
-      ) : null}
-      {!home.isLoading && !home.isError && !recommendations.length ? (
-        <EmptyState
-          title={t('home.noSuggestions')}
-          description={t('home.noSuggestionsDescription')}
-          actionLabel={t('home.explore')}
-          onAction={() => router.push('/(discover)/explore')}
-        />
-      ) : null}
-
-      <HomeRecipeStories
-        recipes={recommendations}
-        onCreateRecipe={() => router.push('/recipes/editor')}
-        onSelect={openRecipe}
+      <CreatePostSheet
+        visible={postComposerOpen}
+        onClose={() => setPostComposerOpen(false)}
       />
-
-      <View style={styles.feedHeading}>
-        <AppText variant="heading3">{t('home.socialFeed')}</AppText>
-        <AppText variant="caption" color={colors.text.secondary}>{t('home.socialPostCount', { count: communityPosts.length })}</AppText>
-      </View>
-      {communityPosts.length ? communityPosts.slice(0, 3).map((post) => (
-        <HomeSocialPostCard key={post._id} post={post} onPress={() => router.push({ pathname: '/community/post', params: { id: post._id } })} />
-      )) : <AppText color={colors.text.secondary}>{t('home.socialEmptyFeed')}</AppText>}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { padding: spacing.md, paddingBottom: spacing['4xl'], gap: spacing.lg, backgroundColor: colors.background.base },
+  screen: { padding: spacing.md, paddingBottom: spacing['4xl'], backgroundColor: colors.background.base },
+  headerContent: { gap: spacing.lg, marginBottom: spacing.lg },
   feedHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: spacing.sm },
+  feedSeparator: { height: spacing.lg },
+  feedFooter: { paddingVertical: spacing.xl },
 });

@@ -6,8 +6,16 @@ import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 
-export function HomeSocialPostCard({ post, onPress }: { post: PostCardData; onPress: () => void }) {
+type HomePost = PostCardData & {
+  content?: string;
+  media?: Array<{ url?: string; downloadUrl?: string }>;
+};
+
+export function HomeSocialPostCard({ post, onPress }: { post: HomePost; onPress: () => void }) {
   const { t } = useTranslation();
+  const copy = post.excerpt ?? post.description ?? post.content;
+  const imageUrl =
+    post.coverImageUrl ?? post.media?.[0]?.downloadUrl ?? post.media?.[0]?.url;
   return (
     <View style={styles.card}>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.header}>
@@ -15,8 +23,8 @@ export function HomeSocialPostCard({ post, onPress }: { post: PostCardData; onPr
         <AppText style={styles.more}>•••</AppText>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
-        {post.excerpt || post.description ? <AppText variant="bodyLarge" style={styles.copy}>{post.excerpt ?? post.description}</AppText> : null}
-        {post.coverImageUrl ? <RecipeImage uri={post.coverImageUrl} style={styles.postImage} fallbackSize="large" /> : null}
+        {copy ? <AppText variant="bodyLarge" style={styles.copy}>{copy}</AppText> : null}
+        {imageUrl ? <RecipeImage uri={imageUrl} style={styles.postImage} fallbackSize="large" /> : null}
       </Pressable>
       <View style={styles.stats}><AppText variant="caption" color={colors.text.secondary}>♡ {post.reactionCount ?? 0}</AppText><AppText variant="caption" color={colors.text.secondary}>{post.commentCount ?? 0} {t('home.comments')}</AppText></View>
       <View style={styles.actions}>

@@ -19,12 +19,12 @@ import {
   MasterResourceType,
 } from './adminConstants';
 
-const parseNumericInput = (value: string) =>
-  Number(value.replace(',', '.')) || 0;
+const number = (value: string) => Number(value.replace(',', '.')) || 0;
+type MasterSection = 'categories' | 'allergens' | 'foods';
 
 export function MasterDataPanel() {
   const { t } = useTranslation();
-  const keys = ADMIN_TRANSLATION_KEYS.MASTER;
+  const [activeSection, setActiveSection] = useState<MasterSection>('categories');
   const client = useQueryClient();
 
   const categories = useQuery({
@@ -98,7 +98,18 @@ export function MasterDataPanel() {
     }) => adminApi.setMasterStatus(type, { ...record, _id: id }, status),
     onSuccess: refresh,
   });
-
+  const activeQuery =
+    activeSection === 'categories'
+      ? categories
+      : activeSection === 'allergens'
+        ? allergens
+        : foods;
+  const activeMutationError =
+    activeSection === 'categories'
+      ? categorySave.error
+      : activeSection === 'allergens'
+        ? allergenSave.error
+        : foodSave.error;
   const card = {
     padding: spacing.md,
     gap: spacing.sm,
@@ -121,114 +132,123 @@ export function MasterDataPanel() {
     type: `${MasterResourceType}`,
     edit: (record: MasterRecord) => void
   ) =>
-    records.map((record) => {
-      const isInactive = record.status === MasterRecordStatus.INACTIVE;
-      return (
-        <View key={record._id} style={card}>
-          <AppText variant="bodyStrong">{record.name}</AppText>
-          <AppText>{formatRecordMeta(record)}</AppText>
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <AppButton
-              title={t(keys.EDIT)}
-              variant="outline"
-              fullWidth={false}
-              disabled={isInactive}
-              onPress={() => edit(record)}
-            />
-            <AppButton
-              title={isInactive ? t(keys.RESTORE) : t(keys.DEACTIVATE)}
-              variant="ghost"
-              fullWidth={false}
-              disabled={masterStatus.isPending}
-              onPress={() =>
-                masterStatus.mutate({
-                  type,
-                  id: record._id,
-                  record,
-                  status: isInactive
-                    ? MasterRecordStatus.ACTIVE
-                    : MasterRecordStatus.INACTIVE,
-                })
-              }
-            />
-          </View>
+    records.map((record) => (
+      <View key={record._id} style={card}>
+        <AppText variant="bodyStrong">{record.name}</AppText>
+        <AppText>{[record.type, record.status].filter(Boolean).join(' · ')}</AppText>
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <AppButton
+            title={t('admin.master.edit')}
+            variant="outline"
+            fullWidth={false}
+            disabled={record.status === 'inactive'}
+            onPress={() => edit(record)}
+          />
+          <AppButton
+            title={
+              record.status === 'inactive'
+                ? t('admin.master.restore')
+                : t('admin.master.deactivate')
+            }
+            variant="ghost"
+            fullWidth={false}
+            disabled={masterStatus.isPending}
+            onPress={() =>
+              masterStatus.mutate({
+                type,
+                id: record._id,
+                record,
+                status: record.status === 'inactive' ? 'active' : 'inactive',
+              })
+            }
+          />
         </View>
-      );
-    });
-
+      </View>
+    ));
   return (
     <View style={{ gap: spacing.lg }}>
-      <AppText variant="heading2">{t(keys.TITLE)}</AppText>
+      <AppText variant="heading2">{t('admin.master.title')}</AppText>
       <FeatureState
-        loading={categories.isLoading || allergens.isLoading || foods.isLoading}
-        error={
-          categories.error ||
-          allergens.error ||
-          foods.error ||
-          categorySave.error ||
-          allergenSave.error ||
-          foodSave.error ||
-          masterStatus.error
-        }
+        loading={activeQuery.isLoading}
+        error={activeQuery.error || activeMutationError || masterStatus.error}
+        retry={() => void activeQuery.refetch()}
       />
-
-      <AppText variant="heading3">{t(keys.CATEGORIES)}</AppText>
+      <AppText color={colors.text.secondary}>{t('admin.master.chooseSection')}</AppText>
+      <View style={styles.sectionTabs}>
+        {([
+          ['categories', t('admin.master.categories')],
+          ['allergens', t('admin.master.allergens')],
+          ['foods', t('admin.master.foods')],
+        ] as const).map(([section, label]) => (
+          <AppButton
+            key={section}
+            title={label}
+            variant={activeSection === section ? 'primary' : 'outline'}
+            fullWidth={false}
+            onPress={() => setActiveSection(section)}
+          />
+        ))}
+      </View>
+      {activeSection === 'categories' ? <>
+      <AppText variant="heading3">{t('admin.master.categories')}</AppText>
       <AppInput
-        label={t(keys.CATEGORY_NAME)}
+        label={t('admin.master.categoryName')}
         value={category.name || ''}
         onChangeText={(name) => setCategory((value) => ({ ...value, name }))}
       />
       <SelectionField
-        label={t(keys.TYPE)}
-        placeholder={t(keys.TYPE_PLACEHOLDER)}
-        value={category.type || MasterCategoryType.RECIPE}
-        options={MASTER_CATEGORY_TYPES.map((value) => ({
+        label={t('admin.master.type')}
+        placeholder=""
+        value={category.type || 'recipe'}
+        options={(['food', 'recipe', 'post'] as const).map((value) => ({
           value,
           label: t(MASTER_CATEGORY_TYPE_LABEL_KEYS[value]),
         }))}
         onChange={(type) => setCategory((value) => ({ ...value, type }))}
       />
       <AppButton
-        title={category._id ? t(keys.UPDATE_CATEGORY) : t(keys.ADD_CATEGORY)}
+        title={
+          category._id
+            ? t('admin.master.update', { type: t('admin.master.categories') })
+            : t('admin.master.add', { type: t('admin.master.categories') })
+        }
         disabled={!category.name?.trim() || categorySave.isPending}
         onPress={() =>
           categorySave.mutate(category as MasterRecord & { name: string })
         }
       />
-      {renderRecordList(
-        categories.data?.data || [],
-        MasterResourceType.CATEGORIES,
-        setCategory
-      )}
-
-      <AppText variant="heading3">{t(keys.ALLERGENS)}</AppText>
+      {list(categories.data?.data || [], 'categories', setCategory)}
+      </> : null}
+      {activeSection === 'allergens' ? <>
+      <AppText variant="heading3">{t('admin.master.allergens')}</AppText>
       <AppInput
-        label={t(keys.ALLERGEN_NAME)}
+        label={t('admin.master.allergenName')}
         value={allergen.name || ''}
         onChangeText={(name) => setAllergen((value) => ({ ...value, name }))}
       />
       <AppButton
-        title={allergen._id ? t(keys.UPDATE_ALLERGEN) : t(keys.ADD_ALLERGEN)}
+        title={
+          allergen._id
+            ? t('admin.master.update', { type: t('admin.master.allergens') })
+            : t('admin.master.add', { type: t('admin.master.allergens') })
+        }
         disabled={!allergen.name?.trim() || allergenSave.isPending}
         onPress={() =>
           allergenSave.mutate(allergen as MasterRecord & { name: string })
         }
       />
-      {renderRecordList(
-        allergens.data?.data || [],
-        MasterResourceType.ALLERGENS,
-        setAllergen
-      )}
-
-      <AppText variant="heading3">{t(keys.FOODS)}</AppText>
+      {list(allergens.data?.data || [], 'allergens', setAllergen)}
+      </> : null}
+      {activeSection === 'foods' ? <>
+      <AppText variant="heading3">{t('admin.master.foods')}</AppText>
       <AppInput
-        label={t(keys.FOOD_NAME)}
+        label={t('admin.master.foodName')}
         value={food.name || ''}
         onChangeText={(name) => setFood((value) => ({ ...value, name }))}
       />
       <SelectionField
-        label={t(keys.FOOD_CATEGORY)}
-        placeholder={t(keys.CHOOSE_CATEGORY)}
+        label={t('admin.master.foodCategory')}
+        placeholder={t('admin.master.chooseCategory')}
         value={food.categoryId || null}
         options={(categories.data?.data || [])
           .filter((item) => item.type === MasterCategoryType.FOOD)
@@ -236,7 +256,7 @@ export function MasterDataPanel() {
         onChange={(categoryId) => setFood((value) => ({ ...value, categoryId }))}
       />
       <AppInput
-        label={t(keys.DEFAULT_SERVING_G)}
+        label={t('admin.master.serving')}
         value={serving}
         onChangeText={setServing}
         keyboardType="decimal-pad"
@@ -248,7 +268,7 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={t(keys.PROTEIN_PER_100G)}
+        label={t('admin.master.protein')}
         value={protein}
         onChangeText={setProtein}
         keyboardType="decimal-pad"
@@ -260,19 +280,23 @@ export function MasterDataPanel() {
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={t(keys.FAT_PER_100G)}
+        label={t('admin.master.fat')}
         value={fat}
         onChangeText={setFat}
         keyboardType="decimal-pad"
       />
       <AppInput
-        label={t(keys.FIBER_PER_100G)}
+        label={t('admin.master.fiber')}
         value={fiber}
         onChangeText={setFiber}
         keyboardType="decimal-pad"
       />
       <AppButton
-        title={food._id ? t(keys.UPDATE_FOOD) : t(keys.ADD_FOOD)}
+        title={
+          food._id
+            ? t('admin.master.update', { type: t('admin.master.foods') })
+            : t('admin.master.add', { type: t('admin.master.foods') })
+        }
         disabled={!food.name?.trim() || !food.categoryId || foodSave.isPending}
         onPress={() =>
           foodSave.mutate({
@@ -295,24 +319,24 @@ export function MasterDataPanel() {
           })
         }
       />
-      {renderRecordList(
-        foods.data?.data || [],
-        MasterResourceType.FOOD_ITEMS,
-        (record) => {
-          setFood(record);
-          setServing(
-            String(
-              record.defaultServing?.amount ||
-                MASTER_FOOD_DEFAULTS.DEFAULT_SERVING_AMOUNT
-            )
-          );
-          setCalories(String(record.nutritionPer100g?.caloriesKcal || 0));
-          setProtein(String(record.nutritionPer100g?.proteinG || 0));
-          setCarbs(String(record.nutritionPer100g?.carbsG || 0));
-          setFat(String(record.nutritionPer100g?.fatG || 0));
-          setFiber(String(record.nutritionPer100g?.fiberG || 0));
-        }
-      )}
+      {list(foods.data?.data || [], 'food-items', (record) => {
+        setFood(record);
+        setServing(String(record.defaultServing?.amount || 100));
+        setCalories(String(record.nutritionPer100g?.caloriesKcal || 0));
+        setProtein(String(record.nutritionPer100g?.proteinG || 0));
+        setCarbs(String(record.nutritionPer100g?.carbsG || 0));
+        setFat(String(record.nutritionPer100g?.fatG || 0));
+        setFiber(String(record.nutritionPer100g?.fiberG || 0));
+      })}
+      </> : null}
     </View>
   );
 }
+
+const styles = {
+  sectionTabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+} as const;

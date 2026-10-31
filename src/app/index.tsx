@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 
 import { LoadingScreen } from '@/components';
-import { useAuthStore } from '@/features/auth';
+import { getPostAuthRoute, useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 
 export default function IndexRoute() {
@@ -15,9 +15,5 @@ export default function IndexRoute() {
 
   const user = useAuthStore.getState().user;
   if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
-  return (
-    <Redirect
-      href={user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'}
-    />
-  );
+  return <Redirect href={getPostAuthRoute(user)} />;
 }

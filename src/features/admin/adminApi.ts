@@ -109,16 +109,6 @@ export const adminApi = {
             reason: ADMIN_ACTION_REASONS.MOBILE_ADMIN_ACTION,
           })
     ),
-  deleteUser: (user: AdminUser) =>
-    unwrapApiRequest<AdminUser>(() =>
-      apiClient.delete(`/admin/users/${user._id}`, {
-        data: { reason: ADMIN_ACTION_REASONS.MOBILE_ADMIN_ACTION },
-      })
-    ),
-  restoreUser: (user: AdminUser) =>
-    unwrapApiRequest<AdminUser>(() =>
-      apiClient.post(`/admin/users/${user._id}/restore`, {})
-    ),
   changeRole: (user: AdminUser) =>
     unwrapApiRequest<AdminUser>(() =>
       apiClient.patch(`/admin/users/${user._id}/role`, {

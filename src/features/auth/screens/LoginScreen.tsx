@@ -9,6 +9,7 @@ import { AuthMessage } from '../components/AuthMessage';
 import { AuthTextLink } from '../components/AuthTextLink';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { useAuthStore } from '../store/authStore';
+import { getPostAuthRoute } from '../authNavigation';
 import { validateLogin } from '../validations/loginValidation';
 
 export function LoginScreen() {
@@ -33,9 +34,7 @@ export function LoginScreen() {
 
     if (await login(email.trim(), password)) {
       const user = useAuthStore.getState().user;
-      router.replace(
-        user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
-      );
+      router.replace(getPostAuthRoute(user));
     }
   };
 

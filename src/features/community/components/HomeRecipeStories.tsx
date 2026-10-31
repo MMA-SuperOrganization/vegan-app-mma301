@@ -1,17 +1,19 @@
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AppText } from '@/components';
+import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import type { ContentCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 
 export function HomeRecipeStories({ recipes, onSelect }: { recipes: ContentCardData[]; onSelect: (recipe: ContentCardData) => void }) {
+  const { t } = useTranslation();
   if (!recipes.length) return null;
   return (
     <View style={styles.section}>
       <View style={styles.headingRow}>
-        <AppText variant="heading3">Gợi ý cho bạn</AppText>
-        <AppText variant="caption" color={colors.text.secondary}>Xem tất cả</AppText>
+        <AppText variant="heading3">{t('home.socialStories')}</AppText>
+        <AppText variant="caption" color={colors.text.secondary}>{t('home.viewAll')}</AppText>
       </View>
       <FlatList
         horizontal

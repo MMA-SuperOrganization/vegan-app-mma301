@@ -73,12 +73,12 @@ export function DiscoveryHomeScreen() {
       <HomeRecipeStories recipes={recommendations} onSelect={openRecipe} />
 
       <View style={styles.feedHeading}>
-        <AppText variant="heading3">Bài viết mới nhất</AppText>
-        <AppText variant="caption" color={colors.text.secondary}>{communityPosts.length} bài viết</AppText>
+        <AppText variant="heading3">{t('home.socialFeed')}</AppText>
+        <AppText variant="caption" color={colors.text.secondary}>{t('home.socialPostCount', { count: communityPosts.length })}</AppText>
       </View>
       {communityPosts.length ? communityPosts.slice(0, 3).map((post) => (
         <HomeSocialPostCard key={post._id} post={post} onPress={() => router.push({ pathname: '/community/post', params: { id: post._id } })} />
-      )) : <AppText color={colors.text.secondary}>Chưa có bài viết mới.</AppText>}
+      )) : <AppText color={colors.text.secondary}>{t('home.socialEmptyFeed')}</AppText>}
     </ScreenWrapper>
   );
 }

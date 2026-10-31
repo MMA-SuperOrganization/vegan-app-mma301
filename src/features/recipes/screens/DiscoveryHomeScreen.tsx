@@ -1,5 +1,5 @@
 import { getUserErrorMessage } from '@/services/errors';
-import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -13,13 +13,13 @@ import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
 import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
+import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
 import { useHomeFeed } from '../hooks';
 import type { ContentCardData } from '../types';
 
 export function DiscoveryHomeScreen() {
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const profile = useProfileStore((state) => state.data);
   const home = useHomeFeed();
   const firstName =
@@ -77,10 +77,7 @@ export function DiscoveryHomeScreen() {
         <AppText variant="caption" color={colors.text.secondary}>{communityPosts.length} bài viết</AppText>
       </View>
       {communityPosts.length ? communityPosts.slice(0, 3).map((post) => (
-        <View key={post._id} style={styles.legacyPost}>
-          <AppText variant="heading4">{post.title}</AppText>
-          <AppText color={colors.text.secondary} numberOfLines={3}>{post.excerpt ?? post.description}</AppText>
-        </View>
+        <HomeSocialPostCard key={post._id} post={post} onPress={() => router.push({ pathname: '/community/post', params: { id: post._id } })} />
       )) : <AppText color={colors.text.secondary}>Chưa có bài viết mới.</AppText>}
     </ScreenWrapper>
   );
@@ -89,5 +86,4 @@ export function DiscoveryHomeScreen() {
 const styles = StyleSheet.create({
   screen: { padding: spacing.md, paddingBottom: spacing['4xl'], gap: spacing.lg, backgroundColor: colors.background.base },
   feedHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: spacing.sm },
-  legacyPost: { backgroundColor: colors.background.surface, borderRadius: 18, padding: spacing.lg, gap: spacing.sm },
 });

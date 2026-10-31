@@ -57,7 +57,8 @@ test('post cards apply reactions optimistically without a loading-only heart sta
   assert.doesNotMatch(homeCard, /disabled=.*isPending/);
   assert.match(homeCard, /<PostLikeIcon liked={liked}/);
   assert.match(communityCard, /<PostLikeIcon liked={liked}/);
-  assert.match(likeIcon, /containerSelected/);
+  assert.match(likeIcon, /liked \? 'heart-filled' : 'heart'/);
+  assert.doesNotMatch(likeIcon, /backgroundColor/);
   assert.doesNotMatch(homeCard, /actionSelected/);
 });
 

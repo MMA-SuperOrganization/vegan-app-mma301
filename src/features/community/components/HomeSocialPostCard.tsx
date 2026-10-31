@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    gap: spacing.xs,
   },
   action: {
     flex: 1,
@@ -151,7 +150,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.none,
+    gap: spacing.xs,
     borderRadius: radius.full,
   },
   actionPressed: { opacity: 0.68 },

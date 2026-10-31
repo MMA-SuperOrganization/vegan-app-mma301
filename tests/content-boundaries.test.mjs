@@ -102,3 +102,24 @@ test('home search includes recipes, posts, ingredients and videos by default', (
   assert.match(api, /params: \{ q: query, type: 'all', limit: 8 \}/);
   assert.match(api, /type === 'all' \? 30 : 10/);
 });
+
+test('home search expands inline and renders suggestions and results without navigating', () => {
+  const home = read('../src/features/recipes/screens/DiscoveryHomeScreen.tsx');
+  const header = read(
+    '../src/features/community/components/HomeSocialHeader.tsx'
+  );
+  const panel = read(
+    '../src/features/recipes/components/HomeInlineSearchPanel.tsx'
+  );
+
+  assert.match(header, /Animated\.timing/);
+  assert.match(header, /outputRange: \[40, openSearchWidth\]/);
+  assert.match(header, /<TextInput/);
+  assert.match(home, /<HomeInlineSearchPanel/);
+  assert.match(home, /useSearchSuggestions\(debouncedSearchQuery\)/);
+  assert.match(home, /useSearchResults\(debouncedSearchQuery, 'all'\)/);
+  assert.match(home, /<ContentResultCard/);
+  assert.match(panel, /discover\.suggestions/);
+  assert.match(panel, /discover\.recent/);
+  assert.doesNotMatch(home, /onSearch=\{\(\) => router\.push/);
+});

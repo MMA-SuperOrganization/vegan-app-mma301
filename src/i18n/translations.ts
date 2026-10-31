@@ -508,6 +508,9 @@ export const vi = {
   'home.question': 'Hôm nay bạn muốn ăn gì?',
   'home.explore': 'Khám phá',
   'home.searchPlaceholder': 'Tìm món, công thức, bài viết hoặc nguyên liệu…',
+  'home.clearSearch': 'Xóa nội dung tìm kiếm',
+  'home.inlineSearchHint':
+    'Nhập từ khóa để xem gợi ý và kết quả ngay tại đây.',
   'home.filterAll': 'Tất cả',
   'home.filterProtein': 'Giàu đạm',
   'home.filterEasy': 'Dễ nấu',
@@ -1827,6 +1830,9 @@ export const en: Record<TranslationKey, string> = {
   'home.question': 'What would you like to eat today?',
   'home.explore': 'Explore',
   'home.searchPlaceholder': 'Find dishes, recipes, posts or ingredients…',
+  'home.clearSearch': 'Clear search',
+  'home.inlineSearchHint':
+    'Type a keyword to see suggestions and results here.',
   'home.filterAll': 'All',
   'home.filterProtein': 'High protein',
   'home.filterEasy': 'Easy',

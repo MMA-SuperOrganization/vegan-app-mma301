@@ -86,11 +86,12 @@ export function useSearchResults(
   });
 }
 
-export function useRecentSearches() {
+export function useRecentSearches(enabled = true) {
   const userId = useAuthStore((state) => state.user?.id);
   return useQuery({
     queryKey: recipeKeys.recent(userId),
     queryFn: recipeApi.recent,
+    enabled,
   });
 }
 

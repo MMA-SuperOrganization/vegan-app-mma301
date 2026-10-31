@@ -29,6 +29,16 @@ export function groceryProgress(list: Pick<GroceryList, 'items'>) {
   };
 }
 
+export function groceryTransferSummary(items: GroceryItem[]) {
+  const checked = items.filter((item) => item.checked);
+  return {
+    eligible: checked.filter((item) => item.foodItemId || item.personalIngredientId),
+    skipped: checked.filter(
+      (item) => !item.foodItemId && !item.personalIngredientId
+    ),
+  };
+}
+
 export function parseGroceryQuantity(value: string) {
   const normalized = value.trim().replace(',', '.');
   if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return null;

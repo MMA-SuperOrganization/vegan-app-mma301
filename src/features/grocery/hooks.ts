@@ -132,6 +132,13 @@ export function useGroceryActions(listId?: string) {
     mutationFn: () => groceryApi.clearChecked(listId!),
     onSuccess: storeList,
   });
+  const transferCheckedToPantry = useMutation({
+    mutationFn: () => groceryApi.transferCheckedToPantry(listId!),
+    onSuccess: async (result) => {
+      client.setQueryData(['account', userId, 'pantry'], result.pantry);
+      await storeList(result.groceryList);
+    },
+  });
 
   return {
     create,
@@ -142,5 +149,6 @@ export function useGroceryActions(listId?: string) {
     updateItem,
     deleteItem,
     clearChecked,
+    transferCheckedToPantry,
   };
 }

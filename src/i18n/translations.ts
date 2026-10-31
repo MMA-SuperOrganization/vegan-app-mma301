@@ -180,6 +180,25 @@ export const vi = {
   'grocery.clearCheckedConfirmTitle': 'Xóa các món đã mua?',
   'grocery.clearCheckedConfirmBody':
     'Tất cả món đã đánh dấu sẽ bị xóa khỏi danh sách này.',
+  'grocery.transferReady': '{{count}} món đã mua sẵn sàng cất kho',
+  'grocery.transferReadyDescription':
+    'Đưa vào Pantry để theo dõi nguyên liệu bạn đang có.',
+  'grocery.transferAction': 'Đưa vào Pantry',
+  'grocery.transferTitle': 'Cất nguyên liệu vào Pantry',
+  'grocery.transferCount': '{{count}} món sẽ được thêm vào kho',
+  'grocery.transferDescription':
+    'Số lượng và đơn vị được giữ nguyên. Các món đã chuyển sẽ rời khỏi danh sách mua sắm.',
+  'grocery.transferMore': 'Và {{count}} món khác',
+  'grocery.transferSkipped':
+    '{{count}} món cũ chưa liên kết nguyên liệu sẽ được giữ lại trong danh sách để bạn xử lý.',
+  'grocery.transferConfirm': 'Xác nhận cất vào kho',
+  'grocery.transferSuccessTitle': 'Đã cập nhật Pantry',
+  'grocery.transferSuccessBody':
+    '{{count}} món đã được cất vào kho và xóa khỏi danh sách mua sắm.',
+  'grocery.transferStay': 'Ở lại danh sách',
+  'grocery.transferViewPantry': 'Xem Pantry',
+  'grocery.transferError':
+    'Chưa thể chuyển các món vào Pantry. Dữ liệu chưa bị thay đổi, vui lòng thử lại.',
   'grocery.markCompleted': 'Đánh dấu đã hoàn tất',
   'grocery.reopen': 'Mở lại danh sách',
   'grocery.archive': 'Lưu trữ danh sách',
@@ -1067,14 +1086,11 @@ export const vi = {
   'ai.starter.proteinDinner.prompt':
     'Gợi ý bữa tối chay giàu đạm, dễ nấu trong 20 phút',
   'ai.starter.postWorkout.tag': 'Tập luyện',
-  'ai.starter.postWorkout.prompt':
-    'Tôi nên ăn gì sau buổi tập để phục hồi cơ?',
+  'ai.starter.postWorkout.prompt': 'Tôi nên ăn gì sau buổi tập để phục hồi cơ?',
   'ai.starter.mealPlan.tag': 'Thực đơn',
-  'ai.starter.mealPlan.prompt':
-    'Lên thực đơn thuần chay 3 ngày đủ chất sắt và B12',
+  'ai.starter.mealPlan.prompt': 'Lên thực đơn thuần chay 3 ngày đủ chất sắt và B12',
   'ai.starter.pantryCook.tag': 'Nấu nhanh',
-  'ai.starter.pantryCook.prompt':
-    'Có đậu phụ, nấm và cải ngọt thì nấu món gì ngon?',
+  'ai.starter.pantryCook.prompt': 'Có đậu phụ, nấm và cải ngọt thì nấu món gì ngon?',
   'ai.chat.headerTitle': 'Trợ lý Mầm AI',
   'ai.chat.historyA11y': 'Lịch sử trò chuyện',
   'ai.chat.newChatChip': 'Cuộc trò chuyện mới',
@@ -1124,8 +1140,7 @@ export const vi = {
   'ai.history.ctaDescription':
     'Tư vấn thực đơn chay, dinh dưỡng & gợi ý món từ nguyên liệu sẵn có.',
   'ai.history.emptyTitle': 'Chưa có cuộc trò chuyện',
-  'ai.history.emptyDescription':
-    'Hãy mở trợ lý AI và gửi câu hỏi đầu tiên của bạn.',
+  'ai.history.emptyDescription': 'Hãy mở trợ lý AI và gửi câu hỏi đầu tiên của bạn.',
   'ai.mealPlanner.title': 'Lập thực đơn AI',
   'ai.mealPlanner.description':
     'Xem và chỉnh đề xuất trước khi xác nhận. Chưa có thực đơn nào được lưu khi tạo đề xuất.',
@@ -1418,6 +1433,25 @@ export const en: Record<TranslationKey, string> = {
   'grocery.clearCheckedConfirmTitle': 'Remove checked items?',
   'grocery.clearCheckedConfirmBody':
     'All checked items will be removed from this list.',
+  'grocery.transferReady': '{{count}} purchased items are ready to store',
+  'grocery.transferReadyDescription':
+    'Move them to Pantry to keep track of ingredients you have.',
+  'grocery.transferAction': 'Move to Pantry',
+  'grocery.transferTitle': 'Store ingredients in Pantry',
+  'grocery.transferCount': '{{count}} items will be added to your pantry',
+  'grocery.transferDescription':
+    'Quantities and units stay the same. Transferred items leave this grocery list.',
+  'grocery.transferMore': 'And {{count}} more',
+  'grocery.transferSkipped':
+    '{{count}} legacy items are not linked to ingredients and will stay in this list for review.',
+  'grocery.transferConfirm': 'Confirm and store',
+  'grocery.transferSuccessTitle': 'Pantry updated',
+  'grocery.transferSuccessBody':
+    '{{count}} items were stored and removed from your grocery list.',
+  'grocery.transferStay': 'Stay on list',
+  'grocery.transferViewPantry': 'View Pantry',
+  'grocery.transferError':
+    'Unable to move these items to Pantry. Nothing changed, so you can safely try again.',
   'grocery.markCompleted': 'Mark as completed',
   'grocery.reopen': 'Reopen list',
   'grocery.archive': 'Archive list',

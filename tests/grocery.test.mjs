@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   groceryProgress,
+  groceryTransferSummary,
   groceryDateRange,
   groupGroceryItems,
   parseGroceryQuantity,
@@ -76,6 +77,23 @@ test('grocery items group by category with an explicit fallback', () => {
 
 test('grocery progress counts checked items', () => {
   assert.deepEqual(groceryProgress({ items }), { checked: 1, total: 4 });
+});
+
+test('pantry transfer includes only checked items linked to catalog or personal ingredients', () => {
+  const summary = groceryTransferSummary([
+    { ...items[0], foodItemId: 'catalog-food' },
+    { ...items[1], checked: true, personalIngredientId: 'personal-food' },
+    { ...items[2], checked: true },
+    items[3],
+  ]);
+  assert.deepEqual(
+    summary.eligible.map((item) => item.itemId),
+    ['tomato', 'pepper']
+  );
+  assert.deepEqual(
+    summary.skipped.map((item) => item.itemId),
+    ['carrot']
+  );
 });
 
 test('grocery quantities accept decimal comma and reject invalid values', () => {

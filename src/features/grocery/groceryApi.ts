@@ -3,6 +3,7 @@ import type {
   GroceryItemInput,
   GroceryItemUpdate,
   GroceryList,
+  GroceryPantryTransfer,
   GroceryStatus,
   GroceryUnit,
   IngredientSuggestion,
@@ -54,6 +55,10 @@ export const groceryApi = {
   clearChecked: (id: string) =>
     unwrapApiRequest<GroceryList>(() =>
       apiClient.post(`/grocery-lists/${id}/clear-checked`, {})
+    ),
+  transferCheckedToPantry: (id: string) =>
+    unwrapApiRequest<GroceryPantryTransfer>(() =>
+      apiClient.post(`/grocery-lists/${id}/transfer-checked-to-pantry`, {})
     ),
   ingredientSuggestions: (query: string) =>
     unwrapApiRequest<IngredientSuggestion[]>(() =>

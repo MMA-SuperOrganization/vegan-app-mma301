@@ -26,6 +26,13 @@ export interface GroceryList {
   updatedAt?: string;
 }
 
+export interface GroceryPantryTransfer {
+  groceryList: GroceryList;
+  pantry: Pantry;
+  transferredCount: number;
+  skippedItems: Array<{ itemId: string; nameSnapshot: string }>;
+}
+
 export interface GroceryItemInput {
   foodItemId?: string;
   personalIngredientId?: string;
@@ -58,3 +65,4 @@ export type IngredientSelection = Pick<
   IngredientSuggestion,
   'id' | 'source' | 'name' | 'defaultUnit' | 'foodItemId' | 'personalIngredientId'
 >;
+import type { Pantry } from '@/features/pantry/types';

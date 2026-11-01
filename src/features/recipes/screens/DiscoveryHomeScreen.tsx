@@ -19,6 +19,7 @@ import { CreatePostSheet } from '@/features/community/components/CreatePostSheet
 import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
 import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
 import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
+import { PostCommentsSheet } from '@/features/community/components/PostComments';
 import { useCommunityPosts, usePostReaction } from '@/features/community/hooks';
 import type { CommunityPost } from '@/features/community/types';
 import { useDebouncedValue } from '@/hooks';
@@ -48,6 +49,7 @@ export function DiscoveryHomeScreen() {
   const { t } = useTranslation();
   const [postComposerOpen, setPostComposerOpen] = useState(false);
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
+  const [commentPostId, setCommentPostId] = useState<string>();
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const listRef = useRef<FlatList<HomeListItem>>(null);
@@ -301,6 +303,7 @@ export function DiscoveryHomeScreen() {
                       item.post.reacted === 'like' ? null : 'like',
                   })
                 }
+                onComment={() => setCommentPostId(item.post._id)}
                 onPress={() =>
                   router.push({
                     pathname: '/community/post',
@@ -352,6 +355,11 @@ export function DiscoveryHomeScreen() {
       <CreateRecipeSheet
         visible={recipeComposerOpen}
         onClose={() => setRecipeComposerOpen(false)}
+      />
+      <PostCommentsSheet
+        visible={Boolean(commentPostId)}
+        postId={commentPostId}
+        onClose={() => setCommentPostId(undefined)}
       />
     </ScreenWrapper>
   );

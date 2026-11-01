@@ -17,12 +17,21 @@ test('recipe detail has no post social controls', () => {
 
 test('home remains recipe-first and adds community posts afterwards', () => {
   const home = read('../src/features/recipes/screens/DiscoveryHomeScreen.tsx');
+  const stories = read('../src/features/community/components/HomeRecipeStories.tsx');
+  const explore = read('../src/features/recipes/screens/ExploreScreen.tsx');
   const recipeStories = home.indexOf('<HomeRecipeStories');
   const community = home.indexOf('<HomeSocialPostCard');
 
   assert.ok(recipeStories >= 0);
   assert.ok(community > recipeStories);
   assert.match(home, /onCreatePost=\{/);
+  assert.match(
+    home,
+    /onViewAll=\{\(\) => router\.push\('\/\(discover\)\/explore'\)\}/
+  );
+  assert.match(stories, /onPress=\{onViewAll\}/);
+  assert.match(explore, /numColumns=\{2\}/);
+  assert.match(explore, /ExploreRecipeCard/);
 });
 
 test('post owns share, reactions and comments while admin routes are guarded', () => {
@@ -65,10 +74,16 @@ test('post cards apply reactions optimistically without a loading-only heart sta
 test('meal-plan completion logs to the diary optimistically and active tabs use a moving line', () => {
   const mealSection = read('../src/features/meal-plan/components/MealSection.tsx');
   const mealHooks = read('../src/features/meal-plan/hooks.ts');
+  const mealPlanScreen = read(
+    '../src/features/meal-plan/screens/MealPlanScreen.tsx'
+  );
   const tabBar = read('../src/components/navigation/CustomTabBar.tsx');
 
   assert.match(mealSection, /onToggleCompleted/);
   assert.match(mealSection, /mealPlan\.loggedToDiary/);
+  assert.match(mealSection, /meal\.diaryEntryId/);
+  assert.match(mealPlanScreen, /legacyDiaryRepairAttempts/);
+  assert.match(mealPlanScreen, /optimistic-diary-entry/);
   assert.match(mealHooks, /variables\.input\.completed/);
   assert.match(mealHooks, /\['account', userId, 'tracking'\]/);
   assert.match(tabBar, /Animated\.spring/);

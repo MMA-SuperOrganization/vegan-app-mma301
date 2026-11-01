@@ -63,9 +63,9 @@ export function MealSection({
             </View>
             <Pressable
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: meal.completed, disabled: pending }}
+              accessibilityState={{ checked: Boolean(meal.diaryEntryId), disabled: pending }}
               accessibilityLabel={t(
-                meal.completed
+                meal.diaryEntryId
                   ? 'mealPlan.removeFromDiaryA11y'
                   : 'mealPlan.logToDiaryA11y',
                 { name: meal.recipeSnapshot.title }
@@ -74,21 +74,23 @@ export function MealSection({
               onPress={() => onToggleCompleted(meal)}
               style={({ pressed }) => [
                 styles.diaryButton,
-                meal.completed && styles.diaryButtonCompleted,
+                meal.diaryEntryId && styles.diaryButtonCompleted,
                 pressed && styles.pressed,
               ]}
             >
               <View
                 style={[
                   styles.diaryIcon,
-                  meal.completed && styles.diaryIconCompleted,
+                  meal.diaryEntryId && styles.diaryIconCompleted,
                 ]}
               >
                 <AppIcon
                   name="check"
                   size={16}
                   color={
-                    meal.completed ? colors.background.surface : colors.primary[700]
+                    meal.diaryEntryId
+                      ? colors.background.surface
+                      : colors.primary[700]
                   }
                   decorative
                 />
@@ -99,7 +101,9 @@ export function MealSection({
                 style={styles.diaryLabel}
               >
                 {t(
-                  meal.completed ? 'mealPlan.loggedToDiary' : 'mealPlan.logToDiary'
+                  meal.diaryEntryId
+                    ? 'mealPlan.loggedToDiary'
+                    : 'mealPlan.logToDiary'
                 )}
               </AppText>
             </Pressable>

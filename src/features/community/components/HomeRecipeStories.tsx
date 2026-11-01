@@ -9,10 +9,12 @@ import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 export function HomeRecipeStories({
   recipes,
   onCreateRecipe,
+  onViewAll,
   onSelect,
 }: {
   recipes: ContentCardData[];
   onCreateRecipe: () => void;
+  onViewAll: () => void;
   onSelect: (recipe: ContentCardData) => void;
 }) {
   const { t } = useTranslation();
@@ -20,7 +22,20 @@ export function HomeRecipeStories({
     <View style={styles.section}>
       <View style={styles.headingRow}>
         <AppText variant="heading3">{t('home.socialStories')}</AppText>
-        <AppText variant="caption" color={colors.text.secondary}>{t('home.viewAll')}</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('home.viewAll')}
+          hitSlop={10}
+          onPress={onViewAll}
+          style={({ pressed }) => [styles.viewAll, pressed && styles.pressed]}
+        >
+          <AppText variant="bodySmall" color={colors.primary[700]}>
+            {t('home.viewAll')}
+          </AppText>
+          <AppText variant="bodyStrong" color={colors.primary[700]}>
+            ›
+          </AppText>
+        </Pressable>
       </View>
       <FlatList
         horizontal
@@ -36,9 +51,18 @@ export function HomeRecipeStories({
             style={({ pressed }) => [styles.createStory, pressed && styles.pressed]}
           >
             <View style={styles.createIcon}>
-              <AppIcon name="plus" size={28} color={colors.common.white} decorative />
+              <AppIcon
+                name="plus"
+                size={28}
+                color={colors.common.white}
+                decorative
+              />
             </View>
-            <AppText variant="bodyStrong" color={colors.primary[800]} style={styles.createLabel}>
+            <AppText
+              variant="bodyStrong"
+              color={colors.primary[800]}
+              style={styles.createLabel}
+            >
               {t('home.addRecipe')}
             </AppText>
           </Pressable>
@@ -46,9 +70,25 @@ export function HomeRecipeStories({
         ListHeaderComponentStyle={styles.createStorySpacing}
         ItemSeparatorComponent={() => <View style={{ width: spacing.sm }} />}
         renderItem={({ item }) => (
-          <Pressable accessibilityRole="button" onPress={() => onSelect(item)} style={({ pressed }) => [styles.story, pressed && styles.pressed]}>
-            <RecipeImage uri={item.coverImageUrl} style={styles.image} fallbackSize="large" />
-            <View style={styles.storyLabel}><AppText color={colors.common.white} numberOfLines={2} style={styles.label}>{item.title ?? t('recipe.defaultTitle')}</AppText></View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => onSelect(item)}
+            style={({ pressed }) => [styles.story, pressed && styles.pressed]}
+          >
+            <RecipeImage
+              uri={item.coverImageUrl}
+              style={styles.image}
+              fallbackSize="large"
+            />
+            <View style={styles.storyLabel}>
+              <AppText
+                color={colors.common.white}
+                numberOfLines={2}
+                style={styles.label}
+              >
+                {item.title ?? t('recipe.defaultTitle')}
+              </AppText>
+            </View>
           </Pressable>
         )}
       />
@@ -58,15 +98,62 @@ export function HomeRecipeStories({
 
 const styles = StyleSheet.create({
   section: { gap: spacing.md },
-  headingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  viewAll: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
   list: { paddingRight: spacing.xl },
   createStorySpacing: { marginRight: spacing.sm },
-  createStory: { width: 116, height: 172, borderRadius: radius.xl, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.md, backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.primary[300] },
-  createIcon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary[700] },
+  createStory: {
+    width: 116,
+    height: 172,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.background.selected,
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+  },
+  createIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary[700],
+  },
   createLabel: { textAlign: 'center' },
-  story: { width: 116, height: 172, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.background.selected, position: 'relative' },
+  story: {
+    width: 116,
+    height: 172,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.background.selected,
+    position: 'relative',
+  },
   image: { width: '100%', height: '100%', borderRadius: 0 },
-  storyLabel: { position: 'absolute', left: spacing.sm, right: spacing.sm, bottom: spacing.sm },
-  label: { fontSize: 13, fontWeight: '700', textShadowColor: 'rgba(0,0,0,0.45)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  storyLabel: {
+    position: 'absolute',
+    left: spacing.sm,
+    right: spacing.sm,
+    bottom: spacing.sm,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   pressed: { opacity: 0.78 },
 });

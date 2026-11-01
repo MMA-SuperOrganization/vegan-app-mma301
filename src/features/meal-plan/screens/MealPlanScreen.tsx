@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { isLocalIsoDate } from '@/features/tracking/trackingState';
 import { StyleSheet, View } from 'react-native';
@@ -38,6 +38,15 @@ import {
 } from '../mealPlanState';
 import type { PlannedMeal } from '../types';
 
+const optimisticDiaryState = (
+  meal: PlannedMeal,
+  completed: boolean
+): PlannedMeal => ({
+  ...meal,
+  completed,
+  diaryEntryId: completed ? 'optimistic-diary-entry' : undefined,
+});
+
 export function MealPlanScreen() {
   const params = useLocalSearchParams<{ planId?: string; date?: string }>();
   const router = useRouter();
@@ -64,6 +73,7 @@ export function MealPlanScreen() {
 
   const planQuery = useMealPlan(weekStartDate, params.planId);
   const actions = useMealPlanActions(weekStartDate, params.planId);
+  const legacyDiaryRepairAttempts = useRef(new Set<string>());
   const targets = useTrackingTargets();
   const recipeOptions = useRecipeOptions(
     searchQuery,
@@ -90,6 +100,22 @@ export function MealPlanScreen() {
     actions.activate.isError ||
     actions.setStatus.isError ||
     actions.clone.isError;
+
+  useEffect(() => {
+    if (!plan || readOnly) return;
+    for (const meal of plan.days.flatMap((day) => day.meals)) {
+      if (!meal.completed || meal.diaryEntryId) continue;
+      const repairKey = `${plan._id}:${meal.mealId}`;
+      if (legacyDiaryRepairAttempts.current.has(repairKey)) continue;
+      legacyDiaryRepairAttempts.current.add(repairKey);
+      actions.updateMeal.mutate({
+        planId: plan._id,
+        mealId: meal.mealId,
+        input: { completed: true },
+        optimisticMeal: optimisticDiaryState(meal, true),
+      });
+    }
+  }, [actions.updateMeal, plan, readOnly]);
 
   const mealCounts = useMemo(
     () =>
@@ -178,10 +204,12 @@ export function MealPlanScreen() {
 
   const toggleCompleted = (meal: PlannedMeal) => {
     if (!plan || readOnly) return;
+    const completed = !meal.diaryEntryId;
     actions.updateMeal.mutate({
       planId: plan._id,
       mealId: meal.mealId,
-      input: { completed: !meal.completed },
+      input: { completed },
+      optimisticMeal: optimisticDiaryState(meal, completed),
     });
   };
 

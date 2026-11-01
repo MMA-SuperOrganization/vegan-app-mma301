@@ -9,12 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import {
-  AppText,
-  EmptyState,
-  LoadingSpinner,
-  ScreenWrapper,
-} from '@/components';
+import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
 import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
 import { HomeRecipeStories } from '@/features/community/components/HomeRecipeStories';
 import { HomeSocialHeader } from '@/features/community/components/HomeSocialHeader';
@@ -65,8 +60,7 @@ export function DiscoveryHomeScreen() {
 
   const featured = home.data?.featured.recipes ?? [];
   const communityPosts = posts.data?.pages.flatMap((page) => page.data) ?? [];
-  const searchContent =
-    searchResults.data?.pages.flatMap((page) => page.data) ?? [];
+  const searchContent = searchResults.data?.pages.flatMap((page) => page.data) ?? [];
   const recommendations = home.data?.personalized?.recipes?.length
     ? home.data.personalized.recipes
     : featured;
@@ -208,9 +202,7 @@ export function DiscoveryHomeScreen() {
                 onRetryRecent={() => void recentSearches.refetch()}
               />
             ) : (
-              <Animated.View
-                style={[styles.homeContent, homeContentRevealStyle]}
-              >
+              <Animated.View style={[styles.homeContent, homeContentRevealStyle]}>
                 {home.isLoading ? (
                   <LoadingSpinner text={t('home.loadingSuggestions')} />
                 ) : null}
@@ -222,9 +214,7 @@ export function DiscoveryHomeScreen() {
                     onAction={() => void home.refetch()}
                   />
                 ) : null}
-                {!home.isLoading &&
-                !home.isError &&
-                !recommendations.length ? (
+                {!home.isLoading && !home.isError && !recommendations.length ? (
                   <EmptyState
                     title={t('home.noSuggestions')}
                     description={t('home.noSuggestionsDescription')}
@@ -236,6 +226,7 @@ export function DiscoveryHomeScreen() {
                 <HomeRecipeStories
                   recipes={recommendations}
                   onCreateRecipe={() => setRecipeComposerOpen(true)}
+                  onViewAll={() => router.push('/(discover)/explore')}
                   onSelect={openRecipe}
                 />
 
@@ -254,9 +245,7 @@ export function DiscoveryHomeScreen() {
                     onAction={() => void posts.refetch()}
                   />
                 ) : null}
-                {!posts.isLoading &&
-                !posts.isError &&
-                !communityPosts.length ? (
+                {!posts.isLoading && !posts.isError && !communityPosts.length ? (
                   <AppText color={colors.text.secondary}>
                     {t('home.socialEmptyFeed')}
                   </AppText>
@@ -297,8 +286,7 @@ export function DiscoveryHomeScreen() {
                 onReact={() =>
                   postReaction.mutate({
                     postId: item.post._id,
-                    nextReaction:
-                      item.post.reacted === 'like' ? null : 'like',
+                    nextReaction: item.post.reacted === 'like' ? null : 'like',
                   })
                 }
                 onPress={() =>
@@ -333,10 +321,7 @@ export function DiscoveryHomeScreen() {
         onEndReachedThreshold={0.5}
         onEndReached={() => {
           if (searchExpanded) {
-            if (
-              searchResults.hasNextPage &&
-              !searchResults.isFetchingNextPage
-            ) {
+            if (searchResults.hasNextPage && !searchResults.isFetchingNextPage) {
               void searchResults.fetchNextPage();
             }
           } else if (posts.hasNextPage && !posts.isFetchingNextPage) {

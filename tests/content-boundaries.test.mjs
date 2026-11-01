@@ -13,6 +13,7 @@ test('recipe detail has no post social controls', () => {
   assert.doesNotMatch(recipeDetail, /RatingPanel/);
   assert.doesNotMatch(recipeDetail, /useRelatedRecipePosts/);
   assert.doesNotMatch(recipeDetail, /community\/post|community\/editor/);
+  assert.doesNotMatch(recipeDetail, /sourceAttribution|Xem nguồn|View source/);
 });
 
 test('home remains recipe-first and adds community posts afterwards', () => {

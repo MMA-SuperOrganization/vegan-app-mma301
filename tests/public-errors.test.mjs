@@ -44,4 +44,10 @@ test('known actionable errors use controlled localized copy and ignore incoming 
     ),
     translateFor('vi', 'firebase.emailExists')
   );
+  assert.equal(
+    resolvePublicErrorMessage({ code: 'USERNAME_TAKEN', status: 409 }, fallback, (key) =>
+      translateFor('vi', key)
+    ),
+    translateFor('vi', 'profile.error.usernameTaken')
+  );
 });

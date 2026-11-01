@@ -17,6 +17,7 @@ const publicMessageKeys: Partial<Record<string, TranslationKey>> = {
   TOO_MANY_ATTEMPTS_TRY_LATER: 'firebase.tooManyAttempts',
   WEAK_PASSWORD: 'firebase.weakPassword',
   INVALID_EMAIL: 'auth.validation.emailInvalid',
+  USERNAME_TAKEN: 'profile.error.usernameTaken',
   NETWORK_ERROR: 'error.network',
   ERR_NETWORK: 'error.network',
   ECONNABORTED: 'error.network',

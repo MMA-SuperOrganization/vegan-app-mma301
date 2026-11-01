@@ -696,6 +696,10 @@ export const vi = {
   'profile.logoutDescription': 'Đăng xuất sẽ xóa dữ liệu phiên trên thiết bị này.',
   'profile.error.load': 'Không thể tải hồ sơ.',
   'profile.error.save': 'Không thể lưu hồ sơ.',
+  'profile.saveSuccessTitle': 'Đã lưu hồ sơ',
+  'profile.saveSuccessMessage': 'Thông tin hồ sơ của bạn đã được cập nhật.',
+  'profile.error.usernameTaken':
+    'Tên người dùng này đã có người sử dụng. Vui lòng chọn tên khác.',
 
   'notifications.title': 'Thông báo',
   'notifications.unreadCount': '{{count}} thông báo chưa đọc',
@@ -2052,6 +2056,10 @@ export const en: Record<TranslationKey, string> = {
   'profile.logoutDescription': 'Signing out clears session data from this device.',
   'profile.error.load': 'Unable to load profile.',
   'profile.error.save': 'Unable to save profile.',
+  'profile.saveSuccessTitle': 'Profile saved',
+  'profile.saveSuccessMessage': 'Your profile has been updated.',
+  'profile.error.usernameTaken':
+    'This username is already taken. Please choose another one.',
   'notifications.title': 'Notifications',
   'notifications.unreadCount': '{{count}} unread notifications',
   'notifications.emptyShort': 'No new notifications',

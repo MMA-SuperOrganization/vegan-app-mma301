@@ -6,6 +6,7 @@ import {
   AppInput,
   AppText,
   BottomSheet,
+  CalendarInputField,
   CustomHeader,
   FilterChip,
   ScreenWrapper,
@@ -176,15 +177,14 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
               ))}
             </View>
           </View>
-          <AppInput
+          <CalendarInputField
             label={t('pantry.expiry')}
             value={expiry}
             onChangeText={setExpiry}
-            placeholder="YYYY-MM-DD"
-            maxLength={10}
             helper={t('pantry.expiryHint')}
             disabled={pending}
             error={errors.expiry ? t(errors.expiry) : undefined}
+            defaultDate={new Date()}
           />
           <AppInput
             label={t('grocery.noteLabel')}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import {
   CustomHeader,
   ScreenWrapper,
   SearchPickerSheet,
+  appDialog,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
@@ -162,7 +163,7 @@ export function RecipeEditorScreen() {
     steps.some((step) => step.instruction.trim());
   const saveRecipe = (submit: boolean) => {
     if (!valid) {
-      Alert.alert(
+      appDialog.alert(
         vi ? 'Thiếu thông tin' : 'Missing information',
         vi
           ? 'Hãy nhập tiêu đề, khẩu phần, ít nhất một nguyên liệu và một bước.'
@@ -213,20 +214,34 @@ export function RecipeEditorScreen() {
         style={({ pressed }) => [styles.storyCover, pressed && styles.pressed]}
       >
         {cover?.uri || recipe.data?.coverImageUrl ? (
-          <Image source={{ uri: cover?.uri || recipe.data?.coverImageUrl }} style={styles.storyCoverImage} />
+          <Image
+            source={{ uri: cover?.uri || recipe.data?.coverImageUrl }}
+            style={styles.storyCoverImage}
+          />
         ) : (
           <View style={styles.storyCoverEmpty}>
             <AppIcon name="image" size={34} color={colors.primary[700]} decorative />
-            <AppText variant="heading4" color={colors.primary[700]}>{t('recipe.createStoryTitle')}</AppText>
-            <AppText variant="bodySmall" color={colors.text.secondary}>{t('recipe.createStoryHint')}</AppText>
+            <AppText variant="heading4" color={colors.primary[700]}>
+              {t('recipe.createStoryTitle')}
+            </AppText>
+            <AppText variant="bodySmall" color={colors.text.secondary}>
+              {t('recipe.createStoryHint')}
+            </AppText>
           </View>
         )}
         <View style={styles.storyCoverAction}>
           <AppIcon name="image" size={18} color={colors.common.white} decorative />
-          <AppText variant="caption" color={colors.common.white}>{t('recipe.chooseCover')}</AppText>
+          <AppText variant="caption" color={colors.common.white}>
+            {t('recipe.chooseCover')}
+          </AppText>
         </View>
       </Pressable>
-      <AppInput label={t('recipe.titleLabel')} value={title} onChangeText={setTitle} editable={editable} />
+      <AppInput
+        label={t('recipe.titleLabel')}
+        value={title}
+        onChangeText={setTitle}
+        editable={editable}
+      />
       <AppInput
         label={t('recipe.summaryLabel')}
         value={summary}
@@ -475,9 +490,35 @@ export function RecipeEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  storyCover: { minHeight: 260, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.background.selected, borderWidth: 1, borderColor: colors.border.default },
+  storyCover: {
+    minHeight: 260,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.background.selected,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
   storyCoverImage: { width: '100%', height: 260 },
-  storyCoverEmpty: { flex: 1, minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
-  storyCoverAction: { position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md, minHeight: 42, borderRadius: radius.full, backgroundColor: 'rgba(24, 60, 43, 0.88)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
+  storyCoverEmpty: {
+    flex: 1,
+    minHeight: 260,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    padding: spacing.xl,
+  },
+  storyCoverAction: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.md,
+    minHeight: 42,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(24, 60, 43, 0.88)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
   pressed: { opacity: 0.78 },
 });

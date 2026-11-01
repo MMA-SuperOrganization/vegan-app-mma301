@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
@@ -8,6 +8,7 @@ import {
   CustomHeader,
   EmptyState,
   ScreenWrapper,
+  appDialog,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -54,7 +55,7 @@ export function GroceryDetailScreen() {
   };
 
   const confirmClear = () =>
-    Alert.alert(
+    appDialog.alert(
       t('grocery.clearCheckedConfirmTitle'),
       t('grocery.clearCheckedConfirmBody'),
       [
@@ -68,28 +69,32 @@ export function GroceryDetailScreen() {
     );
 
   const confirmArchive = () =>
-    Alert.alert(t('grocery.archiveConfirmTitle'), t('grocery.archiveConfirmBody'), [
-      { text: t('common.close'), style: 'cancel' },
-      {
-        text: t('grocery.archive'),
-        style: 'destructive',
-        onPress: async () => {
-          if (!list) return;
-          try {
-            await actions.archive.mutateAsync(list._id);
-            goBack();
-          } catch {
-            // Keep this screen open so the user can retry.
-          }
+    appDialog.alert(
+      t('grocery.archiveConfirmTitle'),
+      t('grocery.archiveConfirmBody'),
+      [
+        { text: t('common.close'), style: 'cancel' },
+        {
+          text: t('grocery.archive'),
+          style: 'destructive',
+          onPress: async () => {
+            if (!list) return;
+            try {
+              await actions.archive.mutateAsync(list._id);
+              goBack();
+            } catch {
+              // Keep this screen open so the user can retry.
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
 
   const transferToPantry = async () => {
     try {
       const result = await actions.transferCheckedToPantry.mutateAsync();
       setTransferOpen(false);
-      Alert.alert(
+      appDialog.alert(
         t('grocery.transferSuccessTitle'),
         t('grocery.transferSuccessBody', { count: result.transferredCount }),
         [

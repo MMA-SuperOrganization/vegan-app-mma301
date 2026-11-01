@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppInput, AppText, BottomSheet } from '@/components';
+import {
+  AppButton,
+  AppInput,
+  AppText,
+  BottomSheet,
+  CalendarInputField,
+} from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useWeightMutations } from '../hooks/useTrackingApi';
@@ -164,13 +170,14 @@ export function WeightLogModal({
           placeholder="65,0"
           error={errors.weight}
         />
-        <AppInput
+        <CalendarInputField
           label={t('tracking.weightEntry.dateLabel')}
           value={dateText}
           onChangeText={setDateText}
-          keyboardType="numbers-and-punctuation"
-          placeholder="DD/MM/YYYY"
+          format="DD/MM/YYYY"
           error={errors.date}
+          minimumDate={new Date(1900, 0, 1)}
+          maximumDate={new Date()}
         />
         <AppInput
           label={t('tracking.weightEntry.noteLabel')}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   AppButton,
@@ -8,6 +8,7 @@ import {
   CustomHeader,
   FilterChip,
   ScreenWrapper,
+  appDialog,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -99,7 +100,7 @@ export function GroceryItemEditorScreen() {
 
   const confirmDelete = () => {
     if (!item) return;
-    Alert.alert(
+    appDialog.alert(
       t('grocery.deleteItemConfirmTitle'),
       t('grocery.deleteItemConfirmBody'),
       [

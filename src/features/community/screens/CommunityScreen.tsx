@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
@@ -10,6 +10,7 @@ import {
   LoadingSpinner,
   ScreenWrapper,
   Surface,
+  appDialog,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
@@ -259,7 +260,7 @@ export function CommunityScreen() {
                 mine &&
                 ['draft', 'rejected', 'published'].includes(item.value.status)
                   ? () =>
-                      Alert.alert(
+                      appDialog.alert(
                         vi ? 'Lưu trữ bài viết?' : 'Archive post?',
                         item.value.title,
                         [

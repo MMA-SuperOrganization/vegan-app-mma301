@@ -94,6 +94,8 @@ export function BottomSheet({
     <Modal
       visible={visible}
       transparent
+      statusBarTranslucent
+      navigationBarTranslucent
       animationType="slide"
       onRequestClose={onClose}
     >
@@ -168,7 +170,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     backgroundColor: colors.overlay.modal,
   },
-  sheetMotion: { width: '100%', zIndex: 1 },
+  sheetMotion: {
+    width: '100%',
+    zIndex: 1,
+    overflow: 'hidden',
+    backgroundColor: colors.background.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+  },
   sheet: {
     backgroundColor: colors.background.surface,
     borderTopLeftRadius: radius.xl,

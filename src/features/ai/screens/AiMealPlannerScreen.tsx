@@ -5,6 +5,7 @@ import {
   AppButton,
   AppInput,
   AppText,
+  CalendarInputField,
   CustomHeader,
   ScreenWrapper,
   Toggle,
@@ -58,11 +59,13 @@ export function AiMealPlannerScreen() {
       }
     >
       <AppText color={colors.text.secondary}>{t(keys.DESCRIPTION)}</AppText>
-      <AppInput
+      <CalendarInputField
         label={t(keys.START_DATE_LABEL)}
         value={startDate}
         onChangeText={setStartDate}
-        editable={!busy && !proposal}
+        disabled={busy || Boolean(proposal)}
+        minimumDate={new Date()}
+        defaultDate={new Date(`${startDate}T12:00:00`)}
       />
       <AppText>{t(keys.MONDAY_HINT)}</AppText>
       <AppInput

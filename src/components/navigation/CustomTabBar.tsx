@@ -1,5 +1,11 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+} from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +15,7 @@ import {
   colors,
   coreTokens,
   interactionTokens,
+  radius,
   spacing,
   type AssetName,
 } from '@/theme';
@@ -34,10 +41,46 @@ const TAB_CONFIG: Record<string, { labelKey: TranslationKey; icon: AssetName }> 
 };
 
 const TAB_ORDER = ['index', 'meal-plan', 'grocery', 'diary', 'profile'];
+const ACTIVE_LINE_WIDTH = 30;
 
 export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const [itemsWidth, setItemsWidth] = useState(0);
+  const indicatorX = useRef(new Animated.Value(0)).current;
+  const hasPositionedIndicator = useRef(false);
+  const selectedTabIndex = Math.max(
+    0,
+    TAB_ORDER.indexOf(state.routes[state.index]?.name)
+  );
+
+  useEffect(() => {
+    if (!itemsWidth) return;
+    const contentWidth = itemsWidth - spacing.lg * 2;
+    const tabWidth = contentWidth / TAB_ORDER.length;
+    const target =
+      spacing.lg + tabWidth * selectedTabIndex + (tabWidth - ACTIVE_LINE_WIDTH) / 2;
+
+    if (!hasPositionedIndicator.current) {
+      indicatorX.setValue(target);
+      hasPositionedIndicator.current = true;
+      return;
+    }
+
+    const animation = Animated.spring(indicatorX, {
+      toValue: target,
+      damping: 20,
+      stiffness: 220,
+      mass: 0.8,
+      useNativeDriver: true,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [indicatorX, itemsWidth, selectedTabIndex]);
+
+  const measureItems = (event: LayoutChangeEvent) => {
+    setItemsWidth(event.nativeEvent.layout.width);
+  };
 
   return (
     <View
@@ -48,7 +91,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
         { paddingBottom: insets.bottom },
       ]}
     >
-      <View style={styles.items}>
+      <View style={styles.items} onLayout={measureItems}>
         {TAB_ORDER.map((routeName) => {
           const routeIndex = state.routes.findIndex(
             (route) => route.name === routeName
@@ -92,7 +135,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
               onLongPress={onLongPress}
               style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              <View style={[styles.tabContent, isFocused && styles.activeIndicator]}>
+              <View style={styles.tabContent}>
                 <AppIcon
                   name={config.icon}
                   size={coreTokens.navigation.tabIconSize}
@@ -109,6 +152,12 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             </Pressable>
           );
         })}
+        {itemsWidth ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.activeLine, { transform: [{ translateX: indicatorX }] }]}
+          />
+        ) : null}
       </View>
     </View>
   );
@@ -145,7 +194,15 @@ const styles = StyleSheet.create({
     borderRadius: coreTokens.navigation.tabItemRadius,
     paddingVertical: spacing.xs,
   },
-  activeIndicator: { backgroundColor: colors.background.selected },
+  activeLine: {
+    position: 'absolute',
+    bottom: 4,
+    left: 0,
+    width: ACTIVE_LINE_WIDTH,
+    height: 3,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[700],
+  },
   label: {
     ...coreTokens.navigation.tabLabel,
     marginTop: spacing.xs,

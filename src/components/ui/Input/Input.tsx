@@ -21,6 +21,7 @@ import {
   child,
   containerStyle,
   interactionTokens,
+  type AssetName,
   variantNode,
 } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -39,6 +40,9 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   onSelect?: () => void;
+  trailingIcon?: AssetName;
+  onTrailingPress?: () => void;
+  trailingAccessibilityLabel?: string;
   preview?: boolean;
   preset?: ComponentPreset;
 }
@@ -59,6 +63,9 @@ export function Input({
   preview = false,
   preset = 'master',
   onSelect,
+  trailingIcon,
+  onTrailingPress,
+  trailingAccessibilityLabel,
   onFocus,
   onBlur,
   autoCapitalize = 'none',
@@ -181,8 +188,27 @@ export function Input({
               onBlur?.(e);
             }}
           />
-          {(icon || kind === 'password') &&
-            (kind === 'password' ? (
+          {(trailingIcon || icon || kind === 'password') &&
+            (trailingIcon && onTrailingPress ? (
+              <Pressable
+                testID={props.testID ? `${props.testID}-trailing-action` : undefined}
+                disabled={blocked}
+                onPress={onTrailingPress}
+                hitSlop={interactionTokens.iconHitSlop}
+                style={styles.trailingAction}
+                accessibilityRole="button"
+                accessibilityLabel={trailingAccessibilityLabel}
+                accessibilityState={{ disabled: blocked }}
+                aria-disabled={blocked}
+              >
+                <AppIcon
+                  name={trailingIcon}
+                  size={22}
+                  color={colors.primary[700]}
+                  decorative
+                />
+              </Pressable>
+            ) : kind === 'password' ? (
               <Pressable
                 testID={props.testID ? `${props.testID}-toggle` : 'password-toggle'}
                 disabled={blocked}
@@ -217,3 +243,12 @@ export function Input({
     </FormField>
   );
 }
+
+const styles = {
+  trailingAction: {
+    minWidth: interactionTokens.minimumTouch,
+    minHeight: interactionTokens.minimumTouch,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+};

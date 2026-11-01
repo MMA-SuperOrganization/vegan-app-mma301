@@ -1,16 +1,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
-import { AppButton } from '@/components';
+import { StyleSheet, View } from 'react-native';
+import { AppButton, appDialog } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
-import {
-  isStep1Complete,
-  isStep2Complete,
-  isStep3Complete,
-} from '../validation';
+import { isStep1Complete, isStep2Complete, isStep3Complete } from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 import {
@@ -50,7 +46,7 @@ export function PermissionsScreen() {
     try {
       await request();
     } catch {
-      Alert.alert(
+      appDialog.alert(
         t('onboarding.permissionRequestError'),
         t('onboarding.permissionUnsupported')
       );

@@ -148,6 +148,20 @@ export function HomeSocialHeader({
                   outputRange: [40, openSearchWidth],
                   extrapolate: 'clamp',
                 }),
+                backgroundColor: expansion.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [
+                    colors.background.muted,
+                    colors.background.surface,
+                  ],
+                }),
+                borderColor: expansion.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [
+                    colors.background.muted,
+                    colors.primary[300],
+                  ],
+                }),
                 transform: [
                   {
                     scaleY: expansion.interpolate({
@@ -160,6 +174,35 @@ export function HomeSocialHeader({
               },
             ]}
           >
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.collapsedSearchGlyph,
+                {
+                  opacity: fieldReveal.interpolate({
+                    inputRange: [0, 0.55, 1],
+                    outputRange: [1, 0, 0],
+                    extrapolate: 'clamp',
+                  }),
+                  transform: [
+                    {
+                      scale: expansion.interpolate({
+                        inputRange: [0, 0.35, 1],
+                        outputRange: [1, 0.9, 0.9],
+                        extrapolate: 'clamp',
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <AppIcon
+                name="search"
+                size={23}
+                color={colors.primary[700]}
+                decorative
+              />
+            </Animated.View>
             <Animated.View
               style={[
                 styles.searchField,
@@ -241,7 +284,8 @@ const styles = StyleSheet.create({
   brandIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   action: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.background.muted, alignItems: 'center', justifyContent: 'center' },
-  searchSlot: { position: 'absolute', top: 0, right: 0, zIndex: 1, height: 40, borderRadius: radius.full, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary[300], backgroundColor: colors.background.surface },
+  searchSlot: { position: 'absolute', top: 0, right: 0, zIndex: 1, height: 40, borderRadius: radius.full, overflow: 'hidden', borderWidth: 1.5 },
+  collapsedSearchGlyph: { position: 'absolute', right: 7, top: 7, width: 26, height: 26, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
   searchField: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.md, paddingRight: spacing.xs, gap: spacing.xs },
   searchInput: { flex: 1, minWidth: 0, color: colors.text.primary, fontSize: 15, paddingVertical: 0 },
   leadingAction: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },

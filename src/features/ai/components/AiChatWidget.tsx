@@ -14,7 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, useRouter, useSegments } from 'expo-router';
 
-import { AppIcon, AppInput, AppText, BottomSheet, Toggle } from '@/components';
+import { AppIcon, AppInput, AppText, BottomSheet } from '@/components';
 import {
   FeatureState,
   getFeatureErrorMessage,
@@ -78,7 +78,6 @@ export function AiChatWidget() {
   const [conversationId, setConversationId] = useState<string>();
   const [widgetTab, setWidgetTab] = useState<'chat' | 'history'>('chat');
   const [content, setContent] = useState('');
-  const [useProfile, setUseProfile] = useState(false);
   const [lastAction, setLastAction] = useState<AiWidgetAction>(
     AiWidgetAction.SUBMIT
   );
@@ -166,7 +165,6 @@ export function AiChatWidget() {
     setVisible(false);
     setConversationId(undefined);
     setContent('');
-    setUseProfile(false);
     setLastAction(AiWidgetAction.SUBMIT);
   }, [userId]);
 
@@ -230,7 +228,6 @@ export function AiChatWidget() {
       const mediaId = await attachment.uploadIfNeeded();
       await chat.send.mutateAsync({
         content: question,
-        useProfile,
         mediaId,
         targetConversationId,
       });
@@ -769,12 +766,6 @@ export function AiChatWidget() {
             ) : null}
 
             <View style={styles.composerToolbar}>
-              <Toggle
-                label={t(widgetKeys.USE_PROFILE)}
-                value={useProfile}
-                onValueChange={setUseProfile}
-                disabled={busy}
-              />
               <AppText variant="caption" color={colors.text.secondary}>
                 {t(widgetKeys.SWIPE_HINT)}
               </AppText>

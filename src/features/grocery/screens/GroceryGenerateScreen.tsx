@@ -5,6 +5,7 @@ import {
   AppButton,
   AppInput,
   AppText,
+  CalendarInputField,
   CustomHeader,
   EmptyState,
   ScreenWrapper,
@@ -188,20 +189,26 @@ export function GroceryGenerateScreen() {
                 onValueChange={setSubtractPantry}
                 disabled={actions.generate.isPending}
               />
-              <AppInput
+              <CalendarInputField
                 label={t('grocery.fromDate')}
                 value={fromText}
-                placeholder="DD/MM/YYYY"
-                editable={!actions.generate.isPending}
+                format="DD/MM/YYYY"
+                disabled={actions.generate.isPending}
+                minimumDate={isoDateToLocalDate(weekStartDate)}
+                maximumDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
+                defaultDate={isoDateToLocalDate(weekStartDate)}
                 onChangeText={(from) =>
                   setRangeDraft({ week: weekStartDate, from, to: toText })
                 }
               />
-              <AppInput
+              <CalendarInputField
                 label={t('grocery.toDate')}
                 value={toText}
-                placeholder="DD/MM/YYYY"
-                editable={!actions.generate.isPending}
+                format="DD/MM/YYYY"
+                disabled={actions.generate.isPending}
+                minimumDate={isoDateToLocalDate(weekStartDate)}
+                maximumDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
+                defaultDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
                 onChangeText={(to) =>
                   setRangeDraft({ week: weekStartDate, from: fromText, to })
                 }
@@ -253,6 +260,10 @@ export function GroceryGenerateScreen() {
       />
     </>
   );
+}
+
+function isoDateToLocalDate(value: string) {
+  return new Date(`${value}T12:00:00`);
 }
 
 const styles = StyleSheet.create({

@@ -55,7 +55,8 @@ export function EditProfileScreen() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [avatar, setAvatar] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const avatarUpload = useMutation({
-    mutationFn: () => mediaApi.uploadImage(avatar!, 'avatar'),
+    mutationFn: (asset: ImagePicker.ImagePickerAsset) =>
+      mediaApi.uploadImage(asset, 'avatar'),
   });
   const chooseAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -63,6 +64,8 @@ export function EditProfileScreen() {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.85,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (!result.canceled) {
       setAvatar(result.assets[0]);
@@ -95,7 +98,7 @@ export function EditProfileScreen() {
     if (heightCm === null || currentWeightKg === null) return;
     try {
       const avatarMediaId = avatar
-        ? avatarUpload.data || (await avatarUpload.mutateAsync())
+        ? avatarUpload.data || (await avatarUpload.mutateAsync(avatar))
         : undefined;
       if (
         await update({

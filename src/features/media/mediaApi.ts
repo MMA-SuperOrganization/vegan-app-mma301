@@ -5,7 +5,8 @@ import axios from 'axios';
 interface UploadRequest {
   assetId: string;
   uploadUrl: string;
-  headers: Record<string, string>;
+  headers?: Record<string, string>;
+  requiredHeaders?: Record<string, string>;
 }
 interface UploadOptions {
   signal?: AbortSignal;
@@ -40,8 +41,9 @@ async function uploadAsset(
       purpose,
     })
   );
+  const uploadHeaders = upload.headers ?? upload.requiredHeaders ?? {};
   const headers = Object.fromEntries(
-    Object.entries(upload.headers).filter(
+    Object.entries(uploadHeaders).filter(
       ([key]) => key.toLowerCase() !== 'content-length'
     )
   );

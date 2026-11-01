@@ -26,6 +26,15 @@ test('AI bottom sheet resizes and scrolls its composer above the Android keyboar
   assert.match(chat, /scrollToEnd/);
 });
 
+test('bottom sheet fully covers and clips its bottom surface on Android', () => {
+  const sheet = read('../src/components/ui/BottomSheet/BottomSheet.tsx');
+
+  assert.match(sheet, /statusBarTranslucent/);
+  assert.match(sheet, /navigationBarTranslucent/);
+  assert.match(sheet, /overflow: 'hidden'/);
+  assert.match(sheet, /backgroundColor: colors\.background\.surface/);
+});
+
 test('password input renders eye and eye-off toggle icon instead of text dot', () => {
   const input = read('../src/components/ui/Input/Input.tsx');
   const assets = read('../src/theme/assets.ts');

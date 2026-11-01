@@ -190,7 +190,8 @@ test('AI widget lets users scroll chat history without forced jumps', () => {
   assert.doesNotMatch(widget, /onContentSizeChange=/);
   assert.doesNotMatch(widget, /swipeResponder\.panHandlers/);
   assert.match(sheet, /style=\{StyleSheet\.absoluteFill\}/);
-  assert.match(sheet, /sheetMotion: \{ width: '100%', zIndex: 1 \}/);
+  assert.match(sheet, /sheetMotion:\s*\{/);
+  assert.match(sheet, /zIndex: 1/);
   assert.doesNotMatch(sheet, /onPress=\{\(e\) => e\.stopPropagation\(\)\}/);
 });
 

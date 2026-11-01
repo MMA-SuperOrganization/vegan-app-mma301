@@ -17,10 +17,12 @@ export function HomeSocialPostCard({
   post,
   onPress,
   onReact,
+  onComment,
 }: {
   post: HomePost;
   onPress: () => void;
   onReact: () => void;
+  onComment: () => void;
 }) {
   const { t } = useTranslation();
   const liked = post.reacted === 'like';
@@ -76,9 +78,11 @@ export function HomeSocialPostCard({
             {t('home.likeCount', { count: post.reactionCount ?? 0 })}
           </AppText>
         </View>
-        <AppText variant="caption" color={colors.text.secondary}>
-          {post.commentCount ?? 0} {t('home.comments')}
-        </AppText>
+        <Pressable accessibilityRole="button" onPress={onComment} hitSlop={8}>
+          <AppText variant="caption" color={colors.text.secondary}>
+            {post.commentCount ?? 0} {t('home.comments')}
+          </AppText>
+        </Pressable>
       </View>
       <View style={styles.actions}>
         <Pressable
@@ -93,7 +97,11 @@ export function HomeSocialPostCard({
             {liked ? t('home.liked') : t('home.like')}
           </AppText>
         </Pressable>
-        <Pressable style={styles.action} onPress={onPress}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onComment}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+        >
           <AppIcon
             name="comment"
             size={20}

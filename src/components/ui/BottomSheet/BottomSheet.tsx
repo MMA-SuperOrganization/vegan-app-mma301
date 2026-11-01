@@ -18,7 +18,7 @@ import { Button } from '../Button';
 
 export interface BottomSheetProps {
   visible: boolean;
-  title: string;
+  title?: string;
   onClose: () => void;
   children: ReactNode;
   /** Fills most of the screen height, for scrollable lists. */
@@ -29,6 +29,8 @@ export interface BottomSheetProps {
   showFooterClose?: boolean;
   /** Allows content-heavy panels to opt into a taller viewport without changing all sheets. */
   height?: ViewStyle['height'];
+  /** Reduces outer spacing for dense, keyboard-driven panels. */
+  compact?: boolean;
 }
 
 /** Shared modal sheet shell for pickers, forms and confirmations. */
@@ -41,6 +43,7 @@ export function BottomSheet({
   headerAction,
   showFooterClose = true,
   height,
+  compact = false,
 }: BottomSheetProps) {
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -117,18 +120,32 @@ export function BottomSheet({
           >
             <SafeAreaView
               edges={['bottom']}
-              style={[styles.sheet, tall && styles.fill]}
+              style={[
+                styles.sheet,
+                compact && styles.sheetCompact,
+                tall && styles.fill,
+              ]}
             >
-              <View style={[styles.body, tall && styles.fill]}>
+              <View
+                style={[
+                  styles.body,
+                  !title && !headerAction && styles.headerlessBody,
+                  tall && styles.fill,
+                ]}
+              >
                 <View style={styles.dragArea} {...panResponder.panHandlers}>
                   <View style={styles.dragHandle} />
                 </View>
-                <View style={styles.header}>
-                  <AppText variant="heading3" style={styles.title}>
-                    {title}
-                  </AppText>
-                  {headerAction}
-                </View>
+                {title || headerAction ? (
+                  <View style={styles.header}>
+                    {title ? (
+                      <AppText variant="heading3" style={styles.title}>
+                        {title}
+                      </AppText>
+                    ) : null}
+                    {headerAction}
+                  </View>
+                ) : null}
                 {children}
                 {showFooterClose ? (
                   <Button
@@ -169,11 +186,16 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl,
   },
+  sheetCompact: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+  },
   tall: { height: '85%' },
   fill: { flex: 1 },
   // Only a tall sheet has a fixed height to fill; `flex: 1` in an auto-height
   // sheet collapses the body to zero height on native (web is unaffected).
   body: { gap: spacing.lg },
+  headerlessBody: { gap: spacing.sm },
   header: {
     minHeight: 40,
     flexDirection: 'row',

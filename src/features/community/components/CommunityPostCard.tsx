@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AppText, Badge, Surface } from '@/components';
+import { AppIcon, AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
 
 import { postStatusLabel } from '../status';
@@ -21,6 +21,7 @@ export function CommunityPostCard({
   vi,
   onOpen,
   onReact,
+  onComment,
   onArchive,
 }: {
   post: CommunityPost;
@@ -28,6 +29,7 @@ export function CommunityPostCard({
   vi: boolean;
   onOpen: () => void;
   onReact: () => void;
+  onComment: () => void;
   onArchive?: () => void;
 }) {
   const visibleTags = post.tags?.filter((tag) => !tag.startsWith('community-demo-'));
@@ -111,23 +113,36 @@ export function CommunityPostCard({
         </View>
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={
-          vi ? (liked ? 'Bỏ thích' : 'Thích') : liked ? 'Unlike' : 'Like'
-        }
-        accessibilityState={{ selected: liked }}
-        onPress={onReact}
-        style={({ pressed }) => [styles.likeAction, pressed && styles.pressed]}
-      >
-        <PostLikeIcon liked={liked} />
-        <AppText
-          variant="bodyStrong"
-          color={liked ? colors.primary[700] : colors.text.secondary}
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            vi ? (liked ? 'Bỏ thích' : 'Thích') : liked ? 'Unlike' : 'Like'
+          }
+          accessibilityState={{ selected: liked }}
+          onPress={onReact}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          {vi ? (liked ? 'Đã thích' : 'Thích') : liked ? 'Liked' : 'Like'}
-        </AppText>
-      </Pressable>
+          <PostLikeIcon liked={liked} />
+          <AppText
+            variant="bodyStrong"
+            color={liked ? colors.primary[700] : colors.text.secondary}
+          >
+            {vi ? (liked ? 'Đã thích' : 'Thích') : liked ? 'Liked' : 'Like'}
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={vi ? 'Xem bình luận' : 'View comments'}
+          onPress={onComment}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+        >
+          <AppIcon name="comment" size={20} color={colors.text.secondary} decorative />
+          <AppText variant="bodyStrong" color={colors.text.secondary}>
+            {vi ? 'Bình luận' : 'Comments'}
+          </AppText>
+        </Pressable>
+      </View>
 
       {onArchive ? (
         <Pressable accessibilityRole="button" onPress={onArchive} hitSlop={8}>
@@ -165,7 +180,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   metrics: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  likeAction: {
+  actions: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+  },
+  action: {
+    flex: 1,
     minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',

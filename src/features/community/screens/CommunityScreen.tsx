@@ -18,6 +18,7 @@ import { colors, radius, spacing } from '@/theme';
 
 import { communityApi } from '../communityApi';
 import { CommunityPostCard } from '../components/CommunityPostCard';
+import { PostCommentsSheet } from '../components/PostComments';
 import { useCommunityPosts, useCommunityVideos, usePostReaction } from '../hooks';
 import { postStatusLabel } from '../status';
 import type { CommunityPost, CommunityVideo } from '../types';
@@ -59,6 +60,7 @@ export function CommunityScreen() {
   const vi = useTranslation().locale === 'vi';
   const [mine, setMine] = useState(false);
   const [contentType, setContentType] = useState<ContentType>('posts');
+  const [commentPostId, setCommentPostId] = useState<string>();
   const posts = useCommunityPosts(mine);
   const postReaction = usePostReaction();
   const videos = useCommunityVideos(mine);
@@ -97,16 +99,17 @@ export function CommunityScreen() {
         : 'Upload video';
 
   return (
-    <ScreenWrapper
-      header={
-        <CustomHeader
-          title={vi ? 'Cộng đồng' : 'Community'}
-          showBack
-          backFallbackHref="/(tabs)/profile"
-        />
-      }
-    >
-      <FlatList
+    <>
+      <ScreenWrapper
+        header={
+          <CustomHeader
+            title={vi ? 'Cộng đồng' : 'Community'}
+            showBack
+            backFallbackHref="/(tabs)/profile"
+          />
+        }
+      >
+        <FlatList
         data={feedItems}
         keyExtractor={(item) => `${item.kind}-${item.value._id}`}
         initialNumToRender={5}
@@ -246,6 +249,7 @@ export function CommunityScreen() {
                   nextReaction: item.value.reacted === 'like' ? null : 'like',
                 })
               }
+              onComment={() => setCommentPostId(item.value._id)}
               onOpen={() =>
                 router.push({
                   pathname: '/community/post',
@@ -327,8 +331,14 @@ export function CommunityScreen() {
           )
             void posts.fetchNextPage();
         }}
+        />
+      </ScreenWrapper>
+      <PostCommentsSheet
+        visible={Boolean(commentPostId)}
+        postId={commentPostId}
+        onClose={() => setCommentPostId(undefined)}
       />
-    </ScreenWrapper>
+    </>
   );
 }
 

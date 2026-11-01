@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppButton, AppText } from '@/components';
+import { AppButton, AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import type { PlannedMeal } from '../types';
@@ -12,6 +12,7 @@ export function MealSection({
   onAdd,
   onReplace,
   onChangeServings,
+  onToggleCompleted,
   onRemove,
 }: {
   title: string;
@@ -21,6 +22,7 @@ export function MealSection({
   onAdd: () => void;
   onReplace: (meal: PlannedMeal) => void;
   onChangeServings: (meal: PlannedMeal, delta: number) => void;
+  onToggleCompleted: (meal: PlannedMeal) => void;
   onRemove: (meal: PlannedMeal) => void;
 }) {
   const { t } = useTranslation();
@@ -59,13 +61,55 @@ export function MealSection({
                 })}
               </AppText>
             </View>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: meal.completed, disabled: pending }}
+              accessibilityLabel={t(
+                meal.completed
+                  ? 'mealPlan.removeFromDiaryA11y'
+                  : 'mealPlan.logToDiaryA11y',
+                { name: meal.recipeSnapshot.title }
+              )}
+              disabled={pending}
+              onPress={() => onToggleCompleted(meal)}
+              style={({ pressed }) => [
+                styles.diaryButton,
+                meal.completed && styles.diaryButtonCompleted,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View
+                style={[
+                  styles.diaryIcon,
+                  meal.completed && styles.diaryIconCompleted,
+                ]}
+              >
+                <AppIcon
+                  name="check"
+                  size={16}
+                  color={
+                    meal.completed ? colors.background.surface : colors.primary[700]
+                  }
+                  decorative
+                />
+              </View>
+              <AppText
+                variant="bodySmall"
+                color={colors.primary[700]}
+                style={styles.diaryLabel}
+              >
+                {t(
+                  meal.completed ? 'mealPlan.loggedToDiary' : 'mealPlan.logToDiary'
+                )}
+              </AppText>
+            </Pressable>
             <View style={styles.actions}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('mealPlan.replaceDishA11y', {
                   name: meal.recipeSnapshot.title,
                 })}
-                disabled={pending}
+                disabled={pending || meal.completed}
                 onPress={() => onReplace(meal)}
                 style={({ pressed }) => [
                   styles.textButton,
@@ -81,7 +125,7 @@ export function MealSection({
                 accessibilityLabel={t('mealPlan.decreaseServingA11y', {
                   name: meal.recipeSnapshot.title,
                 })}
-                disabled={pending || meal.servings <= 1}
+                disabled={pending || meal.completed || meal.servings <= 1}
                 onPress={() => onChangeServings(meal, -1)}
                 style={({ pressed }) => [
                   styles.stepButton,
@@ -100,7 +144,7 @@ export function MealSection({
                 accessibilityLabel={t('mealPlan.increaseServingA11y', {
                   name: meal.recipeSnapshot.title,
                 })}
-                disabled={pending || meal.servings >= 100}
+                disabled={pending || meal.completed || meal.servings >= 100}
                 onPress={() => onChangeServings(meal, 1)}
                 style={({ pressed }) => [
                   styles.stepButton,
@@ -156,6 +200,34 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
   },
   mealCopy: { gap: spacing.xs },
+  diaryButton: {
+    minHeight: 42,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.md,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+    backgroundColor: colors.background.surface,
+  },
+  diaryButtonCompleted: {
+    borderColor: colors.primary[300],
+    backgroundColor: colors.background.selected,
+  },
+  diaryIcon: {
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.selected,
+  },
+  diaryIconCompleted: { backgroundColor: colors.primary[700] },
+  diaryLabel: { fontWeight: '600' },
   actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

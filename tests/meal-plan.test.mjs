@@ -52,15 +52,21 @@ test('optimistic meal edits update nutrition inputs without mutating cached plan
   const increased = updatePlannedMeal(plan, 'meal-1', { servings: 2 });
   assert.equal(increased.days[0].meals[0].servings, 2);
   assert.equal(plan.days[0].meals[0].servings, 1);
+  const logged = updatePlannedMeal(increased, 'meal-1', { completed: true });
+  assert.equal(logged.days[0].meals[0].completed, true);
+  assert.equal(increased.days[0].meals[0].completed, false);
 
   const added = addPlannedMeal(
-    increased,
+    logged,
     '2026-11-01',
     meal({ mealId: 'meal-2', type: 'dinner' })
   );
   assert.equal(added.days[0].meals.length, 2);
   const removed = removePlannedMeal(added, 'meal-1');
-  assert.deepEqual(removed.days[0].meals.map((entry) => entry.mealId), ['meal-2']);
+  assert.deepEqual(
+    removed.days[0].meals.map((entry) => entry.mealId),
+    ['meal-2']
+  );
 });
 
 test('optimistic recipe snapshots fill absent nutrient values safely', () => {

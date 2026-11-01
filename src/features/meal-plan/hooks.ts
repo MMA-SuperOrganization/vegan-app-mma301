@@ -8,12 +8,7 @@ import {
   selectEditablePlan,
   updatePlannedMeal,
 } from './mealPlanState';
-import type {
-  AddMealInput,
-  MealPlan,
-  PlannedMeal,
-  UpdateMealInput,
-} from './types';
+import type { AddMealInput, MealPlan, PlannedMeal, UpdateMealInput } from './types';
 
 const mealPlanKeys = {
   root: (userId?: string) => ['account', userId, 'meal-plans'] as const,
@@ -58,7 +53,7 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
       refetchType: 'none',
     });
   };
-  const enqueueWrite = <T,>(write: () => Promise<T>) => {
+  const enqueueWrite = <T>(write: () => Promise<T>) => {
     const result = writeQueue.current.then(write, write);
     writeQueue.current = result.then(
       () => undefined,
@@ -66,9 +61,7 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
     );
     return result;
   };
-  const beginOptimisticWrite = async (
-    update: (plan: MealPlan) => MealPlan
-  ) => {
+  const beginOptimisticWrite = async (update: (plan: MealPlan) => MealPlan) => {
     const sequence = ++latestOptimisticWrite.current;
     await client.cancelQueries({ queryKey: weekKey });
     const previous = client.getQueryData<MealPlan | null>(weekKey);
@@ -132,7 +125,14 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
         updatePlannedMeal(plan, mealId, input, optimisticMeal)
       ),
     onError: (_error, _variables, context) => rollbackLatest(context),
-    onSuccess: (plan, _variables, context) => reconcileLatest(plan, context),
+    onSuccess: (plan, variables, context) => {
+      reconcileLatest(plan, context);
+      if (typeof variables.input.completed === 'boolean') {
+        void client.invalidateQueries({
+          queryKey: ['account', userId, 'tracking'],
+        });
+      }
+    },
   });
   const removeMeal = useMutation({
     mutationFn: ({ planId, mealId }: { planId: string; mealId: string }) =>
@@ -140,7 +140,12 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
     onMutate: ({ mealId }) =>
       beginOptimisticWrite((plan) => removePlannedMeal(plan, mealId)),
     onError: (_error, _variables, context) => rollbackLatest(context),
-    onSuccess: (plan, _variables, context) => reconcileLatest(plan, context),
+    onSuccess: (plan, _variables, context) => {
+      reconcileLatest(plan, context);
+      void client.invalidateQueries({
+        queryKey: ['account', userId, 'tracking'],
+      });
+    },
   });
 
   const activate = useMutation({

@@ -129,14 +129,12 @@ export function MealPlanScreen() {
             },
           }
         : undefined;
-      actions.updateMeal.mutate(
-        {
-          planId: plan._id,
-          mealId: replacementMeal.mealId,
-          input: { recipeId },
-          optimisticMeal,
-        }
-      );
+      actions.updateMeal.mutate({
+        planId: plan._id,
+        mealId: replacementMeal.mealId,
+        input: { recipeId },
+        optimisticMeal,
+      });
       setReplacementMeal(null);
       setSearchQuery('');
       return;
@@ -158,13 +156,11 @@ export function MealPlanScreen() {
           },
         }
       : undefined;
-    actions.addMeal.mutate(
-      {
-        planId: plan?._id,
-        input: { date: selectedDate, type: pickerMealType, recipeId, servings: 1 },
-        optimisticMeal,
-      }
-    );
+    actions.addMeal.mutate({
+      planId: plan?._id,
+      input: { date: selectedDate, type: pickerMealType, recipeId, servings: 1 },
+      optimisticMeal,
+    });
     setPickerMealType(null);
     setSearchQuery('');
   };
@@ -177,6 +173,15 @@ export function MealPlanScreen() {
       planId: plan._id,
       mealId: meal.mealId,
       input: { servings },
+    });
+  };
+
+  const toggleCompleted = (meal: PlannedMeal) => {
+    if (!plan || readOnly) return;
+    actions.updateMeal.mutate({
+      planId: plan._id,
+      mealId: meal.mealId,
+      input: { completed: !meal.completed },
     });
   };
 
@@ -437,6 +442,7 @@ export function MealPlanScreen() {
                   onAdd={() => setPickerMealType(mealType)}
                   onReplace={(meal) => setReplacementMeal(meal)}
                   onChangeServings={changeServings}
+                  onToggleCompleted={toggleCompleted}
                   onRemove={confirmRemove}
                 />
               ))}

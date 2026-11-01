@@ -62,6 +62,20 @@ test('post cards apply reactions optimistically without a loading-only heart sta
   assert.doesNotMatch(homeCard, /actionSelected/);
 });
 
+test('meal-plan completion logs to the diary optimistically and active tabs use a moving line', () => {
+  const mealSection = read('../src/features/meal-plan/components/MealSection.tsx');
+  const mealHooks = read('../src/features/meal-plan/hooks.ts');
+  const tabBar = read('../src/components/navigation/CustomTabBar.tsx');
+
+  assert.match(mealSection, /onToggleCompleted/);
+  assert.match(mealSection, /mealPlan\.loggedToDiary/);
+  assert.match(mealHooks, /variables\.input\.completed/);
+  assert.match(mealHooks, /\['account', userId, 'tracking'\]/);
+  assert.match(tabBar, /Animated\.spring/);
+  assert.match(tabBar, /styles\.activeLine/);
+  assert.doesNotMatch(tabBar, /activeIndicator/);
+});
+
 test('community uses an infinite newsfeed and publishes posts without admin review', () => {
   const community = read('../src/features/community/screens/CommunityScreen.tsx');
   const composer = read('../src/features/community/screens/PostEditorScreen.tsx');
@@ -105,12 +119,8 @@ test('home search includes recipes, posts, ingredients and videos by default', (
 
 test('home search expands inline and renders suggestions and results without navigating', () => {
   const home = read('../src/features/recipes/screens/DiscoveryHomeScreen.tsx');
-  const header = read(
-    '../src/features/community/components/HomeSocialHeader.tsx'
-  );
-  const panel = read(
-    '../src/features/recipes/components/HomeInlineSearchPanel.tsx'
-  );
+  const header = read('../src/features/community/components/HomeSocialHeader.tsx');
+  const panel = read('../src/features/recipes/components/HomeInlineSearchPanel.tsx');
 
   assert.match(header, /Animated\.timing/);
   assert.match(header, /Animated\.parallel/);

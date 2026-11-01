@@ -14,7 +14,6 @@ import {
   AppText,
   CustomHeader,
   ScreenWrapper,
-  Toggle,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useKeyboardInsets } from '@/hooks';
@@ -58,7 +57,6 @@ export function AiChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   const [content, setContent] = useState('');
-  const [useProfile, setUseProfile] = useState(false);
   const [rated, setRated] = useState<Record<string, AiFeedbackRating>>({});
 
   useEffect(() => {
@@ -131,7 +129,6 @@ export function AiChatScreen() {
       const mediaId = await attachment.uploadIfNeeded();
       await chat.send.mutateAsync({
         content: question,
-        useProfile,
         mediaId,
         targetConversationId,
       });
@@ -583,15 +580,6 @@ export function AiChatScreen() {
           </View>
         ) : null}
 
-        <View style={styles.composerToolbar}>
-          <Toggle
-            label={t(chatKeys.USE_PROFILE)}
-            value={useProfile}
-            onValueChange={setUseProfile}
-            disabled={busy}
-          />
-        </View>
-
         <View style={styles.composerRow}>
           {!attachment.asset ? (
             <AiImageAttachmentPicker
@@ -893,16 +881,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
     backgroundColor: colors.background.surface,
-  },
-  composerToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  profileToggleWrap: {
-    flexShrink: 1,
   },
   composerRow: {
     flexDirection: 'row',

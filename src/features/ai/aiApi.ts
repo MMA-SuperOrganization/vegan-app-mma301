@@ -47,11 +47,11 @@ export const aiApi = {
         })
       )
     ),
-  send: (id: string, content: string, useProfile: boolean, mediaId?: string) =>
+  send: (id: string, content: string, mediaId?: string) =>
     unwrapApiRequest<AiMessage>(() =>
       apiClient.post(
         `/ai/conversations/${id}/messages`,
-        { content, useProfile, ...(mediaId ? { mediaId } : {}) },
+        { content, useProfile: true, ...(mediaId ? { mediaId } : {}) },
         aiGenerationRequest
       )
     ),

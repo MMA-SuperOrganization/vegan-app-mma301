@@ -144,6 +144,23 @@ test('both AI chat surfaces upload an image before sending its media ID', () => 
   }
 });
 
+test('AI chat always uses the nutrition profile without showing an opt-out toggle', () => {
+  for (const path of [
+    '../src/features/ai/screens/AiChatScreen.tsx',
+    '../src/features/ai/components/AiChatWidget.tsx',
+  ]) {
+    const source = read(path);
+    assert.doesNotMatch(source, /\bToggle\b/);
+    assert.doesNotMatch(source, /\buseProfile\b/);
+  }
+
+  const api = read('../src/features/ai/aiApi.ts');
+  assert.match(
+    api,
+    /send:\s*\(id:\s*string,\s*content:\s*string,\s*mediaId\?:\s*string\)[\s\S]*?useProfile:\s*true/
+  );
+});
+
 test('AI launcher stays draggable inside the safe screen and snaps to an edge', () => {
   const bounds = getAiWidgetBounds(
     { width: 390, height: 844 },

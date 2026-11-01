@@ -15,9 +15,11 @@ import {
   AiProgressStage,
   AiSafetyNoticeCode,
 } from '../src/features/ai/aiConstants.ts';
+import { appendAiMessages } from '../src/features/ai/aiMessageCache.ts';
 import {
   clampAiWidgetPosition,
   getAiWidgetBounds,
+  shouldHideAiWidget,
   snapAiWidgetToNearestEdge,
 } from '../src/features/ai/aiWidgetPosition.ts';
 
@@ -30,6 +32,32 @@ test('AI progress reports truthful processing stages without fake percentages', 
   const status = read('../src/features/ai/components/AiProcessingStatus.tsx');
   assert.match(status, /accessibilityRole="progressbar"/);
   assert.doesNotMatch(status, /%|percent/i);
+});
+
+test('AI chat cache keeps the submitted question and returned answer visible', () => {
+  const initial = {
+    data: [{ _id: 'old', role: AiMessageRole.ASSISTANT, content: 'Old answer' }],
+  };
+  const userMessage = {
+    _id: 'optimistic-user',
+    role: AiMessageRole.USER,
+    content: 'New question',
+  };
+  const assistantMessage = {
+    _id: 'assistant-answer',
+    role: AiMessageRole.ASSISTANT,
+    content: 'New answer',
+  };
+
+  const optimistic = appendAiMessages(initial, [userMessage]);
+  const completed = appendAiMessages(optimistic, [assistantMessage, assistantMessage]);
+
+  assert.deepEqual(initial.data.map((message) => message._id), ['old']);
+  assert.deepEqual(completed.data.map((message) => message._id), [
+    'old',
+    'optimistic-user',
+    'assistant-answer',
+  ]);
 });
 
 test('AI chat copy helper derives concise titles and formats timestamps safely via i18n', () => {
@@ -98,7 +126,7 @@ test('both AI chat surfaces show safety limits, allergen cautions, progress and 
   assert.match(screen, /scrollable=\{false\}/);
   assert.match(screen, /styles\.composerDock/);
   assert.match(widget, /widgetKeys\.RETRY/);
-  assert.match(widget, /pathname\.startsWith\('\/ai'\)/);
+  assert.match(widget, /shouldHideAiWidget\(pathname\)/);
 });
 
 test('both AI chat surfaces upload an image before sending its media ID', () => {
@@ -142,6 +170,14 @@ test('AI launcher stays draggable inside the safe screen and snaps to an edge', 
   const widget = read('../src/features/ai/components/AiChatWidget.tsx');
   assert.match(widget, /launcherDragResponder\.panHandlers/);
   assert.match(widget, /DRAG_ACTIVATION_DISTANCE/);
+});
+
+test('AI launcher remains available across app content routes', () => {
+  assert.equal(shouldHideAiWidget('/'), false);
+  assert.equal(shouldHideAiWidget('/community/post'), false);
+  assert.equal(shouldHideAiWidget('/search-results'), false);
+  assert.equal(shouldHideAiWidget('/ai'), true);
+  assert.equal(shouldHideAiWidget('/ai/history'), true);
 });
 
 test('AI widget lets users scroll chat history without forced jumps', () => {

@@ -70,14 +70,9 @@ export function WeekNavigator({
             disabled && styles.disabled,
           ]}
         >
-          <View style={styles.titleRow}>
-            <AppText variant="heading3" style={styles.centerText}>
-              {title}
-            </AppText>
-            <AppText variant="bodyStrong" color={colors.primary[700]}>
-              ⌄
-            </AppText>
-          </View>
+          <AppText variant="heading3" style={styles.centerText}>
+            {title}
+          </AppText>
           <AppText
             variant="bodySmall"
             color={colors.text.secondary}
@@ -130,16 +125,17 @@ export function WeekNavigator({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.default,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     backgroundColor: colors.background.surface,
   },
   navigationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   arrowButton: {
     width: 44,
@@ -149,10 +145,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.background.selected,
   },
-  weekCopy: { flex: 1, alignItems: 'center', gap: spacing.xs },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  weekCopyPressed: {
+  weekCopy: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
+  },
+  weekCopyPressed: {
     backgroundColor: colors.background.selected,
   },
   centerText: { textAlign: 'center' },

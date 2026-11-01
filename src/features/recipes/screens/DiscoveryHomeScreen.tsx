@@ -1,5 +1,12 @@
-import { useState } from 'react';
-import { FlatList, Keyboard, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  Animated,
+  Easing,
+  FlatList,
+  Keyboard,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -43,6 +50,9 @@ export function DiscoveryHomeScreen() {
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const listRef = useRef<FlatList<HomeListItem>>(null);
+  const homeContentReveal = useRef(new Animated.Value(1)).current;
+  const postsReveal = useRef(new Animated.Value(1)).current;
   const activeSearchQuery = normalizeSearchQuery(searchQuery);
   const debouncedSearchQuery = useDebouncedValue(activeSearchQuery, 300);
 
@@ -84,8 +94,58 @@ export function DiscoveryHomeScreen() {
     });
 
   const closeSearch = () => {
+    homeContentReveal.stopAnimation();
+    postsReveal.stopAnimation();
+    homeContentReveal.setValue(0);
+    postsReveal.setValue(0);
     setSearchExpanded(false);
     setSearchQuery('');
+    requestAnimationFrame(() => {
+      Animated.stagger(70, [
+        Animated.timing(homeContentReveal, {
+          toValue: 1,
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(postsReveal, {
+          toValue: 1,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  };
+
+  const openSearch = () => {
+    homeContentReveal.stopAnimation();
+    postsReveal.stopAnimation();
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+    setSearchExpanded(true);
+  };
+
+  const homeContentRevealStyle = {
+    opacity: homeContentReveal,
+    transform: [
+      {
+        translateY: homeContentReveal.interpolate({
+          inputRange: [0, 1],
+          outputRange: [12, 0],
+        }),
+      },
+    ],
+  };
+  const postsRevealStyle = {
+    opacity: postsReveal,
+    transform: [
+      {
+        translateY: postsReveal.interpolate({
+          inputRange: [0, 1],
+          outputRange: [18, 0],
+        }),
+      },
+    ],
   };
 
   const refresh = () => {
@@ -104,6 +164,7 @@ export function DiscoveryHomeScreen() {
   return (
     <ScreenWrapper keyboardAvoiding={false} edges={['top', 'left', 'right']}>
       <FlatList
+        ref={listRef}
         data={listItems}
         keyExtractor={(item) => item.key}
         keyboardShouldPersistTaps="handled"
@@ -114,12 +175,17 @@ export function DiscoveryHomeScreen() {
         contentContainerStyle={styles.screen}
         ItemSeparatorComponent={() => <View style={styles.feedSeparator} />}
         ListHeaderComponent={
-          <View style={styles.headerContent}>
+          <View
+            style={[
+              styles.headerContent,
+              searchExpanded && styles.searchHeaderContent,
+            ]}
+          >
             <HomeSocialHeader
               onCreatePost={() => setPostComposerOpen(true)}
               searchExpanded={searchExpanded}
               searchQuery={searchQuery}
-              onOpenSearch={() => setSearchExpanded(true)}
+              onOpenSearch={openSearch}
               onCloseSearch={closeSearch}
               onChangeSearch={setSearchQuery}
               onSubmitSearch={() => Keyboard.dismiss()}
@@ -142,7 +208,9 @@ export function DiscoveryHomeScreen() {
                 onRetryRecent={() => void recentSearches.refetch()}
               />
             ) : (
-              <>
+              <Animated.View
+                style={[styles.homeContent, homeContentRevealStyle]}
+              >
                 {home.isLoading ? (
                   <LoadingSpinner text={t('home.loadingSuggestions')} />
                 ) : null}
@@ -193,7 +261,7 @@ export function DiscoveryHomeScreen() {
                     {t('home.socialEmptyFeed')}
                   </AppText>
                 ) : null}
-              </>
+              </Animated.View>
             )}
           </View>
         }
@@ -223,21 +291,24 @@ export function DiscoveryHomeScreen() {
               onPress={() => router.push(contentHref(item.result))}
             />
           ) : (
-            <HomeSocialPostCard
-              post={item.post}
-              onReact={() =>
-                postReaction.mutate({
-                  postId: item.post._id,
-                  nextReaction: item.post.reacted === 'like' ? null : 'like',
-                })
-              }
-              onPress={() =>
-                router.push({
-                  pathname: '/community/post',
-                  params: { id: item.post._id },
-                })
-              }
-            />
+            <Animated.View style={postsRevealStyle}>
+              <HomeSocialPostCard
+                post={item.post}
+                onReact={() =>
+                  postReaction.mutate({
+                    postId: item.post._id,
+                    nextReaction:
+                      item.post.reacted === 'like' ? null : 'like',
+                  })
+                }
+                onPress={() =>
+                  router.push({
+                    pathname: '/community/post',
+                    params: { id: item.post._id },
+                  })
+                }
+              />
+            </Animated.View>
           )
         }
         ListFooterComponent={
@@ -293,6 +364,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.base,
   },
   headerContent: { gap: spacing.lg, marginBottom: spacing.lg },
+  homeContent: { gap: spacing.lg },
+  searchHeaderContent: { gap: spacing.sm, marginBottom: spacing.md },
   feedHeading: {
     flexDirection: 'row',
     alignItems: 'center',

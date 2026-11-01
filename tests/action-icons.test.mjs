@@ -33,7 +33,7 @@ test('shared buttons provide semantic action icons across the app', () => {
   assert.match(resolver, /luu binh luan/);
 });
 
-test('post detail groups article, engagement and comments without overlay clutter', () => {
+test('post detail groups article and engagement while keeping AI accessible', () => {
   const post = read('../src/features/community/screens/PostDetailScreen.tsx');
   const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const header = read('../src/components/layout/CustomHeader.tsx');
@@ -46,8 +46,7 @@ test('post detail groups article, engagement and comments without overlay clutte
   assert.match(post, /style={styles\.commentsCard}/);
   assert.match(post, /style={styles\.commentActions}/);
   assert.match(post, /name="comment"/);
-  assert.match(aiWidget, /pathname\.startsWith\('\/community'\)/);
-  assert.match(aiWidget, /pathname\.startsWith\('\/search-results'\)/);
+  assert.match(aiWidget, /shouldHideAiWidget\(pathname\)/);
   assert.match(aiWidget, /launcherHidden/);
   assert.match(header, /numberOfLines={1}/);
 });

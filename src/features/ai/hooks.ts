@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
+import type { ApiPage } from '@/services/api';
 import { aiApi } from './aiApi';
-import { AiFeedbackRating } from './aiConstants';
+import { AiFeedbackRating, AiMessageRole } from './aiConstants';
+import { appendAiMessages } from './aiMessageCache';
+import type { AiMessage } from './types';
 
 export function useSavedMealPlans() {
   const userId = useAuthStore((state) => state.user?.id);
@@ -16,20 +19,24 @@ export function useAiChat(conversationId?: string) {
   const userId = useAuthStore((state) => state.user?.id);
   const client = useQueryClient();
   const root = ['account', userId, 'ai'] as const;
+  const conversationsKey = [...root, 'conversations'] as const;
+  const messagesKey = (targetConversationId: string | undefined) =>
+    [...root, 'messages', targetConversationId] as const;
   const conversations = useQuery({
-    queryKey: [...root, 'conversations'],
+    queryKey: conversationsKey,
     queryFn: aiApi.conversations,
     enabled: Boolean(userId),
   });
   const messages = useQuery({
-    queryKey: [...root, 'messages', conversationId],
+    queryKey: messagesKey(conversationId),
     queryFn: () => aiApi.messages(conversationId!),
     enabled: Boolean(userId && conversationId),
   });
-  const refresh = () => client.invalidateQueries({ queryKey: root });
+  const refreshConversations = () =>
+    client.invalidateQueries({ queryKey: conversationsKey });
   const create = useMutation({
     mutationFn: aiApi.createConversation,
-    onSuccess: refresh,
+    onSuccess: refreshConversations,
   });
   const send = useMutation({
     mutationFn: ({
@@ -49,7 +56,42 @@ export function useAiChat(conversationId?: string) {
         useProfile,
         mediaId
       ),
-    onSettled: refresh,
+    onMutate: async (variables) => {
+      const targetConversationId =
+        variables.targetConversationId ?? conversationId;
+      if (!targetConversationId) return undefined;
+
+      const queryKey = messagesKey(targetConversationId);
+      await client.cancelQueries({ queryKey, exact: true });
+      const previous = client.getQueryData<ApiPage<AiMessage>>(queryKey);
+      const optimisticUserMessage: AiMessage = {
+        _id: `optimistic-user-${targetConversationId}-${Date.now()}`,
+        role: AiMessageRole.USER,
+        content: variables.content,
+        createdAt: new Date().toISOString(),
+        ...(variables.mediaId ? { mediaId: variables.mediaId } : {}),
+      };
+
+      client.setQueryData<ApiPage<AiMessage>>(queryKey, (current) =>
+        appendAiMessages(current, [optimisticUserMessage])
+      );
+      return { previous, queryKey };
+    },
+    onSuccess: (assistantMessage, _variables, context) => {
+      if (!context) return;
+      client.setQueryData<ApiPage<AiMessage>>(context.queryKey, (current) =>
+        appendAiMessages(current, [assistantMessage])
+      );
+    },
+    onError: (_error, _variables, context) => {
+      if (!context) return;
+      if (context.previous) {
+        client.setQueryData(context.queryKey, context.previous);
+      } else {
+        client.removeQueries({ queryKey: context.queryKey, exact: true });
+      }
+    },
+    onSettled: refreshConversations,
   });
   const feedback = useMutation({
     mutationFn: ({ runId, helpful }: { runId: string; helpful: boolean }) =>

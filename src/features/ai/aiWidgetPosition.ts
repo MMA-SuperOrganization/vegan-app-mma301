@@ -22,6 +22,11 @@ type SafeAreaInsets = {
   left: number;
 };
 
+/** The floating assistant is redundant only while an AI screen is already open. */
+export function shouldHideAiWidget(pathname: string): boolean {
+  return pathname === '/ai' || pathname.startsWith('/ai/');
+}
+
 export function getAiWidgetBounds(
   window: WindowSize,
   insets: SafeAreaInsets,

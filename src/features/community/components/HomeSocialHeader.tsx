@@ -34,118 +34,194 @@ export function HomeSocialHeader({
   const { t } = useTranslation();
   const window = useWindowDimensions();
   const inputRef = useRef<TextInput>(null);
+  const closingRef = useRef(false);
   const expansion = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
-  const openSearchWidth = Math.max(
-    220,
-    window.width - spacing.md * 2 - 40 - spacing.xs
-  );
+  const fieldReveal = useRef(
+    new Animated.Value(searchExpanded ? 1 : 0)
+  ).current;
+  const openSearchWidth = Math.max(220, window.width - spacing.md * 2);
 
   useEffect(() => {
-    Animated.timing(expansion, {
-      toValue: searchExpanded ? 1 : 0,
-      duration: 260,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(({ finished }) => {
+    if (!searchExpanded) {
+      closingRef.current = false;
+      expansion.setValue(0);
+      fieldReveal.setValue(0);
+      return;
+    }
+
+    closingRef.current = false;
+    expansion.setValue(0);
+    fieldReveal.setValue(0);
+    const animation = Animated.parallel([
+      Animated.timing(expansion, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      Animated.timing(fieldReveal, {
+        toValue: 1,
+        delay: 70,
+        duration: 170,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]);
+
+    animation.start(({ finished }) => {
       if (finished && searchExpanded) inputRef.current?.focus();
     });
-  }, [expansion, searchExpanded]);
+
+    return () => animation.stop();
+  }, [expansion, fieldReveal, searchExpanded]);
 
   const closeSearch = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
     Keyboard.dismiss();
-    onCloseSearch();
+    Animated.parallel([
+      Animated.timing(fieldReveal, {
+        toValue: 0,
+        duration: 90,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: false,
+      }),
+      Animated.timing(expansion, {
+        toValue: 0,
+        delay: 25,
+        duration: 230,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: false,
+      }),
+    ]).start(({ finished }) => {
+      closingRef.current = false;
+      if (finished) onCloseSearch();
+    });
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <Animated.View
-          style={[
-            styles.brandSlot,
-            {
-              width: expansion.interpolate({
-                inputRange: [0, 1],
-                outputRange: [182, 0],
-              }),
-              opacity: expansion.interpolate({
-                inputRange: [0, 0.7],
-                outputRange: [1, 0],
-              }),
-            },
-          ]}
-        >
-          <View style={styles.brandRow}>
-            <View style={styles.brandIcon}>
-              <AppIcon name="mam-companion" size={30} decorative />
-            </View>
-            <BrandWordmark size={26} />
+        <View style={styles.brandRow}>
+          <View style={styles.brandIcon}>
+            <AppIcon name="mam-companion" size={30} decorative />
           </View>
-        </Animated.View>
-        <View style={styles.actions}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('home.createPost')} onPress={onCreatePost} style={styles.action}>
-            <AppIcon name="plus" size={23} color={colors.text.primary} decorative />
-          </Pressable>
+          <BrandWordmark size={26} />
+        </View>
+
+        {!searchExpanded ? (
+          <View style={styles.actions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('home.createPost')}
+              onPress={onCreatePost}
+              style={styles.action}
+            >
+              <AppIcon
+                name="plus"
+                size={23}
+                color={colors.text.primary}
+                decorative
+              />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('home.search')}
+              onPress={onOpenSearch}
+              style={styles.action}
+            >
+              <AppIcon
+                name="search"
+                size={23}
+                color={colors.primary[700]}
+                decorative
+              />
+            </Pressable>
+          </View>
+        ) : (
           <Animated.View
             style={[
               styles.searchSlot,
-              searchExpanded && styles.searchSlotExpanded,
               {
                 width: expansion.interpolate({
                   inputRange: [0, 1],
                   outputRange: [40, openSearchWidth],
+                  extrapolate: 'clamp',
                 }),
+                transform: [
+                  {
+                    scaleY: expansion.interpolate({
+                      inputRange: [0, 0.45, 1],
+                      outputRange: [0.82, 1.04, 1],
+                      extrapolate: 'clamp',
+                    }),
+                  },
+                ],
               },
             ]}
           >
-            {!searchExpanded ? (
+            <Animated.View
+              style={[
+                styles.searchField,
+                {
+                  opacity: fieldReveal,
+                  transform: [
+                    {
+                      translateX: fieldReveal.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [8, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t('home.search')}
-                onPress={onOpenSearch}
-                style={styles.searchTrigger}
+                accessibilityLabel={t('common.back')}
+                onPress={closeSearch}
+                hitSlop={6}
+                style={styles.leadingAction}
               >
-                <AppIcon name="search" size={23} color={colors.text.primary} decorative />
-              </Pressable>
-            ) : (
-              <View style={styles.searchField}>
-                <AppIcon name="search" size={19} color={colors.primary[700]} decorative />
-                <TextInput
-                  ref={inputRef}
-                  value={searchQuery}
-                  onChangeText={onChangeSearch}
-                  onSubmitEditing={onSubmitSearch}
-                  placeholder={t('home.searchPlaceholder')}
-                  placeholderTextColor={colors.text.secondary}
-                  returnKeyType="search"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  accessibilityLabel={t('home.search')}
-                  style={styles.searchInput}
+                <AppIcon
+                  name="back"
+                  size={20}
+                  color={colors.primary[700]}
+                  decorative
                 />
-                {searchQuery ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t('home.clearSearch')}
-                    onPress={() => onChangeSearch('')}
-                    hitSlop={6}
-                    style={styles.inlineAction}
-                  >
-                    <AppIcon name="close" size={14} color={colors.text.secondary} decorative />
-                  </Pressable>
-                ) : null}
+              </Pressable>
+              <TextInput
+                ref={inputRef}
+                value={searchQuery}
+                onChangeText={onChangeSearch}
+                onSubmitEditing={onSubmitSearch}
+                placeholder={t('home.searchPlaceholder')}
+                placeholderTextColor={colors.text.secondary}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel={t('home.search')}
+                style={styles.searchInput}
+              />
+              {searchQuery ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t('common.close')}
-                  onPress={closeSearch}
+                  accessibilityLabel={t('home.clearSearch')}
+                  onPress={() => onChangeSearch('')}
                   hitSlop={6}
                   style={styles.inlineAction}
                 >
-                  <AppIcon name="close" size={17} color={colors.primary[700]} decorative />
+                  <AppIcon
+                    name="close"
+                    size={17}
+                    color={colors.primary[700]}
+                    decorative
+                  />
                 </Pressable>
-              </View>
-            )}
+              ) : null}
+            </Animated.View>
           </Animated.View>
-        </View>
+        )}
       </View>
 
       {!searchExpanded ? (
@@ -160,17 +236,15 @@ export function HomeSocialHeader({
 
 const styles = StyleSheet.create({
   container: { gap: spacing.lg, paddingTop: spacing.sm },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brandSlot: { overflow: 'hidden' },
+  topRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   brandIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   action: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.background.muted, alignItems: 'center', justifyContent: 'center' },
-  searchSlot: { height: 40, borderRadius: radius.full, overflow: 'hidden', backgroundColor: colors.background.muted },
-  searchSlotExpanded: { borderWidth: 1.5, borderColor: colors.primary[300], backgroundColor: colors.background.surface },
-  searchTrigger: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  searchSlot: { position: 'absolute', top: 0, right: 0, zIndex: 1, height: 40, borderRadius: radius.full, overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary[300], backgroundColor: colors.background.surface },
   searchField: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.md, paddingRight: spacing.xs, gap: spacing.xs },
   searchInput: { flex: 1, minWidth: 0, color: colors.text.primary, fontSize: 15, paddingVertical: 0 },
+  leadingAction: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   inlineAction: { width: 28, height: 28, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background.muted },
   composer: { minHeight: 64, borderRadius: radius.xl, backgroundColor: colors.background.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border.subtle },
   composerText: { flex: 1, fontSize: 16 },

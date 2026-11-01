@@ -41,6 +41,7 @@ import { useAiImageAttachment } from '../useAiImageAttachment';
 import {
   clampAiWidgetPosition,
   getAiWidgetBounds,
+  shouldHideAiWidget,
   snapAiWidgetToNearestEdge,
   type AiWidgetPosition,
 } from '../aiWidgetPosition';
@@ -159,10 +160,7 @@ export function AiChatWidget() {
     attachment.choose.isPending ||
     attachment.upload.isPending;
   const messages = chat.messages.data?.data ?? [];
-  const launcherHidden =
-    pathname.startsWith('/ai') ||
-    pathname.startsWith('/community') ||
-    pathname.startsWith('/search-results');
+  const launcherHidden = shouldHideAiWidget(pathname);
 
   useEffect(() => {
     setVisible(false);

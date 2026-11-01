@@ -117,6 +117,8 @@ test('home search expands inline and renders suggestions and results without nav
   assert.match(header, /outputRange: \[40, openSearchWidth\]/);
   assert.match(header, /outputRange: \[0\.82, 1\.04, 1\]/);
   assert.match(header, /opacity: fieldReveal/);
+  assert.match(header, /styles\.collapsedSearchGlyph/);
+  assert.match(header, /backgroundColor: expansion\.interpolate/);
   assert.match(header, /outputRange: \[8, 0\]/);
   assert.match(header, /closingRef\.current/);
   assert.match(header, /toValue: 0/);

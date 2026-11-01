@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
   EmptyState,
   LoadingSpinner,
   Toggle,
+  appDialog,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -46,9 +47,7 @@ export function AllergiesScreen() {
 
   const next = () => {
     if (!draft.allergyAnswered) {
-      setValidationError(
-        t('onboarding.allergyRequired')
-      );
+      setValidationError(t('onboarding.allergyRequired'));
       return;
     }
     router.push('/(onboarding)/permissions');
@@ -65,7 +64,9 @@ export function AllergiesScreen() {
       error={validationError}
     >
       <View style={styles.list}>
-        {isLoading ? <LoadingSpinner text={t('onboarding.loadingAllergens')} /> : null}
+        {isLoading ? (
+          <LoadingSpinner text={t('onboarding.loadingAllergens')} />
+        ) : null}
         {!isLoading && allergens.length
           ? allergens.map((allergen) => (
               <Toggle
@@ -124,7 +125,7 @@ export function AllergiesScreen() {
           title={t('onboarding.allergenInfo')}
           variant="ghost"
           onPress={() =>
-            Alert.alert(
+            appDialog.alert(
               t('onboarding.allergenInfoTitle'),
               t('onboarding.allergenInfoDescription')
             )

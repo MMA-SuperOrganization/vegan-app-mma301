@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
-import { EmptyState, LoadingScreen, ScreenWrapper } from '@/components';
+import {
+  AppDialogProvider,
+  EmptyState,
+  LoadingScreen,
+  ScreenWrapper,
+} from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { useProfileStore } from '@/features/profile';
 import { useI18nStore, useTranslation } from '@/i18n';
@@ -138,10 +143,12 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <PushNotificationBridge />
-        <StatusBar style="dark" />
-        {content}
-        <AiChatWidget />
+        <AppDialogProvider>
+          <PushNotificationBridge />
+          <StatusBar style="dark" />
+          {content}
+          <AiChatWidget />
+        </AppDialogProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { isLocalIsoDate } from '@/features/tracking/trackingState';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppText,
   AppButton,
@@ -10,6 +10,7 @@ import {
   SearchPickerSheet,
   ScreenWrapper,
   type PickerItem,
+  appDialog,
 } from '@/components';
 import { TrackingQueryState } from '@/features/tracking/components/TrackingQueryState';
 import { useRecipeOptions } from '@/features/tracking/hooks/usePickerOptions';
@@ -25,6 +26,7 @@ import { WeekPickerSheet } from '../components/WeekPickerSheet';
 import { useMealPlan, useMealPlanActions } from '../hooks';
 import {
   groupMealsByType,
+  completeNutritionSnapshot,
   mealsForDate,
   nextServingCount,
   plannedNutrition,
@@ -77,7 +79,6 @@ export function MealPlanScreen() {
   const nutrition = plannedNutrition(selectedMeals);
   const pending =
     actions.addMeal.isPending ||
-    actions.updateMeal.isPending ||
     actions.removeMeal.isPending ||
     actions.activate.isPending ||
     actions.setStatus.isPending ||
@@ -113,39 +114,63 @@ export function MealPlanScreen() {
 
   const addRecipe = (recipeId: string) => {
     if (pending || readOnly) return;
+    const recipe = recipeOptions.data?.data.find((item) => item._id === recipeId);
     if (replacementMeal && plan) {
+      const optimisticMeal = recipe
+        ? {
+            ...replacementMeal,
+            recipeId,
+            recipeSnapshot: {
+              title: recipe.title ?? t('mealPlan.unnamedRecipe'),
+              servings: 1,
+              nutritionPerServing: completeNutritionSnapshot(
+                recipe.nutritionPerServing
+              ),
+            },
+          }
+        : undefined;
       actions.updateMeal.mutate(
         {
           planId: plan._id,
           mealId: replacementMeal.mealId,
           input: { recipeId },
-        },
-        {
-          onSuccess: () => {
-            setReplacementMeal(null);
-            setSearchQuery('');
-          },
+          optimisticMeal,
         }
       );
+      setReplacementMeal(null);
+      setSearchQuery('');
       return;
     }
     if (!pickerMealType) return;
+    const optimisticMeal = recipe
+      ? {
+          mealId: `optimistic-${Date.now()}-${recipeId}`,
+          type: pickerMealType,
+          recipeId,
+          servings: 1,
+          completed: false,
+          recipeSnapshot: {
+            title: recipe.title ?? t('mealPlan.unnamedRecipe'),
+            servings: 1,
+            nutritionPerServing: completeNutritionSnapshot(
+              recipe.nutritionPerServing
+            ),
+          },
+        }
+      : undefined;
     actions.addMeal.mutate(
       {
         planId: plan?._id,
         input: { date: selectedDate, type: pickerMealType, recipeId, servings: 1 },
-      },
-      {
-        onSuccess: () => {
-          setPickerMealType(null);
-          setSearchQuery('');
-        },
+        optimisticMeal,
       }
     );
+    setPickerMealType(null);
+    setSearchQuery('');
   };
 
   const changeServings = (meal: PlannedMeal, delta: number) => {
-    if (!plan || pending || readOnly) return;
+    if (!plan || readOnly) return;
     const servings = nextServingCount(meal.servings, delta);
     if (servings === meal.servings) return;
     actions.updateMeal.mutate({
@@ -157,7 +182,7 @@ export function MealPlanScreen() {
 
   const confirmRemove = (meal: PlannedMeal) => {
     if (!plan || pending || readOnly) return;
-    Alert.alert(
+    appDialog.alert(
       t('mealPlan.removeConfirmTitle'),
       t('mealPlan.removeConfirmBody', { name: meal.recipeSnapshot.title }),
       [
@@ -261,7 +286,7 @@ export function MealPlanScreen() {
                   disabled={pending}
                   loading={actions.setStatus.isPending}
                   onPress={() =>
-                    Alert.alert(
+                    appDialog.alert(
                       locale === 'vi'
                         ? 'Hoàn thành thực đơn?'
                         : 'Complete this plan?',

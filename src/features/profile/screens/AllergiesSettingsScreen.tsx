@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
   EmptyState,
   SettingsScreenLayout,
   Toggle,
+  appDialog,
 } from '@/components';
 import { toggleAllergenSelection } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
@@ -68,7 +69,7 @@ export function AllergiesSettingsScreen() {
         title={t('onboarding.allergenInfo')}
         variant="outline"
         onPress={() =>
-          Alert.alert(
+          appDialog.alert(
             t('onboarding.allergenInfoTitle'),
             t('onboarding.allergenInfoDescription')
           )

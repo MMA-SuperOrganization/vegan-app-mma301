@@ -81,8 +81,8 @@ export function MealSection({
                 accessibilityLabel={t('mealPlan.decreaseServingA11y', {
                   name: meal.recipeSnapshot.title,
                 })}
-                disabled={pending || meal.servings <= 0.5}
-                onPress={() => onChangeServings(meal, -0.5)}
+                disabled={pending || meal.servings <= 1}
+                onPress={() => onChangeServings(meal, -1)}
                 style={({ pressed }) => [
                   styles.stepButton,
                   pressed && styles.pressed,
@@ -92,7 +92,7 @@ export function MealSection({
               </Pressable>
               <AppText style={styles.servings}>
                 {t('mealPlan.servingsShort', {
-                  count: formatNumber(meal.servings, 1),
+                  count: formatNumber(meal.servings, 0),
                 })}
               </AppText>
               <Pressable
@@ -101,7 +101,7 @@ export function MealSection({
                   name: meal.recipeSnapshot.title,
                 })}
                 disabled={pending || meal.servings >= 100}
-                onPress={() => onChangeServings(meal, 0.5)}
+                onPress={() => onChangeServings(meal, 1)}
                 style={({ pressed }) => [
                   styles.stepButton,
                   pressed && styles.pressed,

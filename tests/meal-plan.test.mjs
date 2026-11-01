@@ -2,16 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addCalendarDays,
+  addPlannedMeal,
+  completeNutritionSnapshot,
   groupMealsByType,
   nextServingCount,
   plannedCalories,
   plannedNutrition,
   monthStart,
   relativeWeekOffset,
+  removePlannedMeal,
   selectEditablePlan,
   shiftWeekSelection,
   shiftMonth,
   startOfWeek,
+  updatePlannedMeal,
   weekDates,
   weeksIntersectingMonth,
 } from '../src/features/meal-plan/mealPlanState.ts';
@@ -34,6 +38,45 @@ const meal = (overrides = {}) => ({
     },
   },
   ...overrides,
+});
+
+test('optimistic meal edits update nutrition inputs without mutating cached plans', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-10-26',
+    status: 'active',
+    version: 1,
+    days: [{ date: '2026-11-01', meals: [meal()] }],
+  };
+  const increased = updatePlannedMeal(plan, 'meal-1', { servings: 2 });
+  assert.equal(increased.days[0].meals[0].servings, 2);
+  assert.equal(plan.days[0].meals[0].servings, 1);
+
+  const added = addPlannedMeal(
+    increased,
+    '2026-11-01',
+    meal({ mealId: 'meal-2', type: 'dinner' })
+  );
+  assert.equal(added.days[0].meals.length, 2);
+  const removed = removePlannedMeal(added, 'meal-1');
+  assert.deepEqual(removed.days[0].meals.map((entry) => entry.mealId), ['meal-2']);
+});
+
+test('optimistic recipe snapshots fill absent nutrient values safely', () => {
+  assert.deepEqual(completeNutritionSnapshot({ caloriesKcal: 250, proteinG: 12 }), {
+    caloriesKcal: 250,
+    proteinG: 12,
+    carbsG: 0,
+    fatG: 0,
+    fiberG: 0,
+    sugarG: 0,
+    sodiumMg: 0,
+    calciumMg: 0,
+    ironMg: 0,
+    vitaminB12Mcg: 0,
+    vitaminDMcg: 0,
+  });
 });
 
 test('week picker lists every week intersecting a month and navigates months', () => {
@@ -101,7 +144,12 @@ test('meal-plan selection prefers the active editable plan and normalizes dates'
       title: 'Active',
       weekStartDate: '2026-10-12T00:00:00.000Z',
       status: 'active',
-      days: [{ date: '2026-10-13T00:00:00.000Z', meals: [] }],
+      days: [
+        {
+          date: '2026-10-13T00:00:00.000Z',
+          meals: [meal({ servings: 1.5 })],
+        },
+      ],
       version: 1,
     },
   ];
@@ -109,23 +157,24 @@ test('meal-plan selection prefers the active editable plan and normalizes dates'
   assert.equal(selected._id, 'active');
   assert.equal(selected.weekStartDate, '2026-10-12');
   assert.equal(selected.days[0].date, '2026-10-13');
+  assert.equal(selected.days[0].meals[0].servings, 2);
 });
 
 test('meal groups, calories and serving steps follow the UI rules', () => {
-  const meals = [meal(), meal({ mealId: 'meal-2', type: 'dinner', servings: 1.5 })];
+  const meals = [meal(), meal({ mealId: 'meal-2', type: 'dinner', servings: 2 })];
   const groups = groupMealsByType(meals);
   assert.equal(groups.breakfast.length, 1);
   assert.equal(groups.lunch.length, 0);
   assert.equal(groups.dinner.length, 1);
-  assert.equal(plannedCalories(meals), 1050);
+  assert.equal(plannedCalories(meals), 1260);
   assert.deepEqual(plannedNutrition(meals), {
-    caloriesKcal: 1050,
-    proteinG: 60,
-    carbsG: 125,
-    fatG: 30,
-    fiberG: 20,
+    caloriesKcal: 1260,
+    proteinG: 72,
+    carbsG: 150,
+    fatG: 36,
+    fiberG: 24,
   });
-  assert.equal(nextServingCount(1, 0.5), 1.5);
-  assert.equal(nextServingCount(0.5, -0.5), 0.5);
-  assert.equal(nextServingCount(100, 0.5), 100);
+  assert.equal(nextServingCount(1, 1), 2);
+  assert.equal(nextServingCount(1, -1), 1);
+  assert.equal(nextServingCount(100, 1), 100);
 });

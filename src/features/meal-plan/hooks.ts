@@ -1,8 +1,19 @@
+import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import { mealPlanApi } from './mealPlanApi';
-import { selectEditablePlan } from './mealPlanState';
-import type { AddMealInput, MealPlan, UpdateMealInput } from './types';
+import {
+  addPlannedMeal,
+  removePlannedMeal,
+  selectEditablePlan,
+  updatePlannedMeal,
+} from './mealPlanState';
+import type {
+  AddMealInput,
+  MealPlan,
+  PlannedMeal,
+  UpdateMealInput,
+} from './types';
 
 const mealPlanKeys = {
   root: (userId?: string) => ['account', userId, 'meal-plans'] as const,
@@ -34,13 +45,47 @@ export function useWeekMealPlans(weekStartDate: string) {
 export function useMealPlanActions(weekStartDate: string, planId?: string) {
   const client = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
+  const writeQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestOptimisticWrite = useRef(0);
   const weekKey = [
     ...mealPlanKeys.week(userId, weekStartDate),
     planId ?? 'selected',
   ];
   const storePlan = (plan: MealPlan) => {
     client.setQueryData(weekKey, plan);
-    void client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) });
+    void client.invalidateQueries({
+      queryKey: mealPlanKeys.root(userId),
+      refetchType: 'none',
+    });
+  };
+  const enqueueWrite = <T,>(write: () => Promise<T>) => {
+    const result = writeQueue.current.then(write, write);
+    writeQueue.current = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  };
+  const beginOptimisticWrite = async (
+    update: (plan: MealPlan) => MealPlan
+  ) => {
+    const sequence = ++latestOptimisticWrite.current;
+    await client.cancelQueries({ queryKey: weekKey });
+    const previous = client.getQueryData<MealPlan | null>(weekKey);
+    if (previous) client.setQueryData(weekKey, update(previous));
+    return { previous, sequence };
+  };
+  const rollbackLatest = (
+    context: { previous?: MealPlan | null; sequence: number } | undefined
+  ) => {
+    if (context?.sequence !== latestOptimisticWrite.current) return;
+    client.setQueryData(weekKey, context.previous);
+  };
+  const reconcileLatest = (
+    plan: MealPlan,
+    context: { sequence: number } | undefined
+  ) => {
+    if (context?.sequence === latestOptimisticWrite.current) storePlan(plan);
   };
 
   const addMeal = useMutation({
@@ -50,6 +95,7 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
     }: {
       planId?: string;
       input: AddMealInput;
+      optimisticMeal?: PlannedMeal;
     }) => {
       let targetPlanId = planId;
       if (!targetPlanId) {
@@ -59,9 +105,16 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
         // never creates duplicate drafts for the same week.
         client.setQueryData(weekKey, createdPlan);
       }
-      return mealPlanApi.addMeal(targetPlanId, input);
+      return enqueueWrite(() => mealPlanApi.addMeal(targetPlanId, input));
     },
-    onSuccess: storePlan,
+    onMutate: ({ planId: targetPlanId, input, optimisticMeal }) =>
+      beginOptimisticWrite((plan) =>
+        targetPlanId && optimisticMeal
+          ? addPlannedMeal(plan, input.date, optimisticMeal)
+          : plan
+      ),
+    onError: (_error, _variables, context) => rollbackLatest(context),
+    onSuccess: (plan, _variables, context) => reconcileLatest(plan, context),
   });
   const updateMeal = useMutation({
     mutationFn: ({
@@ -72,13 +125,22 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
       planId: string;
       mealId: string;
       input: UpdateMealInput;
-    }) => mealPlanApi.updateMeal(planId, mealId, input),
-    onSuccess: storePlan,
+      optimisticMeal?: PlannedMeal;
+    }) => enqueueWrite(() => mealPlanApi.updateMeal(planId, mealId, input)),
+    onMutate: ({ mealId, input, optimisticMeal }) =>
+      beginOptimisticWrite((plan) =>
+        updatePlannedMeal(plan, mealId, input, optimisticMeal)
+      ),
+    onError: (_error, _variables, context) => rollbackLatest(context),
+    onSuccess: (plan, _variables, context) => reconcileLatest(plan, context),
   });
   const removeMeal = useMutation({
     mutationFn: ({ planId, mealId }: { planId: string; mealId: string }) =>
-      mealPlanApi.removeMeal(planId, mealId),
-    onSuccess: storePlan,
+      enqueueWrite(() => mealPlanApi.removeMeal(planId, mealId)),
+    onMutate: ({ mealId }) =>
+      beginOptimisticWrite((plan) => removePlannedMeal(plan, mealId)),
+    onError: (_error, _variables, context) => rollbackLatest(context),
+    onSuccess: (plan, _variables, context) => reconcileLatest(plan, context),
   });
 
   const activate = useMutation({

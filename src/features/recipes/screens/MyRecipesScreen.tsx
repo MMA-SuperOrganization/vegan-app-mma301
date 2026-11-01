@@ -1,8 +1,13 @@
-import { Alert } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import {
+  AppButton,
+  AppText,
+  CustomHeader,
+  ScreenWrapper,
+  appDialog,
+} from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
@@ -82,7 +87,7 @@ export function MyRecipesScreen() {
               variant="outline"
               disabled={archive.isPending}
               onPress={() =>
-                Alert.alert(
+                appDialog.alert(
                   vi ? 'Lưu trữ công thức?' : 'Archive recipe?',
                   recipe.title,
                   [
@@ -101,14 +106,18 @@ export function MyRecipesScreen() {
             variant="ghost"
             disabled={remove.isPending}
             onPress={() =>
-              Alert.alert(vi ? 'Xóa công thức?' : 'Delete recipe?', recipe.title, [
-                { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
-                {
-                  text: vi ? 'Xóa' : 'Delete',
-                  style: 'destructive',
-                  onPress: () => remove.mutate(recipe._id),
-                },
-              ])
+              appDialog.alert(
+                vi ? 'Xóa công thức?' : 'Delete recipe?',
+                recipe.title,
+                [
+                  { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+                  {
+                    text: vi ? 'Xóa' : 'Delete',
+                    style: 'destructive',
+                    onPress: () => remove.mutate(recipe._id),
+                  },
+                ]
+              )
             }
           />
         </View>

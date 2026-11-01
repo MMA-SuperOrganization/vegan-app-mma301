@@ -1,10 +1,16 @@
 import { useEffect } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import {
+  AppButton,
+  AppText,
+  CustomHeader,
+  ScreenWrapper,
+  appDialog,
+} from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { ContentSaveButton } from '@/features/recipes/components/ContentSaveButton';
 import { communityApi } from '../communityApi';
@@ -141,7 +147,7 @@ export function VideoDetailScreen() {
               variant="ghost"
               loading={remove.isPending}
               onPress={() =>
-                Alert.alert(
+                appDialog.alert(
                   vi ? 'Xóa video?' : 'Delete video?',
                   vi
                     ? 'Video sẽ bị xóa khỏi ứng dụng.'

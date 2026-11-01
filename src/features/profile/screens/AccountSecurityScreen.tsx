@@ -1,8 +1,8 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useState } from 'react';
-import { Alert, Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppButton, AppText, SettingsScreenLayout } from '@/components';
+import { AppButton, AppText, SettingsScreenLayout, appDialog } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { appConfig } from '@/config/appConfig';
 import { useSafeBack } from '@/hooks';
@@ -32,7 +32,7 @@ export function AccountSecurityScreen() {
     }
   };
   const deleteAccount = () =>
-    Alert.alert(t('profile.deleteAccount'), t('profile.deleteAccountWarning'), [
+    appDialog.alert(t('profile.deleteAccount'), t('profile.deleteAccountWarning'), [
       { text: t('common.close'), style: 'cancel' },
       {
         text: t('profile.deleteAccountConfirm'),
@@ -43,7 +43,7 @@ export function AccountSecurityScreen() {
             .deleteAccount()
             .then(signOut)
             .catch((error) =>
-              Alert.alert(
+              appDialog.alert(
                 t('profile.deleteFailed'),
                 getUserErrorMessage(error, t('profile.deleteFailed'))
               )
@@ -54,7 +54,10 @@ export function AccountSecurityScreen() {
     ]);
   const resetPassword = async () => {
     if (user?.email && (await sendPasswordReset(user.email)))
-      Alert.alert(t('profile.passwordResetTitle'), t('profile.passwordResetSent'));
+      appDialog.alert(
+        t('profile.passwordResetTitle'),
+        t('profile.passwordResetSent')
+      );
   };
   return (
     <SettingsScreenLayout title={t('profile.securityTitle')} onBack={goBack}>

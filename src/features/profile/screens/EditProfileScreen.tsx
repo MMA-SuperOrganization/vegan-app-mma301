@@ -9,6 +9,7 @@ import {
   DateInputField,
   SettingsScreenLayout,
   TimezonePickerField,
+  appDialog,
 } from '@/components';
 import { dateInputToIso, parseDecimal } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
@@ -33,6 +34,8 @@ export function EditProfileScreen() {
   const update = useProfileStore((state) => state.update);
   const isSaving = useProfileStore((state) => state.isSaving);
   const storeError = useProfileStore((state) => state.error);
+  // Also mark the field itself, since it sits far above the save button.
+  const usernameTaken = storeError === t('profile.error.usernameTaken');
   const [name, setName] = useState(data?.user.name ?? '');
   const [username, setUsername] = useState(data?.profile?.username ?? '');
   const [city, setCity] = useState(data?.profile?.city ?? '');
@@ -128,8 +131,13 @@ export function EditProfileScreen() {
           heightCm: heightCm ?? undefined,
           currentWeightKg: currentWeightKg ?? undefined,
         })
-      )
+      ) {
+        appDialog.alert(
+          t('profile.saveSuccessTitle'),
+          t('profile.saveSuccessMessage')
+        );
         goBack();
+      }
     } catch {
       // Upload error is rendered with the form.
     }
@@ -170,7 +178,7 @@ export function EditProfileScreen() {
           onChangeText={setUsername}
           autoCapitalize="none"
           autoCorrect={false}
-          error={errors.username}
+          error={errors.username || (usernameTaken ? storeError : null)}
         />
         <AppInput
           label={t('profile.city')}

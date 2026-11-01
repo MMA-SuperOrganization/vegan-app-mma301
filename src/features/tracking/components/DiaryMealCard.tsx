@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppText } from '@/components';
+import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
@@ -14,7 +14,7 @@ export interface DiaryMealCardProps {
 
 export function DiaryMealCard({ title, entries, onPressEntry }: DiaryMealCardProps) {
   const { t } = useTranslation();
-  const { formatNumber, unitLabel } = useTrackingFormat();
+  const { formatNumber, formatTime, unitLabel } = useTrackingFormat();
   const totalKcal = sumNutrition(entries).caloriesKcal;
 
   const amountLabel = (entry: DiaryEntry) =>
@@ -57,6 +57,12 @@ export function DiaryMealCard({ title, entries, onPressEntry }: DiaryMealCardPro
                   kcal: formatNumber(entry.nutritionSnapshot.caloriesKcal),
                 })}
               </AppText>
+              <View style={styles.timeRow}>
+                <AppIcon name="clock" size={15} color={colors.primary[700]} decorative />
+                <AppText variant="bodySmall" color={colors.primary[700]}>
+                  {formatTime(entry.consumedAt)}
+                </AppText>
+              </View>
             </View>
           </Pressable>
         ))
@@ -87,4 +93,5 @@ const styles = StyleSheet.create({
   },
   pressed: { backgroundColor: colors.background.selected },
   entryText: { flex: 1, gap: spacing.xs },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 });

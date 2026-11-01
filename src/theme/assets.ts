@@ -140,6 +140,22 @@ export const assetRegistry = {
     height: 20,
     xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4.5 4H15.5C16.3 4 17 4.7 17 5.5V15.5C17 16.3 16.3 17 15.5 17H4.5C3.7 17 3 16.3 3 15.5V5.5C3 4.7 3.7 4 4.5 4Z" stroke="#16583D" stroke-width="1.8" stroke-linejoin="round"/>\n<path d="M3 8H17M7 2.5V5.5M13 2.5V5.5" stroke="#16583D" stroke-width="1.8" stroke-linecap="round"/>\n</svg>\n',
   },
+  clock: {
+    id: 'core:clock', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#16583D" stroke-width="2"/><path d="M12 7V12L15.5 14" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  utensils: {
+    id: 'core:utensils', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 3V10M3.5 3V7.5C3.5 9 4.6 10 6 10C7.4 10 8.5 9 8.5 7.5V3M6 10V21M15 3V21M15 3C18.2 4.2 20 7.1 20 10.5H15" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  scale: {
+    id: 'core:scale', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="4" stroke="#16583D" stroke-width="2"/><path d="M8 10C8.7 8.5 10.1 7.5 12 7.5C13.9 7.5 15.3 8.5 16 10M12 8V11" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  water: {
+    id: 'core:water', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 5.5 10 5.5 14.5C5.5 18.1 8.4 21 12 21C15.6 21 18.5 18.1 18.5 14.5C18.5 10 12 3 12 3Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/><path d="M9 15.5C9.4 17 10.5 17.8 12 18" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
   eye: {
     id: 'core:eye',
     width: 24,

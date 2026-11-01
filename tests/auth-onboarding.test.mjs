@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   validateEmail,
   validateLogin,
@@ -25,6 +26,26 @@ import {
   toAppErrorDetails,
 } from '../src/services/errors/appError.ts';
 import { normalizeFirebaseSession } from '../src/services/auth/firebaseSession.ts';
+
+test('native Google sign-in ships in the main bundle instead of a lazy Metro chunk', async () => {
+  const hookSource = await readFile(
+    new URL('../src/features/auth/hooks/useGoogleSignIn.ts', import.meta.url),
+    'utf8'
+  );
+  const nativeAdapterSource = await readFile(
+    new URL(
+      '../src/features/auth/services/nativeGoogleSignIn.native.ts',
+      import.meta.url
+    ),
+    'utf8'
+  );
+
+  assert.doesNotMatch(hookSource, /import\(['"]@react-native-google-signin/);
+  assert.match(
+    nativeAdapterSource,
+    /from ['"]@react-native-google-signin\/google-signin['"]/
+  );
+});
 
 test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
   const details = toAppErrorDetails(

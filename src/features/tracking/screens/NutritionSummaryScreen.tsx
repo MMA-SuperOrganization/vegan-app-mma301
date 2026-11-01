@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
   AppText,
+  CalendarDatePicker,
   CustomHeader,
   NutritionTargetCard,
   ScreenWrapper,
@@ -12,7 +13,6 @@ import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { MacroDonutChart, type MacroSlice } from '../components/MacroDonutChart';
 import { TrackingQueryState } from '../components/TrackingQueryState';
-import { CalendarSheet } from '../components/CalendarSheet';
 import { WeekStrip } from '../components/WeekStrip';
 import {
   useDiary,
@@ -23,9 +23,11 @@ import { useTrackingFormat } from '../hooks/useTrackingFormat';
 import {
   diaryEntriesForDate,
   isLocalIsoDate,
+  localIsoDateToDate,
   macroEnergyShares,
   mealCalorieTotals,
   toLocalIsoDate,
+  TRACKING_MINIMUM_DATE,
 } from '../trackingState';
 
 export function NutritionSummaryScreen() {
@@ -241,10 +243,16 @@ export function NutritionSummaryScreen() {
           ) : null}
         </View>
       </ScreenWrapper>
-      <CalendarSheet
+      <CalendarDatePicker
         visible={pickerVisible}
-        selectedDate={date}
-        onSelect={setDate}
+        title={t('tracking.day.chooseDate')}
+        value={localIsoDateToDate(date)}
+        minimumDate={TRACKING_MINIMUM_DATE}
+        maximumDate={localIsoDateToDate(today)}
+        onConfirm={(selected) => {
+          setDate(toLocalIsoDate(selected));
+          setPickerVisible(false);
+        }}
         onClose={() => setPickerVisible(false)}
       />
     </>

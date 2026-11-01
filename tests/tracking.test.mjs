@@ -34,16 +34,46 @@ import {
 const now = new Date(2026, 9, 8, 15, 0);
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
-test('tracking hub presents weight and water as clear full-width action cards', () => {
+test('tracking hub prioritizes the meal timeline and keeps secondary metrics compact', () => {
   const screen = read('../src/features/tracking/screens/TrackingHubScreen.tsx');
-  const card = read('../src/features/tracking/components/TrackingHubCard.tsx');
+  const timeline = read('../src/features/tracking/components/DailyDiaryCard.tsx');
+  const navigator = read(
+    '../src/features/tracking/components/DiaryDayNavigator.tsx'
+  );
+  const metric = read(
+    '../src/features/tracking/components/TrackingQuickMetricCard.tsx'
+  );
 
-  assert.match(screen, /styles\.metricStack/);
-  assert.doesNotMatch(screen, /variant="compact"|styles\.metricGrid/);
-  assert.match(screen, /tracking\.hub\.weightViewAction/);
-  assert.match(screen, /tracking\.hub\.waterAction/);
-  assert.match(card, /width:\s*'100%'/);
-  assert.match(card, /styles\.metricAction/);
+  assert.match(screen, /useDiary\(date\)/);
+  assert.match(screen, /<DailyDiaryCard/);
+  assert.match(screen, /<DiaryDayNavigator/);
+  assert.match(screen, /<CalendarDatePicker/);
+  assert.match(screen, /params: \{ date \}/);
+  assert.match(screen, /styles\.quickMetrics/);
+  assert.match(timeline, /formatTime\(entry\.consumedAt\)/);
+  assert.match(timeline, /mealLabel\(entry\.mealType\)/);
+  assert.match(metric, /<AppIcon name=\{icon\}/);
+  assert.match(metric, /flex:\s*1/);
+  assert.match(navigator, /addDays\(date, -1\)/);
+  assert.match(navigator, /addDays\(date, 1\)/);
+  assert.match(navigator, /disabled=\{isToday\}/);
+  assert.doesNotMatch(screen, /styles\.metricStack/);
+});
+
+test('every tracking date flow uses the shared branded calendar picker', () => {
+  const screens = [
+    '../src/features/tracking/screens/TrackingHubScreen.tsx',
+    '../src/features/tracking/screens/FoodDiaryScreen.tsx',
+    '../src/features/tracking/screens/NutritionSummaryScreen.tsx',
+    '../src/features/tracking/screens/WaterTrackingScreen.tsx',
+  ].map(read);
+
+  for (const screen of screens) {
+    assert.match(screen, /CalendarDatePicker/);
+    assert.doesNotMatch(screen, /CalendarSheet/);
+    assert.match(screen, /TRACKING_MINIMUM_DATE/);
+    assert.match(screen, /maximumDate=\{localIsoDateToDate\(today\)\}/);
+  }
 });
 
 test('tracking overview matches the Figma mock numbers', () => {

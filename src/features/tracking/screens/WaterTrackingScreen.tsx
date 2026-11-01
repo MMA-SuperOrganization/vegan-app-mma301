@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import {
   AppButton,
   AppText,
+  CalendarDatePicker,
   CustomHeader,
   ProgressBar,
   ScreenWrapper,
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { CalendarSheet } from '../components/CalendarSheet';
 import { LogHistoryItem } from '../components/LogHistoryItem';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WaterGlassRow } from '../components/WaterGlassRow';
@@ -26,7 +27,10 @@ import {
   combineDateAndTime,
   formatTimeOfDay,
   sumWater,
+  isLocalIsoDate,
+  localIsoDateToDate,
   toLocalIsoDate,
+  TRACKING_MINIMUM_DATE,
   waterGlasses,
   waterLogsForDate,
 } from '../trackingState';
@@ -40,10 +44,16 @@ interface ModalState {
 }
 
 export function WaterTrackingScreen() {
+  const params = useLocalSearchParams<{ date?: string }>();
   const { t } = useTranslation();
   const { formatNumber } = useTrackingFormat();
   const today = toLocalIsoDate(new Date());
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(
+    isLocalIsoDate(params.date) ? params.date : today
+  );
+  useEffect(() => {
+    if (isLocalIsoDate(params.date)) setDate(params.date);
+  }, [params.date]);
   const [calendarVisible, setCalendarVisible] = useState(false);
   const isToday = date === today;
   const water = useWater(date);
@@ -265,10 +275,16 @@ export function WaterTrackingScreen() {
           setFocusId(id);
         }}
       />
-      <CalendarSheet
+      <CalendarDatePicker
         visible={calendarVisible}
-        selectedDate={date}
-        onSelect={setDate}
+        title={t('tracking.day.chooseDate')}
+        value={localIsoDateToDate(date)}
+        minimumDate={TRACKING_MINIMUM_DATE}
+        maximumDate={localIsoDateToDate(today)}
+        onConfirm={(selected) => {
+          setDate(toLocalIsoDate(selected));
+          setCalendarVisible(false);
+        }}
         onClose={() => setCalendarVisible(false)}
       />
     </ScreenWrapper>

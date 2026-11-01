@@ -50,6 +50,12 @@ export function useTrackingFormat() {
         month: '2-digit',
         year: 'numeric',
       }).format(new Date(`${isoDate}T00:00:00`));
+    const formatTime = (value: string | Date) =>
+      new Intl.DateTimeFormat(localeTag, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(typeof value === 'string' ? new Date(value) : value);
     const relativeDay = (days: number) => {
       if (days <= 0) return t('tracking.day.today');
       if (days === 1) return t('tracking.day.yesterday');
@@ -73,6 +79,7 @@ export function useTrackingFormat() {
       formatLongDate,
       formatShortDate,
       formatMonthYear,
+      formatTime,
       relativeDay,
       mealLabel,
       unitLabel,

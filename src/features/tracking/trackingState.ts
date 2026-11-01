@@ -203,6 +203,15 @@ export function addDays(isoDate: string, days: number) {
   return toLocalIsoDate(new Date(year, month - 1, day + days));
 }
 
+/** Earliest supported date for historical tracking records. */
+export const TRACKING_MINIMUM_DATE = new Date(1900, 0, 1);
+
+/** Converts a validated local calendar day without applying a UTC offset. */
+export function localIsoDateToDate(isoDate: string) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
 export function diaryEntriesForDate(entries: DiaryEntry[], date: string) {
   return entries
     .filter((entry) => entry.date === date)

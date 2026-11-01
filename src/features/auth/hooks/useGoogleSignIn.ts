@@ -9,6 +9,7 @@ import { AppError } from '@/services/errors';
 import { translate } from '@/i18n';
 import { useAuthStore } from '../store/authStore';
 import { getPostAuthRoute } from '../authNavigation';
+import { requestNativeGoogleIdToken } from '../services/nativeGoogleSignIn';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -132,16 +133,9 @@ export function useGoogleSignIn() {
       );
     }
 
-    const google = await import('@react-native-google-signin/google-signin');
-    google.GoogleSignin.configure({ webClientId });
-    if (Platform.OS === 'android') {
-      await google.GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-    }
-    const result = await google.GoogleSignin.signIn();
-    if (!google.isSuccessResponse(result)) return;
-    if (!result.data.idToken) {
+    const googleIdToken = await requestNativeGoogleIdToken(webClientId);
+    if (googleIdToken === null) return;
+    if (!googleIdToken) {
       throw new AppError(
         translate('auth.google.idTokenMissing'),
         'GOOGLE_ID_TOKEN_MISSING'
@@ -150,7 +144,7 @@ export function useGoogleSignIn() {
 
     // Firebase REST requires this field, but the native SDK already completed
     // the real Google callback before this request is sent.
-    await finishLogin(result.data.idToken, 'http://localhost');
+    await finishLogin(googleIdToken, 'http://localhost');
   };
 
   const startWeb = async () => {

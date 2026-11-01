@@ -363,8 +363,8 @@ const styles = StyleSheet.create({
   selectedChip: { backgroundColor: colors.background.selected },
   calendar: { gap: spacing.xs },
   weekRow: { flexDirection: 'row' },
-  weekday: { flex: 1, textAlign: 'center' },
-  daySlot: { flex: 1, alignItems: 'center' },
+  weekday: { width: `${100 / 7}%`, textAlign: 'center' },
+  daySlot: { width: `${100 / 7}%`, alignItems: 'center' },
   day: {
     width: 40,
     height: 40,

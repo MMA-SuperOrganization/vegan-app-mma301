@@ -28,6 +28,7 @@ interface PostCommentsProps {
   showComments?: boolean;
   contentHeader?: ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  focusRequestKey?: number;
 }
 
 export function PostComments({
@@ -39,6 +40,7 @@ export function PostComments({
   showComments = true,
   contentHeader,
   contentContainerStyle,
+  focusRequestKey = 0,
 }: PostCommentsProps) {
   const router = useRouter();
   const vi = useTranslation().locale === 'vi';
@@ -67,6 +69,11 @@ export function PostComments({
     const timer = setTimeout(() => composerRef.current?.focus(), 220);
     return () => clearTimeout(timer);
   }, [autoFocus, postId]);
+
+  useEffect(() => {
+    if (!focusRequestKey) return;
+    focusComposer();
+  }, [focusRequestKey]);
 
   const resetComposer = () => {
     setCommentText('');
@@ -138,10 +145,20 @@ export function PostComments({
             <AppIcon name="user" size={16} color={colors.primary[700]} decorative />
           </View>
           <View style={styles.commentBody}>
+            <AppText variant="caption" color={colors.primary[700]}>
+              {comment.authorId === userId
+                ? vi
+                  ? 'Bạn'
+                  : 'You'
+                : vi
+                  ? 'Thành viên cộng đồng'
+                  : 'Community member'}
+            </AppText>
             <AppText>{comment.content}</AppText>
             <View style={styles.commentActions}>
               {!comment.parentCommentId ? (
                 <CommentAction
+                  icon="reply"
                   label={vi ? 'Trả lời' : 'Reply'}
                   disabled={busy}
                   onPress={() => {
@@ -155,6 +172,7 @@ export function PostComments({
               {comment.authorId === userId ? (
                 <>
                   <CommentAction
+                    icon="edit"
                     label={vi ? 'Sửa' : 'Edit'}
                     disabled={busy}
                     onPress={() => {
@@ -165,6 +183,7 @@ export function PostComments({
                     }}
                   />
                   <CommentAction
+                    icon="trash"
                     label={vi ? 'Xóa' : 'Delete'}
                     disabled={busy}
                     destructive
@@ -173,6 +192,7 @@ export function PostComments({
                 </>
               ) : (
                 <CommentAction
+                  icon="flag"
                   label={vi ? 'Báo cáo' : 'Report'}
                   onPress={() => {
                     onNavigateAway?.();
@@ -190,6 +210,7 @@ export function PostComments({
                   {vi ? 'Xóa bình luận này?' : 'Delete this comment?'}
                 </AppText>
                 <CommentAction
+                  icon="trash"
                   label={vi ? 'Xác nhận' : 'Confirm'}
                   disabled={busy}
                   destructive
@@ -200,6 +221,7 @@ export function PostComments({
                   }
                 />
                 <CommentAction
+                  icon="close"
                   label={vi ? 'Hủy' : 'Cancel'}
                   onPress={() => setDeletingComment(null)}
                 />
@@ -248,7 +270,11 @@ export function PostComments({
       <View style={styles.composerArea}>
         {editingComment || replyingTo ? (
           <View style={styles.composerContext}>
-            <AppText variant="caption" color={colors.text.secondary} numberOfLines={1}>
+            <AppText
+              variant="caption"
+              color={colors.text.secondary}
+              numberOfLines={1}
+            >
               {editingComment
                 ? vi
                   ? 'Đang sửa bình luận'
@@ -297,7 +323,12 @@ export function PostComments({
                 busy && styles.disabled,
               ]}
             >
-              <AppIcon name="send" size={20} color={colors.common.white} decorative />
+              <AppIcon
+                name="send"
+                size={20}
+                color={colors.common.white}
+                decorative
+              />
             </Pressable>
           ) : null}
         </View>
@@ -314,11 +345,13 @@ export function PostComments({
 }
 
 function CommentAction({
+  icon,
   label,
   onPress,
   disabled = false,
   destructive = false,
 }: {
+  icon: 'reply' | 'edit' | 'trash' | 'flag' | 'close';
   label: string;
   onPress: () => void;
   disabled?: boolean;
@@ -331,8 +364,19 @@ function CommentAction({
       disabled={disabled}
       onPress={onPress}
       hitSlop={6}
-      style={({ pressed }) => [pressed && styles.pressed, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.commentAction,
+        destructive && styles.commentActionDestructive,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
+      <AppIcon
+        name={icon}
+        size={14}
+        color={destructive ? colors.status.danger : colors.text.secondary}
+        decorative
+      />
       <AppText
         variant="caption"
         color={destructive ? colors.status.danger : colors.text.secondary}
@@ -399,7 +443,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
-  replyComment: { marginLeft: spacing.xl },
+  replyComment: {
+    marginLeft: spacing.xl,
+    paddingLeft: spacing.md,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.primary[300],
+  },
   commentAvatar: {
     width: 32,
     height: 32,
@@ -416,6 +465,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.background.muted,
   },
+  commentAction: {
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.surface,
+  },
+  commentActionDestructive: { backgroundColor: colors.background.surface },
   commentActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',

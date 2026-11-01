@@ -1,25 +1,36 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AppText, ScreenWrapper } from '@/components';
+import { AppText, CalendarDatePicker, ScreenWrapper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
-import { TrackingHubCard } from '../components/TrackingHubCard';
+import { DailyDiaryCard } from '../components/DailyDiaryCard';
+import { DiaryDayNavigator } from '../components/DiaryDayNavigator';
+import { TrackingQuickMetricCard } from '../components/TrackingQuickMetricCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import {
+  useDiary,
   useDiarySummary,
   useTrackingTargets,
   useWater,
   useWeightTrend,
 } from '../hooks/useTrackingApi';
 import { useTrackingFormat } from '../hooks/useTrackingFormat';
-import { toLocalIsoDate } from '../trackingState';
+import {
+  localIsoDateToDate,
+  toLocalIsoDate,
+  TRACKING_MINIMUM_DATE,
+} from '../trackingState';
 
 export function TrackingHubScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { formatNumber, formatLongDate } = useTrackingFormat();
-  const date = toLocalIsoDate(new Date());
+  const { formatNumber } = useTrackingFormat();
+  const today = toLocalIsoDate(new Date());
+  const [date, setDate] = useState(today);
+  const [calendarVisible, setCalendarVisible] = useState(false);
   const diary = useDiarySummary(date);
+  const diaryEntries = useDiary(date);
   const trend = useWeightTrend();
   const waterQuery = useWater(date);
   const targets = useTrackingTargets();
@@ -42,36 +53,19 @@ export function TrackingHubScreen() {
       targetMl: targets.waterMl,
     },
   };
-  const loading = diary.isLoading || trend.isLoading || waterQuery.isLoading;
-  const error = diary.isError || trend.isError || waterQuery.isError;
+  const loading =
+    diary.isLoading || diaryEntries.isLoading || trend.isLoading || waterQuery.isLoading;
+  const error =
+    diary.isError || diaryEntries.isError || trend.isError || waterQuery.isError;
   const retry = () =>
-    void Promise.all([diary.refetch(), trend.refetch(), waterQuery.refetch()]);
-
-  const dateLabel = formatLongDate(overview.date);
+    void Promise.all([
+      diary.refetch(),
+      diaryEntries.refetch(),
+      trend.refetch(),
+      waterQuery.refetch(),
+    ]);
 
   const { energy, weight, water } = overview;
-  const energyPercent = energy.targetKcal
-    ? Math.round((energy.consumedKcal / energy.targetKcal) * 100)
-    : null;
-  const waterRemaining = water.targetMl
-    ? Math.max(0, water.targetMl - water.consumedMl)
-    : null;
-
-  let weightDetail: string | undefined;
-  if (weight?.changeKg != null) {
-    const change = formatNumber(Math.abs(weight.changeKg), 1, 1);
-    if (weight.changeKg < 0) {
-      weightDetail = t('tracking.hub.weightDown', {
-        change,
-        days: weight.periodDays,
-      });
-    } else if (weight.changeKg > 0) {
-      weightDetail = t('tracking.hub.weightUp', { change, days: weight.periodDays });
-    } else {
-      weightDetail = t('tracking.hub.weightSame', { days: weight.periodDays });
-    }
-  }
-
   return (
     <ScreenWrapper
       scrollable
@@ -81,58 +75,49 @@ export function TrackingHubScreen() {
     >
       <View style={styles.header}>
         <AppText variant="heading1">{t('tracking.hub.title')}</AppText>
-        <AppText
-          variant="bodyLarge"
-          color={colors.text.secondary}
-          style={styles.date}
-        >
-          {dateLabel}
-        </AppText>
         <AppText color={colors.text.secondary}>{t('tracking.hub.subtitle')}</AppText>
       </View>
 
+      <DiaryDayNavigator
+        date={date}
+        today={today}
+        onChange={setDate}
+        onOpenCalendar={() => setCalendarVisible(true)}
+      />
+
       <View style={styles.sectionHeader}>
-        <AppText variant="heading4">{t('tracking.hub.todayOverview')}</AppText>
+        <AppText variant="heading4">
+          {date === today
+            ? t('tracking.hub.todayOverview')
+            : t('tracking.hub.dayOverview')}
+        </AppText>
       </View>
 
       <TrackingQueryState loading={loading} error={error} onRetry={retry} />
 
       {!loading && !error ? (
         <>
-          <TrackingHubCard
-            testID="tracking-hub-food-diary"
-            tone="energy"
-            unit="kcal"
-            title={t('tracking.foodDiary.title')}
-            value={
-              energy.targetKcal
-                ? t('tracking.hub.energyValue', {
-                    consumed: formatNumber(energy.consumedKcal),
-                    target: formatNumber(energy.targetKcal),
-                  })
-                : t('tracking.hub.energyValueNoTarget', {
-                    consumed: formatNumber(energy.consumedKcal),
-                  })
+          <DailyDiaryCard
+            entries={diaryEntries.data?.data ?? []}
+            consumedKcal={energy.consumedKcal}
+            targetKcal={energy.targetKcal}
+            onPress={() =>
+              router.push({
+                pathname: '/(tracking)/food-diary',
+                params: { date },
+              })
             }
-            detail={
-              energyPercent != null
-                ? t('tracking.hub.energyDetail', { percent: energyPercent })
-                : undefined
-            }
-            progress={
-              energy.targetKcal
-                ? { value: energy.consumedKcal, max: energy.targetKcal }
-                : undefined
-            }
-            onPress={() => router.push('/(tracking)/food-diary')}
           />
 
-          <View style={styles.metricStack}>
-            <TrackingHubCard
+          <View style={styles.secondaryHeader}>
+            <AppText variant="bodyStrong">{t('tracking.hub.secondaryTitle')}</AppText>
+          </View>
+          <View style={styles.quickMetrics}>
+            <TrackingQuickMetricCard
               testID="tracking-hub-weight"
-              variant="metric"
-              tone="weight"
-              unit="kg"
+              icon="scale"
+              iconColor={colors.primary[700]}
+              iconBackground={colors.primary[100]}
               title={t('tracking.hub.weightTitle')}
               value={
                 weight
@@ -141,51 +126,43 @@ export function TrackingHubScreen() {
                     })
                   : t('tracking.hub.weightEmpty')
               }
-              detail={weight ? weightDetail : t('tracking.hub.weightEmptyDetail')}
-              actionLabel={
-                weight
-                  ? t('tracking.hub.weightViewAction')
-                  : t('tracking.hub.weightAddAction')
-              }
               onPress={() => router.push('/(tracking)/weight')}
             />
 
-            <TrackingHubCard
+            <TrackingQuickMetricCard
               testID="tracking-hub-water"
-              variant="metric"
-              tone="water"
-              unit="ml"
-              title={t('tracking.hub.waterTitle')}
+              icon="water"
+              iconColor={colors.status.info}
+              iconBackground={colors.background.muted}
+              title={
+                date === today
+                  ? t('tracking.hub.waterTitle')
+                  : t('tracking.hub.waterTitleDay')
+              }
               value={
-                water.targetMl
-                  ? t('tracking.hub.waterValue', {
-                      consumed: formatNumber(water.consumedMl),
-                      target: formatNumber(water.targetMl),
-                    })
-                  : t('tracking.hub.waterValueNoTarget', {
-                      consumed: formatNumber(water.consumedMl),
-                    })
+                t('tracking.hub.waterValueNoTarget', {
+                  consumed: formatNumber(water.consumedMl),
+                })
               }
-              detail={
-                waterRemaining == null
-                  ? undefined
-                  : waterRemaining > 0
-                    ? t('tracking.hub.waterRemaining', {
-                        remaining: formatNumber(waterRemaining),
-                      })
-                    : t('tracking.hub.waterDone')
+              onPress={() =>
+                router.push({ pathname: '/(tracking)/water', params: { date } })
               }
-              progress={
-                water.targetMl
-                  ? { value: water.consumedMl, max: water.targetMl }
-                  : undefined
-              }
-              actionLabel={t('tracking.hub.waterAction')}
-              onPress={() => router.push('/(tracking)/water')}
             />
           </View>
         </>
       ) : null}
+      <CalendarDatePicker
+        visible={calendarVisible}
+        title={t('tracking.day.chooseDate')}
+        value={localIsoDateToDate(date)}
+        minimumDate={TRACKING_MINIMUM_DATE}
+        maximumDate={localIsoDateToDate(today)}
+        onConfirm={(selected) => {
+          setDate(toLocalIsoDate(selected));
+          setCalendarVisible(false);
+        }}
+        onClose={() => setCalendarVisible(false)}
+      />
     </ScreenWrapper>
   );
 }
@@ -193,9 +170,9 @@ export function TrackingHubScreen() {
 const styles = StyleSheet.create({
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.lg },
   header: { gap: spacing.xs, marginBottom: spacing.sm },
-  date: { textTransform: 'capitalize' },
   sectionHeader: {
     marginTop: spacing.sm,
   },
-  metricStack: { gap: spacing.md },
+  secondaryHeader: { marginTop: spacing.xs },
+  quickMetrics: { flexDirection: 'row', gap: spacing.md },
 });

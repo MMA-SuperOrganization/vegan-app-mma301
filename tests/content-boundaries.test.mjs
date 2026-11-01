@@ -38,15 +38,21 @@ test('home remains recipe-first and adds community posts afterwards', () => {
 test('post owns share, reactions and comments while admin routes are guarded', () => {
   const post = read('../src/features/community/screens/PostDetailScreen.tsx');
   const comments = read('../src/features/community/components/PostComments.tsx');
+  const engagement = read(
+    '../src/features/community/components/PostDetailEngagement.tsx'
+  );
   const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const adminLayout = read('../src/app/admin/_layout.tsx');
 
-  assert.match(post, /Share\.share/);
-  assert.match(post, /<ReactionButtons/);
+  assert.match(engagement, /Share\.share/);
+  assert.match(post, /<PostDetailEngagement/);
+  assert.match(engagement, /<ReactionButtons/);
   for (const type of ['like', 'love', 'helpful'])
     assert.match(reactions, new RegExp(`type: '${type}'`));
   assert.match(post, /<PostComments/);
   assert.match(comments, /Viết bình luận/);
+  assert.match(post, /focusRequestKey={commentFocusRequest}/);
+  assert.match(engagement, /title={vi \? 'Bình luận'/);
   assert.match(adminLayout, /role !== 'admin'/);
 });
 

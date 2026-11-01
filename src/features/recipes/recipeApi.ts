@@ -18,9 +18,12 @@ import type {
   RecipeTagOption,
 } from './types';
 
+// The API reads list filters as comma-separated values; axios would send `key[]=`.
 const compactParams = (params: Record<string, unknown>) =>
   Object.fromEntries(
-    Object.entries(params).filter(([, value]) => value !== undefined && value !== '')
+    Object.entries(params)
+      .map(([key, value]) => [key, Array.isArray(value) ? value.join(',') : value])
+      .filter(([, value]) => value !== undefined && value !== '')
   );
 
 const pageRequest = <T>(path: string, params: Record<string, unknown>) =>

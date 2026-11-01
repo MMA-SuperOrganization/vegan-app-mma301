@@ -35,6 +35,7 @@ test('shared buttons provide semantic action icons across the app', () => {
 
 test('post detail groups article and engagement while keeping AI accessible', () => {
   const post = read('../src/features/community/screens/PostDetailScreen.tsx');
+  const comments = read('../src/features/community/components/PostComments.tsx');
   const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const header = read('../src/components/layout/CustomHeader.tsx');
   const aiWidget = read('../src/features/ai/components/AiChatWidget.tsx');
@@ -43,9 +44,9 @@ test('post detail groups article and engagement while keeping AI accessible', ()
   assert.match(post, /<ReactionButtons/);
   assert.match(reactions, /style={styles\.reactions}/);
   assert.match(post, /style={styles\.engagementCard}/);
-  assert.match(post, /style={styles\.commentsCard}/);
-  assert.match(post, /style={styles\.commentActions}/);
-  assert.match(post, /name="comment"/);
+  assert.match(post, /<PostComments/);
+  assert.match(comments, /style={styles\.commentActions}/);
+  assert.match(comments, /name="comment"/);
   assert.match(aiWidget, /shouldHideAiWidget\(pathname\)/);
   assert.match(aiWidget, /launcherHidden/);
   assert.match(header, /numberOfLines={1}/);

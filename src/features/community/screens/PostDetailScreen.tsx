@@ -14,8 +14,9 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { useCommunityPost } from '../hooks';
+import { useCommunityPost, usePostReaction } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
+import { ReactionButtons } from '@/features/engagement/ReactionButtons';
 import { postStatusLabel } from '../status';
 import { ContentResultCard } from '@/features/recipes/components/ContentResultCard';
 import { useRecipeDetail } from '@/features/recipes/hooks';
@@ -27,6 +28,7 @@ export function PostDetailScreen() {
   const vi = useTranslation().locale === 'vi';
   const userId = useAuthStore((state) => state.user?.id);
   const actions = useCommunityPost(id);
+  const postReaction = usePostReaction();
   const post = actions.post.data;
   const linkedRecipe = useRecipeDetail(post?.recipeId ?? '');
   useEffect(() => {
@@ -186,7 +188,19 @@ export function PostDetailScreen() {
             )
           ) : null}
           {published ? (
-            <>
+            <Surface padding="md" radius="xl" style={styles.engagementCard}>
+              <ReactionButtons
+                selected={post.reacted}
+                disabled={false}
+                vi={vi}
+                onPress={(type, remove) =>
+                  postReaction.mutate({
+                    postId: post._id,
+                    nextReaction: remove ? null : type,
+                  })
+                }
+              />
+              <View style={styles.engagementDivider} />
               <View style={styles.secondaryActions}>
                 <AppButton
                   title={vi ? 'Chia sẻ' : 'Share'}
@@ -210,7 +224,7 @@ export function PostDetailScreen() {
                   }
                 />
               </View>
-            </>
+            </Surface>
           ) : null}
         </>
       ) : null}
@@ -270,6 +284,15 @@ const styles = StyleSheet.create({
   },
   actionPressed: {
     opacity: 0.72,
+  },
+  engagementCard: {
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  engagementDivider: {
+    height: 1,
+    backgroundColor: colors.border.subtle,
   },
   secondaryActions: {
     flexDirection: 'row',

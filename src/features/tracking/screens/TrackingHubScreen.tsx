@@ -127,13 +127,13 @@ export function TrackingHubScreen() {
             onPress={() => router.push('/(tracking)/food-diary')}
           />
 
-          <View style={styles.metricGrid}>
+          <View style={styles.metricStack}>
             <TrackingHubCard
               testID="tracking-hub-weight"
-              variant="compact"
+              variant="metric"
               tone="weight"
               unit="kg"
-              title={t('tracking.weight.title')}
+              title={t('tracking.hub.weightTitle')}
               value={
                 weight
                   ? t('tracking.hub.weightValue', {
@@ -142,15 +142,20 @@ export function TrackingHubScreen() {
                   : t('tracking.hub.weightEmpty')
               }
               detail={weight ? weightDetail : t('tracking.hub.weightEmptyDetail')}
+              actionLabel={
+                weight
+                  ? t('tracking.hub.weightViewAction')
+                  : t('tracking.hub.weightAddAction')
+              }
               onPress={() => router.push('/(tracking)/weight')}
             />
 
             <TrackingHubCard
               testID="tracking-hub-water"
-              variant="compact"
+              variant="metric"
               tone="water"
               unit="ml"
-              title={t('tracking.water.title')}
+              title={t('tracking.hub.waterTitle')}
               value={
                 water.targetMl
                   ? t('tracking.hub.waterValue', {
@@ -175,6 +180,7 @@ export function TrackingHubScreen() {
                   ? { value: water.consumedMl, max: water.targetMl }
                   : undefined
               }
+              actionLabel={t('tracking.hub.waterAction')}
               onPress={() => router.push('/(tracking)/water')}
             />
           </View>
@@ -191,5 +197,5 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginTop: spacing.sm,
   },
-  metricGrid: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  metricStack: { gap: spacing.md },
 });

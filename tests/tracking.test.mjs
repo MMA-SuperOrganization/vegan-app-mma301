@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createTrackingFixture } from './fixtures/trackingFixtures.ts';
 import {
   addDays,
@@ -31,6 +32,19 @@ import {
 } from '../src/features/tracking/trackingState.ts';
 
 const now = new Date(2026, 9, 8, 15, 0);
+const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+
+test('tracking hub presents weight and water as clear full-width action cards', () => {
+  const screen = read('../src/features/tracking/screens/TrackingHubScreen.tsx');
+  const card = read('../src/features/tracking/components/TrackingHubCard.tsx');
+
+  assert.match(screen, /styles\.metricStack/);
+  assert.doesNotMatch(screen, /variant="compact"|styles\.metricGrid/);
+  assert.match(screen, /tracking\.hub\.weightViewAction/);
+  assert.match(screen, /tracking\.hub\.waterAction/);
+  assert.match(card, /width:\s*'100%'/);
+  assert.match(card, /styles\.metricAction/);
+});
 
 test('tracking overview matches the Figma mock numbers', () => {
   const overview = selectTrackingOverview(createTrackingFixture(now), now);

@@ -39,15 +39,19 @@ test('post detail groups article and engagement while keeping AI accessible', ()
   const engagement = read(
     '../src/features/community/components/PostDetailEngagement.tsx'
   );
-  const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const header = read('../src/components/layout/CustomHeader.tsx');
   const aiWidget = read('../src/features/ai/components/AiChatWidget.tsx');
 
   assert.match(post, /style={styles\.articleCard}/);
   assert.match(post, /<PostDetailEngagement/);
-  assert.match(engagement, /<ReactionButtons/);
-  assert.match(reactions, /style={styles\.reactions}/);
-  assert.match(engagement, /style={styles\.card}/);
+  assert.match(engagement, /onReact\('love', loved\)/);
+  assert.match(engagement, /styles\.actions/);
+  assert.doesNotMatch(engagement, /ReactionButtons/);
+  assert.doesNotMatch(engagement, /'Tương tác'|'Engagement'/);
+  assert.match(post, /style={styles\.authorAvatar}/);
+  assert.doesNotMatch(post, /\/users\/\[id\]/);
+  assert.match(post, /<BackButton onPress={goBack}/);
+  assert.doesNotMatch(post, /<CustomHeader/);
   assert.match(post, /<PostComments/);
   assert.match(comments, /style={styles\.commentActions}/);
   assert.match(comments, /styles\.commentAction/);

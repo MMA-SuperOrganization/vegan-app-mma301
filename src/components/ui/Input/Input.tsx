@@ -21,6 +21,7 @@ import {
   child,
   containerStyle,
   interactionTokens,
+  inputTypography,
   type AssetName,
   variantNode,
 } from '@/theme';
@@ -143,6 +144,7 @@ export function Input({
           <AppText
             style={[
               valueNode.style,
+              inputTypography,
               interactionTokens.flexibleText,
               { flex: 1 },
               inputStyle,
@@ -215,7 +217,9 @@ export function Input({
                 onPress={visibility.toggle}
                 hitSlop={interactionTokens.iconHitSlop}
                 accessibilityRole="button"
-                accessibilityLabel={visible ? t('common.hidePassword') : t('common.showPassword')}
+                accessibilityLabel={
+                  visible ? t('common.hidePassword') : t('common.showPassword')
+                }
                 accessibilityState={{ disabled: blocked, selected: visible }}
                 aria-pressed={visible}
                 aria-disabled={blocked}
@@ -232,7 +236,12 @@ export function Input({
                 />
               </Pressable>
             ) : kind === 'search' ? (
-              <AppIcon name="search" size={22} color={colors.primary[700]} decorative />
+              <AppIcon
+                name="search"
+                size={22}
+                color={colors.primary[700]}
+                decorative
+              />
             ) : icon ? (
               <AppText accessible={false} style={icon.style}>
                 {icon.text}

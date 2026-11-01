@@ -40,10 +40,12 @@ export interface AddMealInput {
   type: MealType;
   recipeId: string;
   servings: number;
+  acknowledgeAllergens?: boolean;
 }
 
 export interface UpdateMealInput {
   recipeId?: string;
   servings?: number;
   completed?: boolean;
+  acknowledgeAllergens?: boolean;
 }

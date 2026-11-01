@@ -77,17 +77,18 @@ export const profileApi = {
         ...(values.avatarMediaId ? { avatarMediaId: values.avatarMediaId } : {}),
       })
     );
-    await unwrapApiRequest(() =>
-      apiClient.put('/profiles/me', {
-        username: values.username?.trim().toLowerCase() || undefined,
-        bio: values.bio?.trim() ?? '',
-        city: values.city?.trim() ?? '',
-        country: values.country?.trim() ?? '',
-        dateOfBirth: values.dateOfBirth || null,
-        ...(values.gender !== undefined ? { gender: values.gender } : {}),
-        timezone: values.timezone?.trim() || 'Asia/Ho_Chi_Minh',
-      })
-    );
+    const profile = compactOptionalFields({
+      username: values.username?.trim().toLowerCase(),
+      bio: values.bio?.trim(),
+      city: values.city?.trim(),
+      country: values.country?.trim(),
+      dateOfBirth: values.dateOfBirth,
+      gender: values.gender,
+      timezone: values.timezone?.trim(),
+    });
+    if (Object.keys(profile).length) {
+      await unwrapApiRequest(() => apiClient.put('/profiles/me', profile));
+    }
     const nutrition = Object.fromEntries(
       Object.entries({
         heightCm: values.heightCm,
@@ -133,3 +134,11 @@ export const profileApi = {
       apiClient.delete('/users/me', { data: {} })
     ),
 };
+
+function compactOptionalFields(values: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(values).filter(
+      ([, value]) => value !== undefined && value !== null && value !== ''
+    )
+  );
+}

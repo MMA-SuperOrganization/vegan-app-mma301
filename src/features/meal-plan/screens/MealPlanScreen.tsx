@@ -14,6 +14,8 @@ import {
 } from '@/components';
 import { TrackingQueryState } from '@/features/tracking/components/TrackingQueryState';
 import { useRecipeOptions } from '@/features/tracking/hooks/usePickerOptions';
+import { matchingAllergenNames } from '@/features/profile/allergenMatching';
+import { useProfileStore } from '@/features/profile/profileStore';
 import { useTrackingFormat } from '@/features/tracking/hooks/useTrackingFormat';
 import { useTrackingTargets } from '@/features/tracking/hooks/useTrackingApi';
 import type { MealType } from '@/features/tracking/types';
@@ -70,6 +72,10 @@ export function MealPlanScreen() {
   const [replacementMeal, setReplacementMeal] = useState<PlannedMeal | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmActivation, setConfirmActivation] = useState(false);
+  const profileAllergenIds = useProfileStore(
+    (state) => state.data?.nutritionProfile?.allergenIds ?? []
+  );
+  const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
 
   const planQuery = useMealPlan(weekStartDate, params.planId);
   const actions = useMealPlanActions(weekStartDate, params.planId);
@@ -125,6 +131,17 @@ export function MealPlanScreen() {
     [plan?.days]
   );
 
+  const allergenNamesByRecipe = new Map(
+    (recipeOptions.data?.data ?? []).map((recipe) => [
+      recipe._id,
+      matchingAllergenNames(
+        recipe.allergenIds,
+        profileAllergenIds,
+        allergenCatalog,
+        t('recipe.unknownAllergen')
+      ),
+    ])
+  );
   const pickerItems: PickerItem[] = (recipeOptions.data?.data ?? []).map(
     (recipe) => ({
       id: recipe._id,
@@ -135,10 +152,15 @@ export function MealPlanScreen() {
           })
         : undefined,
       imageUrl: recipe.coverImageUrl,
+      warning: allergenNamesByRecipe.get(recipe._id)?.length
+        ? t('mealPlan.allergenPickerWarning', {
+            allergens: allergenNamesByRecipe.get(recipe._id)!.join(', '),
+          })
+        : undefined,
     })
   );
 
-  const addRecipe = (recipeId: string) => {
+  const commitRecipe = (recipeId: string, acknowledgeAllergens = false) => {
     if (pending || readOnly) return;
     const recipe = recipeOptions.data?.data.find((item) => item._id === recipeId);
     if (replacementMeal && plan) {
@@ -158,7 +180,10 @@ export function MealPlanScreen() {
       actions.updateMeal.mutate({
         planId: plan._id,
         mealId: replacementMeal.mealId,
-        input: { recipeId },
+        input: {
+          recipeId,
+          ...(acknowledgeAllergens ? { acknowledgeAllergens } : {}),
+        },
         optimisticMeal,
       });
       setReplacementMeal(null);
@@ -184,11 +209,41 @@ export function MealPlanScreen() {
       : undefined;
     actions.addMeal.mutate({
       planId: plan?._id,
-      input: { date: selectedDate, type: pickerMealType, recipeId, servings: 1 },
+      input: {
+        date: selectedDate,
+        type: pickerMealType,
+        recipeId,
+        servings: 1,
+        ...(acknowledgeAllergens ? { acknowledgeAllergens } : {}),
+      },
       optimisticMeal,
     });
     setPickerMealType(null);
     setSearchQuery('');
+  };
+
+  const selectRecipe = (recipeId: string) => {
+    const matchingAllergens = allergenNamesByRecipe.get(recipeId) ?? [];
+    if (!matchingAllergens.length) {
+      commitRecipe(recipeId);
+      return;
+    }
+    const recipe = recipeOptions.data?.data.find((item) => item._id === recipeId);
+    appDialog.alert(
+      t('mealPlan.allergenWarningTitle'),
+      t('mealPlan.allergenWarningBody', {
+        name: recipe?.title ?? t('mealPlan.unnamedRecipe'),
+        allergens: matchingAllergens.join(', '),
+      }),
+      [
+        { text: t('mealPlan.cancel'), style: 'cancel' },
+        {
+          text: t('mealPlan.addAnyway'),
+          style: 'destructive',
+          onPress: () => commitRecipe(recipeId, true),
+        },
+      ]
+    );
   };
 
   const changeServings = (meal: PlannedMeal, delta: number) => {
@@ -497,7 +552,7 @@ export function MealPlanScreen() {
         isLoading={recipeOptions.isLoading || pending}
         isError={recipeOptions.isError}
         onRetry={() => void recipeOptions.refetch()}
-        onSelect={addRecipe}
+        onSelect={selectRecipe}
         onClose={() => {
           if (pending) return;
           setPickerMealType(null);

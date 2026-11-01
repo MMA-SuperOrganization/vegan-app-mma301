@@ -1,10 +1,11 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   AppButton,
+  AppIcon,
   AppText,
   EmptyState,
   LoadingSpinner,
@@ -12,6 +13,7 @@ import {
   Surface,
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
+import { matchingAllergenNames } from '@/features/profile/allergenMatching';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, spacing } from '@/theme';
 
@@ -30,6 +32,9 @@ export function RecipeDetailScreen() {
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
+  const profileAllergenIds = useProfileStore(
+    (state) => state.data?.nutritionProfile?.allergenIds ?? []
+  );
   useEffect(() => {
     if (recipe.data?._id)
       void engagementApi
@@ -93,6 +98,12 @@ export function RecipeDetailScreen() {
                   ?.name ?? t('recipe.unknownAllergen')
             )
             .join(', ');
+  const matchingAllergens = matchingAllergenNames(
+    data.allergenIds,
+    profileAllergenIds,
+    allergenCatalog,
+    t('recipe.unknownAllergen')
+  );
   const difficulty = data.difficulty
     ? t(`filters.difficulty.${data.difficulty}` as TranslationKey)
     : null;
@@ -119,6 +130,31 @@ export function RecipeDetailScreen() {
         cookMinutes={data.cookMinutes}
         difficulty={difficulty}
       />
+
+      {matchingAllergens.length ? (
+        <Surface bordered padding="lg" radius="lg" style={styles.allergenWarning}>
+          <View style={styles.warningHeader}>
+            <View style={styles.warningIcon}>
+              <AppIcon
+                name="flag"
+                size={22}
+                color={colors.status.danger}
+                decorative
+              />
+            </View>
+            <View style={styles.warningCopy}>
+              <AppText variant="heading4" color={colors.status.danger}>
+                {t('recipe.profileAllergenWarningTitle')}
+              </AppText>
+              <AppText color={colors.text.secondary}>
+                {t('recipe.profileAllergenWarningBody', {
+                  allergens: matchingAllergens.join(', '),
+                })}
+              </AppText>
+            </View>
+          </View>
+        </Surface>
+      ) : null}
 
       <RecipeMacroCards
         caloriesKcal={nutrition?.caloriesKcal}
@@ -173,4 +209,19 @@ const styles = StyleSheet.create({
   state: { padding: spacing.xl, justifyContent: 'center' },
   screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.lg },
   block: { gap: spacing.md },
+  allergenWarning: {
+    gap: spacing.md,
+    borderColor: colors.status.danger,
+    backgroundColor: colors.accent.soft,
+  },
+  warningHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  warningIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.surface,
+  },
+  warningCopy: { flex: 1, gap: spacing.xs },
 });

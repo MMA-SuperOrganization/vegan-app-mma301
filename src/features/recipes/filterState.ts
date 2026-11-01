@@ -5,6 +5,8 @@ export type RecipeFilterRouteParams = {
   q?: RouteValue;
   type?: RouteValue;
   category?: RouteValue;
+  categoryIds?: RouteValue;
+  tags?: RouteValue;
   difficulty?: RouteValue;
   maxTotalMinutes?: RouteValue;
   dietType?: RouteValue;
@@ -13,6 +15,14 @@ export type RecipeFilterRouteParams = {
 };
 
 const first = (value: RouteValue) => (Array.isArray(value) ? value[0] : value);
+const list = (value: RouteValue) => [
+  ...new Set(
+    (Array.isArray(value) ? value : [value])
+      .flatMap((item) => item?.split(',') ?? [])
+      .map((item) => item.trim())
+      .filter(Boolean)
+  ),
+];
 
 const oneOf = <T extends string>(value: string | undefined, values: readonly T[]) =>
   values.includes(value as T) ? (value as T) : undefined;
@@ -20,7 +30,10 @@ const oneOf = <T extends string>(value: string | undefined, values: readonly T[]
 export function parseRecipeFilters(params: RecipeFilterRouteParams): RecipeFilters {
   const duration = Number(first(params.maxTotalMinutes));
   return {
-    category: first(params.category) || undefined,
+    categoryIds: list(params.categoryIds ?? params.category).length
+      ? list(params.categoryIds ?? params.category)
+      : undefined,
+    tags: list(params.tags).length ? list(params.tags) : undefined,
     difficulty: oneOf(first(params.difficulty), ['easy', 'medium', 'hard'] as const),
     maxTotalMinutes:
       Number.isInteger(duration) && duration > 0 ? duration : undefined,
@@ -40,7 +53,8 @@ export function serializeRecipeFilters(
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries({
-      category: filters.category,
+      categoryIds: filters.categoryIds?.join(','),
+      tags: filters.tags?.join(','),
       difficulty: filters.difficulty,
       maxTotalMinutes: filters.maxTotalMinutes?.toString(),
       dietType: filters.dietType,
@@ -67,13 +81,28 @@ export function filtersForContentType(
   filters: RecipeFilters,
   type: ContentType | 'all'
 ): RecipeFilters {
-  if (type !== 'food-item') return filters;
+  if (type === 'recipe' || type === 'all') return filters;
+  if (type === 'post')
+    return { categoryIds: filters.categoryIds, sort: filters.sort };
+  if (type === 'video') return { sort: filters.sort };
   return {
-    category: filters.category,
+    categoryIds: filters.categoryIds,
     dietType: filters.dietType,
     avoidProfileAllergens: filters.avoidProfileAllergens,
   };
 }
 
 export const hasActiveRecipeFilters = (filters: RecipeFilters) =>
-  Object.values(filters).some((value) => value !== undefined && value !== false);
+  Object.values(filters).some(
+    (value) =>
+      value !== undefined &&
+      value !== false &&
+      (!Array.isArray(value) || value.length > 0)
+  );
+
+export const toggleFilterValue = (values: string[] | undefined, value: string) => {
+  const current = values ?? [];
+  return current.includes(value)
+    ? current.filter((item) => item !== value)
+    : [...current, value];
+};

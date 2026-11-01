@@ -12,7 +12,7 @@ import {
 
 import { AppIcon, AppText, BrandWordmark } from '@/components';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, inputTypography, radius, spacing } from '@/theme';
 
 export function HomeSocialHeader({
   onCreatePost,
@@ -36,9 +36,7 @@ export function HomeSocialHeader({
   const inputRef = useRef<TextInput>(null);
   const closingRef = useRef(false);
   const expansion = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
-  const fieldReveal = useRef(
-    new Animated.Value(searchExpanded ? 1 : 0)
-  ).current;
+  const fieldReveal = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
   const openSearchWidth = Math.max(220, window.width - spacing.md * 2);
 
   useEffect(() => {
@@ -150,17 +148,11 @@ export function HomeSocialHeader({
                 }),
                 backgroundColor: expansion.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [
-                    colors.background.muted,
-                    colors.background.surface,
-                  ],
+                  outputRange: [colors.background.muted, colors.background.surface],
                 }),
                 borderColor: expansion.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [
-                    colors.background.muted,
-                    colors.primary[300],
-                  ],
+                  outputRange: [colors.background.muted, colors.primary[300]],
                 }),
                 transform: [
                   {
@@ -268,8 +260,14 @@ export function HomeSocialHeader({
       </View>
 
       {!searchExpanded ? (
-        <Pressable accessibilityRole="button" onPress={onCreatePost} style={styles.composer}>
-          <AppText color={colors.text.secondary} style={styles.composerText}>{t('home.createPostPrompt')}</AppText>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onCreatePost}
+          style={styles.composer}
+        >
+          <AppText color={colors.text.secondary} style={styles.composerText}>
+            {t('home.createPostPrompt')}
+          </AppText>
           <AppIcon name="image" size={24} color={colors.primary[700]} decorative />
         </Pressable>
       ) : null}
@@ -279,17 +277,87 @@ export function HomeSocialHeader({
 
 const styles = StyleSheet.create({
   container: { gap: spacing.lg, paddingTop: spacing.sm },
-  topRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topRow: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  brandIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  brandIcon: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  action: { width: 40, height: 40, borderRadius: radius.full, backgroundColor: colors.background.muted, alignItems: 'center', justifyContent: 'center' },
-  searchSlot: { position: 'absolute', top: 0, right: 0, zIndex: 1, height: 40, borderRadius: radius.full, overflow: 'hidden', borderWidth: 1.5 },
-  collapsedSearchGlyph: { position: 'absolute', right: 7, top: 7, width: 26, height: 26, alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  searchField: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.md, paddingRight: spacing.xs, gap: spacing.xs },
-  searchInput: { flex: 1, minWidth: 0, color: colors.text.primary, fontSize: 15, paddingVertical: 0 },
-  leadingAction: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  inlineAction: { width: 28, height: 28, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background.muted },
-  composer: { minHeight: 64, borderRadius: radius.xl, backgroundColor: colors.background.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border.subtle },
+  action: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchSlot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 1,
+    height: 40,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+  },
+  collapsedSearchGlyph: {
+    position: 'absolute',
+    right: 7,
+    top: 7,
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: spacing.md,
+    paddingRight: spacing.xs,
+    gap: spacing.xs,
+  },
+  searchInput: {
+    ...inputTypography,
+    flex: 1,
+    minWidth: 0,
+    color: colors.text.primary,
+    fontSize: 15,
+    paddingVertical: 0,
+  },
+  leadingAction: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineAction: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.muted,
+  },
+  composer: {
+    minHeight: 64,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
   composerText: { flex: 1, fontSize: 16 },
 });

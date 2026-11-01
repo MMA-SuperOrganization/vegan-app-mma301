@@ -15,6 +15,7 @@ import type {
   FoodQuery,
   SearchSuggestion,
   RecipeAuthorInput,
+  RecipeTagOption,
 } from './types';
 
 const compactParams = (params: Record<string, unknown>) =>
@@ -58,7 +59,8 @@ export const recipeApi = {
       page: query.page ?? 1,
       limit: query.limit ?? 10,
       sort: query.sort ?? 'popular',
-      category: query.category,
+      categoryIds: query.categoryIds,
+      tags: query.tags,
       difficulty: query.difficulty,
       maxTotalMinutes: query.maxTotalMinutes,
       dietType: query.dietType,
@@ -74,7 +76,8 @@ export const recipeApi = {
       type,
       page: filters.page ?? 1,
       limit: filters.limit ?? (type === 'all' ? 30 : 10),
-      category: filters.category,
+      categoryIds: filters.categoryIds,
+      tags: filters.tags,
       difficulty: filters.difficulty,
       maxTotalMinutes: filters.maxTotalMinutes,
       dietType: filters.dietType,
@@ -91,6 +94,33 @@ export const recipeApi = {
         params: { q: query, type: 'all', limit: 8 },
       })
     ),
+  tags: async (): Promise<RecipeTagOption[]> => {
+    const recipes: ContentCardData[] = [];
+    let pageNumber = 1;
+    for (;;) {
+      const page = await pageRequest<ContentCardData>('/search', {
+        type: 'recipe',
+        page: pageNumber,
+        limit: 50,
+        sort: 'popular',
+      });
+      recipes.push(...page.data);
+      if (page.meta ? pageNumber >= page.meta.totalPages : page.data.length < 50)
+        break;
+      pageNumber += 1;
+    }
+    const hidden = new Set(['open-catalog', 'demo-fixture', 'vegan', 'vegetarian']);
+    const counts = new Map<string, number>();
+    for (const recipe of recipes) {
+      for (const tag of new Set(recipe.tags ?? [])) {
+        if (tag && !hidden.has(tag)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+      .slice(0, 30);
+  },
   detail: async (idOrSlug: string) => {
     const recipe = await unwrapApiRequest<RecipeDetail>(() =>
       apiClient.get(`/recipes/${idOrSlug}`)

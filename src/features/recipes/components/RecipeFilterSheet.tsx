@@ -14,8 +14,9 @@ import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 
-import { filtersForContentType } from '../filterState';
-import { useContentCategories } from '../hooks';
+import { filtersForContentType, toggleFilterValue } from '../filterState';
+import { categoryFilterLabel, recipeTagLabel } from '../filterLabels';
+import { useContentCategories, useRecipeTags } from '../hooks';
 import type { ContentType, RecipeFilters } from '../types';
 
 const durations = [15, 30, 60] as const;
@@ -38,15 +39,19 @@ export function RecipeFilterSheet({
   onClose,
   onApply,
 }: RecipeFilterSheetProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [filters, setFilters] = useState<RecipeFilters>(initialFilters);
-  const categories = useContentCategories(
+  const categoryType =
     contentType === 'food-item'
       ? 'food'
-      : contentType === 'recipe'
-        ? 'recipe'
-        : undefined
-  );
+      : contentType === 'post'
+        ? 'post'
+        : contentType === 'recipe' || contentType === 'all'
+          ? 'recipe'
+          : undefined;
+  const recipeFiltersVisible = contentType === 'recipe' || contentType === 'all';
+  const categories = useContentCategories(categoryType, contentType !== 'video');
+  const tags = useRecipeTags(recipeFiltersVisible);
   const profile = useProfileStore((state) => state.data);
   const allergenIds = profile?.nutritionProfile?.allergenIds ?? [];
   const allergySelectionReady =
@@ -75,35 +80,76 @@ export function RecipeFilterSheet({
       >
         <AppText color={colors.text.secondary}>{t('filters.subtitle')}</AppText>
 
-        <FilterSection title={t('filters.category')}>
-          {categories.isLoading ? (
-            <LoadingSpinner text={t('filters.loadingCategories')} />
-          ) : null}
-          {categories.isError ? (
-            <EmptyState
-              title={t('filters.categoryError')}
-              actionLabel={t('common.retry')}
-              onAction={() => void categories.refetch()}
-            />
-          ) : null}
-          <Options>
-            <FilterOption
-              label={t('filters.any')}
-              selected={!filters.category}
-              onPress={() => update({ category: undefined })}
-            />
-            {categories.data?.data.map((category) => (
-              <FilterOption
-                key={category._id}
-                label={category.name}
-                selected={filters.category === category._id}
-                onPress={() => update({ category: category._id })}
+        {contentType !== 'video' ? (
+          <FilterSection title={t('filters.category')}>
+            {categories.isLoading ? (
+              <LoadingSpinner text={t('filters.loadingCategories')} />
+            ) : null}
+            {categories.isError ? (
+              <EmptyState
+                title={t('filters.categoryError')}
+                actionLabel={t('common.retry')}
+                onAction={() => void categories.refetch()}
               />
-            ))}
-          </Options>
-        </FilterSection>
+            ) : null}
+            <Options>
+              <FilterOption
+                label={t('filters.any')}
+                selected={!filters.categoryIds?.length}
+                onPress={() => update({ categoryIds: undefined })}
+              />
+              {categories.data?.data.map((category) => (
+                <FilterOption
+                  key={category._id}
+                  label={categoryFilterLabel(category, locale)}
+                  selected={filters.categoryIds?.includes(category._id) ?? false}
+                  onPress={() =>
+                    update({
+                      categoryIds: toggleFilterValue(
+                        filters.categoryIds,
+                        category._id
+                      ),
+                    })
+                  }
+                />
+              ))}
+            </Options>
+          </FilterSection>
+        ) : null}
 
-        {contentType !== 'food-item' ? (
+        {recipeFiltersVisible ? (
+          <FilterSection title={t('filters.tags')}>
+            {tags.isLoading ? (
+              <LoadingSpinner text={t('filters.loadingTags')} />
+            ) : null}
+            {tags.isError ? (
+              <EmptyState
+                title={t('filters.tagsError')}
+                actionLabel={t('common.retry')}
+                onAction={() => void tags.refetch()}
+              />
+            ) : null}
+            <Options>
+              <FilterOption
+                label={t('filters.any')}
+                selected={!filters.tags?.length}
+                onPress={() => update({ tags: undefined })}
+              />
+              {tags.data?.map((tag) => (
+                <FilterOption
+                  key={tag.value}
+                  label={`${recipeTagLabel(tag.value, locale)} · ${tag.count}`}
+                  selected={filters.tags?.includes(tag.value) ?? false}
+                  onPress={() =>
+                    update({ tags: toggleFilterValue(filters.tags, tag.value) })
+                  }
+                />
+              ))}
+            </Options>
+          </FilterSection>
+        ) : null}
+
+        {recipeFiltersVisible ? (
           <FilterSection title={t('filters.duration')}>
             <Options>
               <FilterOption
@@ -123,7 +169,7 @@ export function RecipeFilterSheet({
           </FilterSection>
         ) : null}
 
-        {contentType !== 'food-item' ? (
+        {recipeFiltersVisible ? (
           <FilterSection title={t('filters.difficulty')}>
             <Options>
               <FilterOption
@@ -143,23 +189,25 @@ export function RecipeFilterSheet({
           </FilterSection>
         ) : null}
 
-        <FilterSection title={t('filters.diet')}>
-          <Options>
-            <FilterOption
-              label={t('filters.any')}
-              selected={!filters.dietType}
-              onPress={() => update({ dietType: undefined })}
-            />
-            {diets.map((diet) => (
+        {contentType !== 'post' && contentType !== 'video' ? (
+          <FilterSection title={t('filters.diet')}>
+            <Options>
               <FilterOption
-                key={diet}
-                label={t(`filters.diet.${diet}` as TranslationKey)}
-                selected={filters.dietType === diet}
-                onPress={() => update({ dietType: diet })}
+                label={t('filters.any')}
+                selected={!filters.dietType}
+                onPress={() => update({ dietType: undefined })}
               />
-            ))}
-          </Options>
-        </FilterSection>
+              {diets.map((diet) => (
+                <FilterOption
+                  key={diet}
+                  label={t(`filters.diet.${diet}` as TranslationKey)}
+                  selected={filters.dietType === diet}
+                  onPress={() => update({ dietType: diet })}
+                />
+              ))}
+            </Options>
+          </FilterSection>
+        ) : null}
 
         {contentType !== 'food-item' ? (
           <FilterSection title={t('filters.sort')}>
@@ -176,22 +224,23 @@ export function RecipeFilterSheet({
           </FilterSection>
         ) : null}
 
-        <View style={styles.allergenBlock}>
-          <Toggle
-            value={Boolean(filters.avoidProfileAllergens)}
-            disabled={!allergySelectionReady}
-            label={t('filters.avoidAllergens')}
-            onValueChange={(avoidProfileAllergens) =>
-              update({ avoidProfileAllergens })
-            }
-          />
-          <AppText variant="caption" color={colors.text.secondary}>
-            {allergySelectionReady
-              ? t('filters.avoidAllergensDescription')
-              : t('filters.allergensUnavailable')}
-          </AppText>
-        </View>
-
+        {contentType !== 'post' && contentType !== 'video' ? (
+          <View style={styles.allergenBlock}>
+            <Toggle
+              value={Boolean(filters.avoidProfileAllergens)}
+              disabled={!allergySelectionReady}
+              label={t('filters.avoidAllergens')}
+              onValueChange={(avoidProfileAllergens) =>
+                update({ avoidProfileAllergens })
+              }
+            />
+            <AppText variant="caption" color={colors.text.secondary}>
+              {allergySelectionReady
+                ? t('filters.avoidAllergensDescription')
+                : t('filters.allergensUnavailable')}
+            </AppText>
+          </View>
+        ) : null}
       </ScrollView>
       <View style={styles.actions}>
         <View style={styles.actionCell}>

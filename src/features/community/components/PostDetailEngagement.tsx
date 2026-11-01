@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
 
-import { AppButton, AppIcon, AppText, Surface } from '@/components';
-import { ReactionButtons } from '@/features/engagement/ReactionButtons';
+import { AppIcon, AppText } from '@/components';
 import type { ReactionType } from '@/features/engagement/engagementApi';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, type AssetName } from '@/theme';
 
 interface PostDetailEngagementProps {
   vi: boolean;
@@ -30,6 +29,7 @@ export function PostDetailEngagement({
   onReport,
 }: PostDetailEngagementProps) {
   const [shareFeedback, setShareFeedback] = useState<string>();
+  const loved = selectedReaction === 'love';
 
   useEffect(() => {
     if (!shareFeedback) return;
@@ -54,60 +54,32 @@ export function PostDetailEngagement({
   };
 
   return (
-    <Surface padding="lg" radius="xl" style={styles.card}>
-      <View style={styles.header}>
-        <View>
-          <AppText variant="heading3">{vi ? 'Tương tác' : 'Engagement'}</AppText>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {vi
-              ? 'Chia sẻ cảm nhận của bạn về bài viết'
-              : 'Share how this post helped you'}
-          </AppText>
-        </View>
-        <View style={styles.metrics}>
-          <View style={styles.metric}>
-            <AppIcon name="heart" size={17} color={colors.primary[700]} decorative />
-            <AppText variant="bodyStrong">{reactionCount}</AppText>
-          </View>
-          <View style={styles.metric}>
-            <AppIcon
-              name="comment"
-              size={17}
-              color={colors.primary[700]}
-              decorative
-            />
-            <AppText variant="bodyStrong">{commentCount}</AppText>
-          </View>
-        </View>
-      </View>
-
-      <ReactionButtons
-        selected={selectedReaction}
-        disabled={false}
-        vi={vi}
-        onPress={onReact}
-      />
-
-      <View style={styles.quickActions}>
-        <AppButton
-          title={vi ? 'Bình luận' : 'Comment'}
+    <View style={styles.container}>
+      <View style={styles.actions}>
+        <EngagementAction
+          icon={loved ? 'heart-filled' : 'heart'}
+          label={`${vi ? 'Yêu thích' : 'Favorite'} · ${reactionCount}`}
+          accessibilityLabel={vi ? 'Yêu thích bài viết' : 'Favorite post'}
+          selected={loved}
+          onPress={() => onReact('love', loved)}
+        />
+        <EngagementAction
           icon="comment"
-          variant="outline"
-          style={styles.quickAction}
+          label={`${vi ? 'Bình luận' : 'Comment'} · ${commentCount}`}
+          accessibilityLabel={vi ? 'Bình luận' : 'Comment'}
           onPress={onComment}
         />
-        <AppButton
-          title={vi ? 'Chia sẻ' : 'Share'}
+        <EngagementAction
           icon="share"
-          variant="outline"
-          style={styles.quickAction}
+          label={vi ? 'Chia sẻ' : 'Share'}
+          accessibilityLabel={vi ? 'Chia sẻ' : 'Share'}
           onPress={() => void sharePost()}
         />
       </View>
 
       {shareFeedback ? (
         <View style={styles.feedback} accessibilityLiveRegion="polite">
-          <AppIcon name="check" size={16} color={colors.primary[700]} decorative />
+          <AppIcon name="check" size={15} color={colors.primary[700]} decorative />
           <AppText variant="caption" color={colors.primary[700]}>
             {shareFeedback}
           </AppText>
@@ -120,57 +92,85 @@ export function PostDetailEngagement({
         onPress={onReport}
         style={({ pressed }) => [styles.reportAction, pressed && styles.pressed]}
       >
-        <AppIcon name="flag" size={16} color={colors.text.secondary} decorative />
+        <AppIcon name="flag" size={14} color={colors.text.secondary} decorative />
         <AppText variant="caption" color={colors.text.secondary}>
-          {vi ? 'Báo cáo bài viết' : 'Report post'}
+          {vi ? 'Báo cáo' : 'Report'}
         </AppText>
       </Pressable>
-    </Surface>
+    </View>
+  );
+}
+
+function EngagementAction({
+  icon,
+  label,
+  accessibilityLabel,
+  selected = false,
+  onPress,
+}: {
+  icon: AssetName;
+  label: string;
+  accessibilityLabel: string;
+  selected?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.action,
+        selected && styles.actionSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <AppIcon name={icon} size={19} color={colors.primary[700]} decorative />
+      <AppText variant="caption" color={colors.primary[700]} numberOfLines={1}>
+        {label}
+      </AppText>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.subtle,
+  container: {
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  metrics: { flexDirection: 'row', gap: spacing.sm },
-  metric: {
-    minWidth: 52,
-    minHeight: 34,
+  actions: { flexDirection: 'row', gap: spacing.xs },
+  action: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 42,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: colors.background.selected,
+    backgroundColor: colors.background.muted,
   },
-  quickActions: { flexDirection: 'row', gap: spacing.sm },
-  quickAction: { flex: 1, minWidth: 0 },
+  actionSelected: { backgroundColor: colors.background.selected },
   feedback: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    padding: spacing.sm,
+    padding: spacing.xs,
     borderRadius: radius.md,
     backgroundColor: colors.background.selected,
   },
   reportAction: {
-    minHeight: 38,
+    minHeight: 30,
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
   pressed: { opacity: 0.65 },
 });

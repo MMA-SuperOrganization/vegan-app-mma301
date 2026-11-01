@@ -4,6 +4,20 @@ import test from 'node:test';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
+test('every native text input uses the shared app typography', () => {
+  const files = [
+    '../src/components/ui/Input/Input.tsx',
+    '../src/features/community/components/HomeSocialHeader.tsx',
+    '../src/features/community/components/PostComments.tsx',
+    '../src/features/recipes/components/SearchBar.tsx',
+  ];
+
+  for (const file of files) {
+    const source = read(file);
+    assert.match(source, /inputTypography/, file);
+  }
+});
+
 test('recipe detail has no post social controls', () => {
   const recipeDetail = read(
     '../src/features/recipes/screens/RecipeDetailScreen.tsx'
@@ -41,18 +55,21 @@ test('post owns share, reactions and comments while admin routes are guarded', (
   const engagement = read(
     '../src/features/community/components/PostDetailEngagement.tsx'
   );
-  const reactions = read('../src/features/engagement/ReactionButtons.tsx');
   const adminLayout = read('../src/app/admin/_layout.tsx');
 
   assert.match(engagement, /Share\.share/);
   assert.match(post, /<PostDetailEngagement/);
-  assert.match(engagement, /<ReactionButtons/);
-  for (const type of ['like', 'love', 'helpful'])
-    assert.match(reactions, new RegExp(`type: '${type}'`));
+  assert.match(engagement, /onReact\('love', loved\)/);
+  assert.match(engagement, /Yêu thích/);
+  assert.doesNotMatch(engagement, /ReactionButtons|thumb-up|lightbulb/);
+  assert.doesNotMatch(engagement, /Tương tác|Chia sẻ cảm nhận/);
+  assert.doesNotMatch(post, /Xem hồ sơ tác giả|View author profile/);
+  assert.doesNotMatch(post, /Xem công thức đầy đủ|View full recipe/);
+  assert.match(post, /Mở công thức liên quan/);
   assert.match(post, /<PostComments/);
   assert.match(comments, /Viết bình luận/);
   assert.match(post, /focusRequestKey={commentFocusRequest}/);
-  assert.match(engagement, /title={vi \? 'Bình luận'/);
+  assert.match(engagement, /accessibilityLabel={vi \? 'Bình luận'/);
   assert.match(adminLayout, /role !== 'admin'/);
 });
 
@@ -147,6 +164,7 @@ test('home search expands inline and renders suggestions and results without nav
   const panel = read('../src/features/recipes/components/HomeInlineSearchPanel.tsx');
 
   assert.match(header, /Animated\.timing/);
+  assert.doesNotMatch(header, /composer:[\s\S]*?borderBottomWidth/);
   assert.match(header, /Animated\.parallel/);
   assert.match(header, /outputRange: \[40, openSearchWidth\]/);
   assert.match(header, /outputRange: \[0\.82, 1\.04, 1\]/);
@@ -158,7 +176,7 @@ test('home search expands inline and renders suggestions and results without nav
   assert.match(header, /toValue: 0/);
   assert.match(header, /Easing\.inOut\(Easing\.cubic\)/);
   assert.match(header, /if \(finished\) onCloseSearch\(\)/);
-  assert.match(header, /position: 'absolute', top: 0, right: 0/);
+  assert.match(header, /position: 'absolute',[\s\S]*?top: 0,[\s\S]*?right: 0/);
   assert.doesNotMatch(header, /styles\.brandSlot/);
   assert.match(header, /<TextInput/);
   assert.match(header, /!searchExpanded \? \(/);

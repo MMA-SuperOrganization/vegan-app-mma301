@@ -167,12 +167,18 @@ export type RecipeDietType = 'vegan' | 'vegetarian';
 export type RecipeSort = 'newest' | 'popular' | 'rating' | 'quickest';
 
 export interface RecipeFilters {
-  category?: string;
+  categoryIds?: string[];
+  tags?: string[];
   difficulty?: RecipeDifficulty;
   maxTotalMinutes?: number;
   dietType?: RecipeDietType;
   sort?: RecipeSort;
   avoidProfileAllergens?: boolean;
+}
+
+export interface RecipeTagOption {
+  value: string;
+  count: number;
 }
 
 export interface RecipeQuery extends RecipeFilters {

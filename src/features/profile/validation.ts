@@ -17,3 +17,18 @@ export function validateProfileText(displayName: string, bio: string) {
     bio: bio.trim().length <= 500,
   };
 }
+
+export function validateOptionalUsername(username: string) {
+  const normalized = username.trim();
+  return normalized.length === 0 || /^[a-zA-Z0-9_]{3,30}$/.test(normalized);
+}
+
+export function validateOptionalMeasurement(
+  value: string,
+  min: number,
+  max: number
+) {
+  if (!value.trim()) return true;
+  const parsed = Number(value.trim().replace(',', '.'));
+  return Number.isFinite(parsed) && parsed >= min && parsed <= max;
+}

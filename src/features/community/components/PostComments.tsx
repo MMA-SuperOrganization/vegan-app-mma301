@@ -14,7 +14,7 @@ import { AppIcon, AppText, BottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
-import { colors, radius, shadows, spacing } from '@/theme';
+import { colors, inputTypography, radius, shadows, spacing } from '@/theme';
 
 import { useCommunityPost } from '../hooks';
 import type { PostComment } from '../types';
@@ -505,6 +505,7 @@ const styles = StyleSheet.create({
   },
   composerRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   composerInput: {
+    ...inputTypography,
     flex: 1,
     minWidth: 0,
     minHeight: 42,

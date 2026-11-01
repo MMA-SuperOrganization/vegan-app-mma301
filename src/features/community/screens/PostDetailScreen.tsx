@@ -1,37 +1,39 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
+  BackButton,
   AppIcon,
   AppText,
   Badge,
-  CustomHeader,
   ScreenWrapper,
   Surface,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
+import { useSafeBack } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost, usePostReaction } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { postStatusLabel } from '../status';
-import { useRecipeDetail } from '@/features/recipes/hooks';
 import { PostComments } from '../components/PostComments';
 import { PostDetailEngagement } from '../components/PostDetailEngagement';
 import { PostFoodSummary } from '../components/PostFoodSummary';
 import { PostMediaGallery } from '../components/PostMediaGallery';
+import { usePublicProfile } from '@/features/profile/hooks';
 
 export function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBack = useSafeBack('/community');
   const vi = useTranslation().locale === 'vi';
   const userId = useAuthStore((state) => state.user?.id);
   const actions = useCommunityPost(id);
   const postReaction = usePostReaction();
   const post = actions.post.data;
-  const linkedRecipe = useRecipeDetail(post?.recipeId ?? '');
+  const author = usePublicProfile(post?.authorId);
   useEffect(() => {
     if (post?._id && post.status === 'published')
       void engagementApi.recordView('post', post._id).catch(() => undefined);
@@ -44,11 +46,9 @@ export function PostDetailScreen() {
   return (
     <ScreenWrapper
       header={
-        <CustomHeader
-          title={post?.title || (vi ? 'Bài viết' : 'Post')}
-          showBack
-          backFallbackHref="/community"
-        />
+        <View style={styles.backNavigation}>
+          <BackButton onPress={goBack} />
+        </View>
       }
     >
       <PostComments
@@ -79,51 +79,65 @@ export function PostDetailScreen() {
                       size="sm"
                     />
                   </View>
-                  <AppText variant="heading2">{post.title}</AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      vi ? 'Xem hồ sơ tác giả' : 'View author profile'
-                    }
-                    onPress={() =>
-                      router.push({
-                        pathname: '/users/[id]',
-                        params: { id: post.authorId },
-                      })
-                    }
-                    style={({ pressed }) => [
-                      styles.authorRow,
-                      pressed && styles.actionPressed,
-                    ]}
-                  >
-                    <View style={styles.authorAvatar}>
-                      <AppIcon
-                        name="user"
-                        size={20}
-                        color={colors.primary[700]}
-                        decorative
+                  <View style={styles.articleTitleRow}>
+                    <AppText variant="heading2" style={styles.articleTitle}>
+                      {post.title}
+                    </AppText>
+                    {author.data?.avatarUrl ? (
+                      <Image
+                        source={{ uri: author.data.avatarUrl }}
+                        style={styles.authorAvatar}
+                        accessibilityLabel={
+                          vi ? 'Ảnh đại diện tác giả' : 'Author avatar'
+                        }
                       />
-                    </View>
-                    <View style={styles.authorCopy}>
-                      <AppText variant="bodyStrong">
-                        {vi ? 'Tác giả bài viết' : 'Post author'}
-                      </AppText>
-                      <AppText variant="caption" color={colors.text.secondary}>
-                        {vi ? 'Chạm để xem hồ sơ' : 'Tap to view profile'}
-                      </AppText>
-                    </View>
-                    <AppIcon
-                      name="back"
-                      size={18}
-                      color={colors.primary[700]}
-                      style={styles.forwardIcon}
-                      decorative
-                    />
-                  </Pressable>
+                    ) : (
+                      <View style={styles.authorAvatarFallback}>
+                        <AppIcon
+                          name="user"
+                          size={18}
+                          color={colors.primary[700]}
+                          decorative
+                        />
+                      </View>
+                    )}
+                  </View>
                   <View style={styles.articleDivider} />
                   <AppText selectable style={styles.articleBody}>
                     {post.content}
                   </AppText>
+                  {published ? (
+                    <>
+                      <PostDetailEngagement
+                        vi={vi}
+                        title={post.title}
+                        content={post.content}
+                        selectedReaction={post.reacted}
+                        reactionCount={post.reactionCount ?? 0}
+                        commentCount={
+                          post.commentCount ??
+                          actions.comments.data?.data.length ??
+                          0
+                        }
+                        onReact={(type, remove) =>
+                          postReaction.mutate({
+                            postId: post._id,
+                            nextReaction: remove ? null : type,
+                          })
+                        }
+                        onComment={() =>
+                          setCommentFocusRequest((value) => value + 1)
+                        }
+                        onReport={() =>
+                          router.push({
+                            pathname: '/community/report',
+                            params: { targetType: 'post', targetId: id },
+                          })
+                        }
+                      />
+                      <FeatureState error={postReaction.error} />
+                    </>
+                  ) : null}
                 </Surface>
                 <PostMediaGallery assets={actions.media.data ?? []} vi={vi} />
                 <FeatureState error={actions.media.error} />
@@ -142,31 +156,38 @@ export function PostDetailScreen() {
                         ? 'Xem nhanh công thức hoặc nguyên liệu liên quan đến nội dung.'
                         : 'Quickly review the recipe or ingredients related to this story.'}
                     </AppText>
-                    <PostFoodSummary
-                      recipeId={post.recipeId}
-                      foodItemIds={post.foodItemIds}
-                      relatedRecipe={post.relatedRecipe}
-                      relatedFoodItems={post.relatedFoodItems}
-                    />
-                    <FeatureState
-                      loading={Boolean(post.recipeId) && linkedRecipe.isLoading}
-                      error={linkedRecipe.error}
-                      retry={() => void linkedRecipe.refetch()}
-                    />
-                    {linkedRecipe.data ? (
-                      <AppButton
-                        title={vi ? 'Xem công thức đầy đủ' : 'View full recipe'}
-                        variant="outline"
+                    {post.recipeId ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          vi ? 'Mở công thức liên quan' : 'Open related recipe'
+                        }
                         onPress={() =>
                           router.push({
                             pathname: '/(discover)/recipe/[id]',
                             params: {
-                              id: linkedRecipe.data.slug ?? linkedRecipe.data._id,
+                              id:
+                                post.relatedRecipe?.slug ??
+                                post.relatedRecipe?._id ??
+                                post.recipeId!,
                             },
                           })
                         }
+                        style={({ pressed }) => pressed && styles.cardPressed}
+                      >
+                        <PostFoodSummary
+                          recipeId={post.recipeId}
+                          foodItemIds={post.foodItemIds}
+                          relatedRecipe={post.relatedRecipe}
+                          relatedFoodItems={post.relatedFoodItems}
+                        />
+                      </Pressable>
+                    ) : (
+                      <PostFoodSummary
+                        foodItemIds={post.foodItemIds}
+                        relatedFoodItems={post.relatedFoodItems}
                       />
-                    ) : null}
+                    )}
                   </Surface>
                 ) : null}
                 {post.rejectionReason ? (
@@ -239,34 +260,6 @@ export function PostDetailScreen() {
                     />
                   )
                 ) : null}
-                {published ? (
-                  <>
-                    <PostDetailEngagement
-                      vi={vi}
-                      title={post.title}
-                      content={post.content}
-                      selectedReaction={post.reacted}
-                      reactionCount={post.reactionCount ?? 0}
-                      commentCount={
-                        post.commentCount ?? actions.comments.data?.data.length ?? 0
-                      }
-                      onReact={(type, remove) =>
-                        postReaction.mutate({
-                          postId: post._id,
-                          nextReaction: remove ? null : type,
-                        })
-                      }
-                      onComment={() => setCommentFocusRequest((value) => value + 1)}
-                      onReport={() =>
-                        router.push({
-                          pathname: '/community/report',
-                          params: { targetType: 'post', targetId: id },
-                        })
-                      }
-                    />
-                    <FeatureState error={postReaction.error} />
-                  </>
-                ) : null}
               </>
             ) : null}
             <FeatureState error={actions.remove.error} />
@@ -278,6 +271,12 @@ export function PostDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  backNavigation: {
+    minHeight: 64,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background.base,
+  },
   screenContent: {
     padding: spacing.xl,
     paddingBottom: spacing.md,
@@ -293,25 +292,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  authorRow: {
+  articleTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background.selected,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
+  articleTitle: { flex: 1 },
   authorAvatar: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+  },
+  authorAvatarFallback: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
-    backgroundColor: colors.background.surface,
-  },
-  authorCopy: {
-    flex: 1,
-    minWidth: 0,
+    backgroundColor: colors.background.selected,
   },
   articleDivider: {
     height: 1,
@@ -323,10 +323,7 @@ const styles = StyleSheet.create({
   linkedRecipeCard: {
     gap: spacing.md,
   },
-  actionPressed: {
-    opacity: 0.72,
-  },
-  forwardIcon: { transform: [{ rotate: '180deg' }] },
+  cardPressed: { opacity: 0.78 },
   deleteCard: { gap: spacing.sm, borderColor: colors.status.danger },
   deleteTitle: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

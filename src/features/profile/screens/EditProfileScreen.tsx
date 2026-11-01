@@ -10,16 +10,17 @@ import {
   SettingsScreenLayout,
   TimezonePickerField,
 } from '@/components';
-import {
-  dateInputToIso,
-  parseDecimal,
-  validateMeasurement,
-} from '@/features/onboarding/validation';
+import { dateInputToIso, parseDecimal } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
-import { isValidIanaTimezone, validateProfileText } from '../validation';
+import {
+  isValidIanaTimezone,
+  validateOptionalMeasurement,
+  validateOptionalUsername,
+  validateProfileText,
+} from '../validation';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import type { PersonalProfile } from '../types';
 import { mediaApi } from '@/features/media/mediaApi';
@@ -78,7 +79,7 @@ export function EditProfileScreen() {
     const next = {
       name: textValidation.name ? null : t('profile.nameInvalid'),
       bio: textValidation.bio ? null : t('profile.bioInvalid'),
-      username: /^[a-zA-Z0-9_]{3,30}$/.test(username.trim())
+      username: validateOptionalUsername(username)
         ? null
         : t('profile.usernameInvalid'),
       city: city.trim().length <= 100 ? null : t('profile.locationInvalid'),
@@ -88,14 +89,25 @@ export function EditProfileScreen() {
           ? t('profile.birthDateInvalid')
           : null,
       timezone: isValidIanaTimezone(timezone) ? null : t('profile.timezoneInvalid'),
-      height: validateMeasurement(height, t('onboarding.height'), 50, 250),
-      weight: validateMeasurement(weight, t('onboarding.weight'), 10, 500),
+      height: validateOptionalMeasurement(height, 50, 250)
+        ? null
+        : t('onboarding.validation.range', {
+            label: t('onboarding.height'),
+            min: 50,
+            max: 250,
+          }),
+      weight: validateOptionalMeasurement(weight, 10, 500)
+        ? null
+        : t('onboarding.validation.range', {
+            label: t('onboarding.weight'),
+            min: 10,
+            max: 500,
+          }),
     };
     setErrors(next);
     if (Object.values(next).some(Boolean)) return;
     const heightCm = parseDecimal(height);
     const currentWeightKg = parseDecimal(weight);
-    if (heightCm === null || currentWeightKg === null) return;
     try {
       const avatarMediaId = avatar
         ? avatarUpload.data || (await avatarUpload.mutateAsync(avatar))
@@ -104,17 +116,17 @@ export function EditProfileScreen() {
         await update({
           displayName: name.trim(),
           avatarMediaId,
-          username: username.trim(),
-          city: city.trim(),
-          country: country.trim(),
+          username: optionalText(username),
+          city: optionalText(city),
+          country: optionalText(country),
           gender,
-          bio: bio.trim(),
+          bio: optionalText(bio),
           dateOfBirth: dateOfBirth.trim()
             ? (dateInputToIso(dateOfBirth) ?? undefined)
-            : null,
+            : undefined,
           timezone: timezone.trim(),
-          heightCm,
-          currentWeightKg,
+          heightCm: heightCm ?? undefined,
+          currentWeightKg: currentWeightKg ?? undefined,
         })
       )
         goBack();
@@ -242,4 +254,8 @@ function toDateInput(value?: string | null) {
   if (!value) return '';
   const match = value.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+function optionalText(value: string) {
+  return value.trim() || undefined;
 }

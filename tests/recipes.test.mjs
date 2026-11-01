@@ -45,7 +45,8 @@ test('search terms are trimmed and compacted before fuzzy lookup', () => {
 
 test('recipe filters parse, serialize and map profile allergens to the API query', () => {
   const filters = parseRecipeFilters({
-    category: ['category-1'],
+    categoryIds: 'category-1,category-2',
+    tags: ['quick,gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: '30',
     dietType: 'vegan',
@@ -54,7 +55,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
   });
 
   assert.deepEqual(filters, {
-    category: 'category-1',
+    categoryIds: ['category-1', 'category-2'],
+    tags: ['quick', 'gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: 30,
     dietType: 'vegan',
@@ -63,7 +65,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
   });
   assert.equal(hasActiveRecipeFilters(filters), true);
   assert.deepEqual(buildRecipeQuery(filters, ['allergen-1']), {
-    category: 'category-1',
+    categoryIds: ['category-1', 'category-2'],
+    tags: ['quick', 'gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: 30,
     dietType: 'vegan',
@@ -71,7 +74,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
     excludeAllergenIds: ['allergen-1'],
   });
   assert.deepEqual(serializeRecipeFilters(filters), {
-    category: 'category-1',
+    categoryIds: 'category-1,category-2',
+    tags: 'quick,gluten-free',
     difficulty: 'easy',
     maxTotalMinutes: '30',
     dietType: 'vegan',
@@ -84,7 +88,8 @@ test('food search drops recipe-only filters', () => {
   assert.deepEqual(
     filtersForContentType(
       {
-        category: 'food-category',
+        categoryIds: ['food-category'],
+        tags: ['quick'],
         difficulty: 'hard',
         maxTotalMinutes: 30,
         dietType: 'vegan',
@@ -94,7 +99,7 @@ test('food search drops recipe-only filters', () => {
       'food-item'
     ),
     {
-      category: 'food-category',
+      categoryIds: ['food-category'],
       dietType: 'vegan',
       avoidProfileAllergens: true,
     }
@@ -110,7 +115,8 @@ test('invalid filter route values are ignored and clearing filters is inactive',
       sort: 'random',
     }),
     {
-      category: undefined,
+      categoryIds: undefined,
+      tags: undefined,
       difficulty: undefined,
       maxTotalMinutes: undefined,
       dietType: undefined,

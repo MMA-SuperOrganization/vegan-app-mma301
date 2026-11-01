@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppInput, AppText, SettingsScreenLayout } from '@/components';
+import { SelectionField } from '@/features/onboarding/components/SelectionField';
+import { getGoalOptions } from '@/features/onboarding/constants';
+import type { NutritionGoal } from '@/features/onboarding/types';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -17,6 +20,7 @@ export function NutritionProfileScreen() {
   const isSaving = useProfileStore((state) => state.isSaving);
   const error = useProfileStore((state) => state.error);
   const [height, setHeight] = useState(nutrition?.heightCm?.toString() ?? '');
+  const [goal, setGoal] = useState<NutritionGoal | null>(nutrition?.goal ?? null);
   const [weight, setWeight] = useState(nutrition?.currentWeightKg?.toString() ?? '');
   const [calories, setCalories] = useState(
     nutrition?.dailyCalorieTarget?.toString() ?? ''
@@ -67,6 +71,7 @@ export function NutritionProfileScreen() {
     const currentWeightKg = parseDecimal(weight);
     if (heightCm === null || currentWeightKg === null) return;
     await save({
+      ...(goal ? { goal } : {}),
       heightCm,
       currentWeightKg,
       dailyCalorieTarget: calorieTarget.value,
@@ -94,6 +99,16 @@ export function NutritionProfileScreen() {
         </AppText>
       </View>
       <View style={styles.fields}>
+        <SelectionField
+          label={t('profile.currentGoal')}
+          placeholder={t('onboarding.selectGoal')}
+          value={goal}
+          options={getGoalOptions(t)}
+          onChange={setGoal}
+        />
+        <AppText variant="bodySmall" color={colors.text.secondary}>
+          {t('profile.goalHistoryNote')}
+        </AppText>
         <AppInput
           label={t('onboarding.heightCm')}
           value={height}

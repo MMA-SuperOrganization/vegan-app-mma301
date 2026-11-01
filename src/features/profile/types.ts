@@ -82,6 +82,7 @@ export interface DietaryPreferencesUpdate {
 }
 
 export interface NutritionTargetsUpdate {
+  goal?: NutritionGoal;
   heightCm: number;
   currentWeightKg: number;
   dailyCalorieTarget?: number;

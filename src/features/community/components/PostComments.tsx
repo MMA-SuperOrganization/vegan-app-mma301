@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
-import {
-  AppButton,
-  AppIcon,
-  AppInput,
-  AppText,
-  BottomSheet,
-} from '@/components';
+import { AppIcon, AppText, BottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
@@ -21,12 +23,22 @@ interface PostCommentsProps {
   postId?: string;
   scrollable?: boolean;
   onNavigateAway?: () => void;
+  autoFocus?: boolean;
+  showSectionHeader?: boolean;
+  showComments?: boolean;
+  contentHeader?: ReactNode;
+  contentContainerStyle?: StyleProp<ViewStyle>;
 }
 
 export function PostComments({
   postId,
   scrollable = false,
   onNavigateAway,
+  autoFocus = false,
+  showSectionHeader = true,
+  showComments = true,
+  contentHeader,
+  contentContainerStyle,
 }: PostCommentsProps) {
   const router = useRouter();
   const vi = useTranslation().locale === 'vi';
@@ -36,6 +48,7 @@ export function PostComments({
   const [editingComment, setEditingComment] = useState<PostComment | null>(null);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
+  const composerRef = useRef<TextInput>(null);
   const comments = actions.comments.data?.data ?? [];
   const busy =
     actions.comment.isPending ||
@@ -49,10 +62,20 @@ export function PostComments({
     setDeletingComment(null);
   }, [postId]);
 
+  useEffect(() => {
+    if (!autoFocus) return;
+    const timer = setTimeout(() => composerRef.current?.focus(), 220);
+    return () => clearTimeout(timer);
+  }, [autoFocus, postId]);
+
   const resetComposer = () => {
     setCommentText('');
     setEditingComment(null);
     setReplyingTo(null);
+  };
+
+  const focusComposer = () => {
+    requestAnimationFrame(() => composerRef.current?.focus());
   };
 
   const submitComment = () => {
@@ -73,13 +96,15 @@ export function PostComments({
 
   const commentList = (
     <View style={styles.commentSection}>
-      <View style={styles.sectionTitle}>
-        <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
-        <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
-        <AppText variant="caption" color={colors.text.secondary}>
-          {comments.length}
-        </AppText>
-      </View>
+      {showSectionHeader ? (
+        <View style={styles.sectionTitle}>
+          <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
+          <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
+          <AppText variant="caption" color={colors.text.secondary}>
+            {comments.length}
+          </AppText>
+        </View>
+      ) : null}
 
       <FeatureState
         loading={actions.comments.isLoading || actions.post.isLoading}
@@ -123,6 +148,7 @@ export function PostComments({
                     setReplyingTo(comment);
                     setEditingComment(null);
                     setCommentText('');
+                    focusComposer();
                   }}
                 />
               ) : null}
@@ -135,6 +161,7 @@ export function PostComments({
                       setEditingComment(comment);
                       setReplyingTo(null);
                       setCommentText(comment.content);
+                      focusComposer();
                     }}
                   />
                   <CommentAction
@@ -184,19 +211,38 @@ export function PostComments({
     </View>
   );
 
+  if (!showComments) {
+    return scrollable ? (
+      <ScrollView
+        style={styles.fill}
+        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        {contentHeader}
+      </ScrollView>
+    ) : (
+      <>{contentHeader}</>
+    );
+  }
+
   return (
     <View style={[styles.root, scrollable && styles.fill]}>
       {scrollable ? (
         <ScrollView
           style={styles.fill}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
+          {contentHeader}
           {commentList}
         </ScrollView>
       ) : (
-        commentList
+        <>
+          {contentHeader}
+          {commentList}
+        </>
       )}
 
       <View style={styles.composerArea}>
@@ -222,22 +268,38 @@ export function PostComments({
           </View>
         ) : null}
         <View style={styles.composerRow}>
-          <AppInput
+          <TextInput
+            ref={composerRef}
             value={commentText}
             onChangeText={setCommentText}
             placeholder={vi ? 'Viết bình luận…' : 'Write a comment…'}
+            placeholderTextColor={colors.text.secondary}
             multiline
             maxLength={5000}
             editable={!busy}
+            autoFocus={autoFocus}
+            autoCapitalize="sentences"
+            autoCorrect
+            textAlignVertical="center"
+            accessibilityLabel={vi ? 'Viết bình luận' : 'Write a comment'}
             style={styles.composerInput}
-            inputStyle={styles.composerText}
           />
-          <AppButton
-            title={vi ? 'Gửi' : 'Send'}
-            fullWidth={false}
-            disabled={busy || !commentText.trim()}
-            onPress={submitComment}
-          />
+          {commentText.trim() ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={vi ? 'Gửi bình luận' : 'Send comment'}
+              accessibilityState={{ disabled: busy }}
+              disabled={busy}
+              onPress={submitComment}
+              style={({ pressed }) => [
+                styles.sendButton,
+                pressed && styles.sendButtonPressed,
+                busy && styles.disabled,
+              ]}
+            >
+              <AppIcon name="send" size={20} color={colors.common.white} decorative />
+            </Pressable>
+          ) : null}
         </View>
         <FeatureState
           error={
@@ -290,36 +352,33 @@ export function PostCommentsSheet({
   postId?: string;
   onClose: () => void;
 }) {
-  const vi = useTranslation().locale === 'vi';
   return (
     <BottomSheet
       visible={visible}
-      title={vi ? 'Bình luận' : 'Comments'}
       onClose={onClose}
       tall
+      compact
       showFooterClose={false}
-      headerAction={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={vi ? 'Đóng' : 'Close'}
-          onPress={onClose}
-          hitSlop={8}
-        >
-          <AppText variant="bodyStrong" color={colors.primary[700]}>
-            {vi ? 'Đóng' : 'Close'}
-          </AppText>
-        </Pressable>
-      }
     >
-      <PostComments postId={postId} scrollable onNavigateAway={onClose} />
+      {visible && postId ? (
+        <PostComments
+          postId={postId}
+          scrollable
+          autoFocus
+          showSectionHeader={false}
+          contentContainerStyle={styles.sheetScrollContent}
+          onNavigateAway={onClose}
+        />
+      ) : null}
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { gap: spacing.md },
+  root: { gap: 0 },
   fill: { flex: 1 },
-  scrollContent: { paddingBottom: spacing.md },
+  scrollContent: { flexGrow: 1, paddingBottom: spacing.sm },
+  sheetScrollContent: { paddingHorizontal: spacing.md },
   commentSection: { gap: spacing.md },
   sectionTitle: {
     flexDirection: 'row',
@@ -371,7 +430,9 @@ const styles = StyleSheet.create({
   },
   composerArea: {
     gap: spacing.sm,
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border.default,
     backgroundColor: colors.background.surface,
@@ -384,8 +445,30 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   composerRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  composerInput: { flex: 1, minWidth: 0 },
-  composerText: { maxHeight: 96 },
+  composerInput: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 42,
+    maxHeight: 96,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border.default,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background.muted,
+    color: colors.text.primary,
+    fontSize: 16,
+    lineHeight: 21,
+  },
+  sendButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[700],
+  },
+  sendButtonPressed: { opacity: 0.78, transform: [{ scale: 0.96 }] },
   pressed: { opacity: 0.65 },
   disabled: { opacity: 0.45 },
 });

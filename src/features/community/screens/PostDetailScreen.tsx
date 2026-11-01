@@ -39,8 +39,6 @@ export function PostDetailScreen() {
   const busy = actions.remove.isPending;
   return (
     <ScreenWrapper
-      scrollable
-      contentContainerStyle={styles.screenContent}
       header={
         <CustomHeader
           title={post?.title || (vi ? 'Bài viết' : 'Post')}
@@ -49,6 +47,13 @@ export function PostDetailScreen() {
         />
       }
     >
+      <PostComments
+        postId={id}
+        scrollable
+        showComments={published}
+        contentContainerStyle={styles.screenContent}
+        contentHeader={
+          <>
       <FeatureState
         loading={actions.post.isLoading}
         error={actions.post.error}
@@ -205,12 +210,14 @@ export function PostDetailScreen() {
                   }
                 />
               </View>
-              <PostComments postId={id} />
             </>
           ) : null}
         </>
       ) : null}
       <FeatureState error={actions.remove.error} />
+          </>
+        }
+      />
     </ScreenWrapper>
   );
 }
@@ -218,7 +225,7 @@ export function PostDetailScreen() {
 const styles = StyleSheet.create({
   screenContent: {
     padding: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.md,
     gap: spacing.md,
   },
   articleCard: {

@@ -15,6 +15,8 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing, webLayout } from '@/theme';
 import { useCommunityPost } from '../hooks';
+import { communityApi } from '../communityApi';
+import type { CommunityPost } from '../types';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { useContentCategories } from '@/features/recipes/hooks';
 import {
@@ -24,6 +26,19 @@ import {
 } from '../postRelationship';
 import { PostFoodRelationshipFields } from '../components/PostFoodRelationshipFields';
 import { usePostImageUpload } from '../usePostImageUpload';
+
+function editablePostSnapshot(post: CommunityPost) {
+  return JSON.stringify({
+    title: post.title,
+    content: post.content,
+    mediaIds: post.mediaIds ?? [],
+    categoryIds: post.categoryIds ?? [],
+    tags: post.tags ?? [],
+    foodItemIds: post.foodItemIds ?? [],
+    recipeId: post.recipeId ?? null,
+    visibility: post.visibility ?? 'public',
+  });
+}
 
 export function PostEditorScreen() {
   const { id, recipeId: routeRecipeId } = useLocalSearchParams<{
@@ -43,6 +58,7 @@ export function PostEditorScreen() {
   const [existingMediaIds, setExistingMediaIds] = useState<string[]>([]);
   const [editorVersion, setEditorVersion] = useState<number | null>(null);
   const hydratedPostId = useRef<string | null>(null);
+  const hydratedPostSnapshot = useRef<string | null>(null);
   const submitting = useRef(false);
   const { image, upload, selectImage, clearImage, ensureUploaded } =
     usePostImageUpload();
@@ -50,6 +66,8 @@ export function PostEditorScreen() {
   useEffect(() => {
     if (
       actions.post.data &&
+      !actions.post.isFetching &&
+      !actions.post.isError &&
       hydratedPostId.current !== actions.post.data._id
     ) {
       hydratedPostId.current = actions.post.data._id;
@@ -62,8 +80,9 @@ export function PostEditorScreen() {
       setVisibility(actions.post.data.visibility || 'public');
       setExistingMediaIds(actions.post.data.mediaIds ?? []);
       setEditorVersion(actions.post.data.version);
+      hydratedPostSnapshot.current = editablePostSnapshot(actions.post.data);
     }
-  }, [actions.post.data]);
+  }, [actions.post.data, actions.post.isError, actions.post.isFetching]);
   const editable =
     !id ||
     ['draft', 'rejected', 'published', 'archived'].includes(
@@ -93,24 +112,48 @@ export function PostEditorScreen() {
     submitting.current = true;
     try {
       const uploadedId = await ensureUploaded();
-      const post = await actions.save.mutateAsync({
-        title: title.trim(),
-        content: content.trim(),
-        mediaIds: uploadedId ? [uploadedId] : existingMediaIds,
-        categoryIds: categoryId ? [categoryId] : [],
-        tags: parsePostTags(tags),
-        recipeId: normalizeLinkedRecipeId(recipeId),
-        foodItemIds,
-        visibility,
-        previous:
-          id && editorVersion !== null
-            ? { _id: id, version: editorVersion }
-            : undefined,
-      });
-      router.replace({
-        pathname: '/community/post',
-        params: { id: post._id },
-      });
+      const persist = (version: number | null) =>
+        actions.save.mutateAsync({
+          title: title.trim(),
+          content: content.trim(),
+          mediaIds: uploadedId ? [uploadedId] : existingMediaIds,
+          categoryIds: categoryId ? [categoryId] : [],
+          tags: parsePostTags(tags),
+          recipeId: normalizeLinkedRecipeId(recipeId),
+          foodItemIds,
+          visibility,
+          previous: id && version !== null ? { _id: id, version } : undefined,
+        });
+
+      let post: CommunityPost;
+      try {
+        post = await persist(editorVersion);
+      } catch (error) {
+        const code = (error as { code?: unknown })?.code;
+        if (id && code === 'VERSION_CONFLICT') {
+          const latest = await communityApi.post(id);
+          const contentIsUnchanged =
+            hydratedPostSnapshot.current === editablePostSnapshot(latest);
+          if (!contentIsUnchanged) {
+            void actions.post.refetch();
+            throw error;
+          }
+
+          setEditorVersion(latest.version);
+          hydratedPostSnapshot.current = editablePostSnapshot(latest);
+          post = await persist(latest.version);
+        } else {
+          throw error;
+        }
+      }
+      if (id) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace({
+          pathname: '/community/post',
+          params: { id: post._id },
+        });
+      }
     } catch {
       // Mutation errors are rendered with the form.
     } finally {
@@ -297,7 +340,12 @@ export function PostEditorScreen() {
               disabled={busy}
               style={styles.removeImage}
             >
-              <AppIcon name="close" size={18} color={colors.text.inverse} decorative />
+              <AppIcon
+                name="close"
+                size={18}
+                color={colors.text.inverse}
+                decorative
+              />
             </Pressable>
           </View>
         ) : null}

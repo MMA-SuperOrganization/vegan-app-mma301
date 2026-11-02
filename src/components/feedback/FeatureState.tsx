@@ -67,6 +67,10 @@ const featureErrorMessages: Record<string, [string, string]> = {
     'Thiết bị đang đăng ký với tài khoản khác. Hãy tắt push ở tài khoản đó trước.',
     'This device is registered to another account. Unregister push from that account first.',
   ],
+  VERSION_CONFLICT: [
+    'Bài viết đã được thay đổi ở phiên khác. Hãy tải lại trước khi lưu để tránh ghi đè nội dung mới.',
+    'This post changed in another session. Reload it before saving to avoid overwriting newer content.',
+  ],
 };
 
 export function getFeatureErrorMessage(error: unknown, locale: 'vi' | 'en') {

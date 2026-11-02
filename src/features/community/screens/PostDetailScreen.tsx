@@ -44,13 +44,7 @@ export function PostDetailScreen() {
   const published = post?.status === 'published';
   const busy = actions.remove.isPending;
   return (
-    <ScreenWrapper
-      header={
-        <View style={styles.backNavigation}>
-          <BackButton onPress={goBack} />
-        </View>
-      }
-    >
+    <ScreenWrapper>
       <PostComments
         postId={id}
         scrollable
@@ -59,6 +53,11 @@ export function PostDetailScreen() {
         focusRequestKey={commentFocusRequest}
         contentHeader={
           <>
+            {!post ? (
+              <View style={styles.loadingNavigation}>
+                <BackButton onPress={goBack} />
+              </View>
+            ) : null}
             <FeatureState
               loading={actions.post.isLoading}
               error={actions.post.error}
@@ -67,17 +66,26 @@ export function PostDetailScreen() {
             {post ? (
               <>
                 <Surface padding="lg" radius="xl" style={styles.articleCard}>
-                  <View style={styles.articleBadges}>
-                    <Badge
-                      label={vi ? 'Bài viết cộng đồng' : 'Community post'}
-                      variant="primary"
-                      size="sm"
+                  <View style={styles.articleHeaderRow}>
+                    <BackButton
+                      onPress={goBack}
+                      pointerEvents="none"
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      style={styles.hiddenBackButton}
                     />
-                    <Badge
-                      label={postStatusLabel(post.status, vi)}
-                      variant={published ? 'success' : 'neutral'}
-                      size="sm"
-                    />
+                    <View style={styles.articleBadges}>
+                      <Badge
+                        label={vi ? 'Bài viết cộng đồng' : 'Community post'}
+                        variant="primary"
+                        size="sm"
+                      />
+                      <Badge
+                        label={postStatusLabel(post.status, vi)}
+                        variant={published ? 'success' : 'neutral'}
+                        size="sm"
+                      />
+                    </View>
                   </View>
                   <View style={styles.articleTitleRow}>
                     <AppText variant="heading2" style={styles.articleTitle}>
@@ -266,19 +274,20 @@ export function PostDetailScreen() {
           </>
         }
       />
+      {post ? (
+        <View pointerEvents="box-none" style={styles.stickyBackButton}>
+          <BackButton onPress={goBack} />
+        </View>
+      ) : null}
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  backNavigation: {
-    minHeight: 64,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background.base,
-  },
+  loadingNavigation: { alignItems: 'flex-start' },
   screenContent: {
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xs,
     paddingBottom: spacing.md,
     gap: spacing.md,
   },
@@ -287,7 +296,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.subtle,
   },
+  articleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  hiddenBackButton: { opacity: 0 },
+  stickyBackButton: {
+    position: 'absolute',
+    top: spacing.xs + spacing.lg,
+    left: spacing.xl + spacing.lg,
+  },
   articleBadges: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,

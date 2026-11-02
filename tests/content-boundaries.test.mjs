@@ -69,7 +69,7 @@ test('post owns share, reactions and comments while admin routes are guarded', (
   assert.match(post, /<PostComments/);
   assert.match(comments, /Viết bình luận/);
   assert.match(post, /focusRequestKey={commentFocusRequest}/);
-  assert.match(engagement, /accessibilityLabel={vi \? 'Bình luận'/);
+  assert.match(engagement, /formatFullEngagementCount\(commentCount/);
   assert.match(adminLayout, /role !== 'admin'/);
 });
 

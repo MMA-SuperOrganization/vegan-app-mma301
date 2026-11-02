@@ -4,6 +4,10 @@ import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { AppIcon, AppText } from '@/components';
 import type { ReactionType } from '@/features/engagement/engagementApi';
 import { colors, radius, spacing, type AssetName } from '@/theme';
+import {
+  formatEngagementCount,
+  formatFullEngagementCount,
+} from '../engagementPresentation';
 
 interface PostDetailEngagementProps {
   vi: boolean;
@@ -30,6 +34,7 @@ export function PostDetailEngagement({
 }: PostDetailEngagementProps) {
   const [shareFeedback, setShareFeedback] = useState<string>();
   const loved = selectedReaction === 'love';
+  const locale = vi ? 'vi' : 'en';
 
   useEffect(() => {
     if (!shareFeedback) return;
@@ -58,15 +63,17 @@ export function PostDetailEngagement({
       <View style={styles.actions}>
         <EngagementAction
           icon={loved ? 'heart-filled' : 'heart'}
-          label={`${vi ? 'Yêu thích' : 'Favorite'} · ${reactionCount}`}
-          accessibilityLabel={vi ? 'Yêu thích bài viết' : 'Favorite post'}
+          label={vi ? 'Yêu thích' : 'Favorite'}
+          count={formatEngagementCount(reactionCount, locale)}
+          accessibilityLabel={`${vi ? 'Yêu thích bài viết' : 'Favorite post'}, ${formatFullEngagementCount(reactionCount, locale)}`}
           selected={loved}
           onPress={() => onReact('love', loved)}
         />
         <EngagementAction
           icon="comment"
-          label={`${vi ? 'Bình luận' : 'Comment'} · ${commentCount}`}
-          accessibilityLabel={vi ? 'Bình luận' : 'Comment'}
+          label={vi ? 'Bình luận' : 'Comment'}
+          count={formatEngagementCount(commentCount, locale)}
+          accessibilityLabel={`${vi ? 'Bình luận' : 'Comment'}, ${formatFullEngagementCount(commentCount, locale)}`}
           onPress={onComment}
         />
         <EngagementAction
@@ -105,12 +112,14 @@ function EngagementAction({
   icon,
   label,
   accessibilityLabel,
+  count,
   selected = false,
   onPress,
 }: {
   icon: AssetName;
   label: string;
   accessibilityLabel: string;
+  count?: string;
   selected?: boolean;
   onPress: () => void;
 }) {
@@ -127,9 +136,16 @@ function EngagementAction({
       ]}
     >
       <AppIcon name={icon} size={19} color={colors.primary[700]} decorative />
-      <AppText variant="caption" color={colors.primary[700]} numberOfLines={1}>
-        {label}
-      </AppText>
+      <View style={styles.actionCopy}>
+        <AppText variant="caption" color={colors.primary[700]} numberOfLines={1}>
+          {label}
+        </AppText>
+        {count ? (
+          <AppText variant="caption" color={colors.text.secondary} numberOfLines={1}>
+            {count}
+          </AppText>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
@@ -145,7 +161,7 @@ const styles = StyleSheet.create({
   action: {
     flex: 1,
     minWidth: 0,
-    minHeight: 42,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -153,6 +169,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     borderRadius: radius.full,
     backgroundColor: colors.background.muted,
+  },
+  actionCopy: {
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   actionSelected: { backgroundColor: colors.background.selected },
   feedback: {

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { AppIcon, AppText, BottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
+import { usePublicProfile } from '@/features/profile/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, inputTypography, radius, shadows, spacing } from '@/theme';
 
@@ -50,8 +52,13 @@ export function PostComments({
   const [editingComment, setEditingComment] = useState<PostComment | null>(null);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
+  const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
   const composerRef = useRef<TextInput>(null);
   const comments = actions.comments.data?.data ?? [];
+  const commentsById = useMemo(
+    () => new Map(comments.map((comment) => [comment._id, comment])),
+    [comments]
+  );
   const busy =
     actions.comment.isPending ||
     actions.editComment.isPending ||
@@ -62,6 +69,7 @@ export function PostComments({
     setEditingComment(null);
     setReplyingTo(null);
     setDeletingComment(null);
+    setExpandedActionsId(null);
   }, [postId]);
 
   useEffect(() => {
@@ -134,101 +142,55 @@ export function PostComments({
       ) : null}
 
       {comments.map((comment) => (
-        <View
+        <CommentRow
           key={comment._id}
-          style={[
-            styles.comment,
-            comment.parentCommentId ? styles.replyComment : undefined,
-          ]}
-        >
-          <View style={styles.commentAvatar}>
-            <AppIcon name="user" size={16} color={colors.primary[700]} decorative />
-          </View>
-          <View style={styles.commentBody}>
-            <AppText variant="caption" color={colors.primary[700]}>
-              {comment.authorId === userId
-                ? vi
-                  ? 'Bạn'
-                  : 'You'
-                : vi
-                  ? 'Thành viên cộng đồng'
-                  : 'Community member'}
-            </AppText>
-            <AppText>{comment.content}</AppText>
-            <View style={styles.commentActions}>
-              {!comment.parentCommentId ? (
-                <CommentAction
-                  icon="reply"
-                  label={vi ? 'Trả lời' : 'Reply'}
-                  disabled={busy}
-                  onPress={() => {
-                    setReplyingTo(comment);
-                    setEditingComment(null);
-                    setCommentText('');
-                    focusComposer();
-                  }}
-                />
-              ) : null}
-              {comment.authorId === userId ? (
-                <>
-                  <CommentAction
-                    icon="edit"
-                    label={vi ? 'Sửa' : 'Edit'}
-                    disabled={busy}
-                    onPress={() => {
-                      setEditingComment(comment);
-                      setReplyingTo(null);
-                      setCommentText(comment.content);
-                      focusComposer();
-                    }}
-                  />
-                  <CommentAction
-                    icon="trash"
-                    label={vi ? 'Xóa' : 'Delete'}
-                    disabled={busy}
-                    destructive
-                    onPress={() => setDeletingComment(comment._id)}
-                  />
-                </>
-              ) : (
-                <CommentAction
-                  icon="flag"
-                  label={vi ? 'Báo cáo' : 'Report'}
-                  onPress={() => {
-                    onNavigateAway?.();
-                    router.push({
-                      pathname: '/community/report',
-                      params: { targetType: 'comment', targetId: comment._id },
-                    });
-                  }}
-                />
-              )}
-            </View>
-            {deletingComment === comment._id ? (
-              <View style={styles.deleteConfirmation}>
-                <AppText variant="caption" color={colors.status.danger}>
-                  {vi ? 'Xóa bình luận này?' : 'Delete this comment?'}
-                </AppText>
-                <CommentAction
-                  icon="trash"
-                  label={vi ? 'Xác nhận' : 'Confirm'}
-                  disabled={busy}
-                  destructive
-                  onPress={() =>
-                    actions.removeComment.mutate(comment._id, {
-                      onSuccess: () => setDeletingComment(null),
-                    })
-                  }
-                />
-                <CommentAction
-                  icon="close"
-                  label={vi ? 'Hủy' : 'Cancel'}
-                  onPress={() => setDeletingComment(null)}
-                />
-              </View>
-            ) : null}
-          </View>
-        </View>
+          comment={comment}
+          parent={
+            comment.parentCommentId
+              ? commentsById.get(comment.parentCommentId)
+              : undefined
+          }
+          userId={userId}
+          vi={vi}
+          busy={busy}
+          actionsExpanded={expandedActionsId === comment._id}
+          deleting={deletingComment === comment._id}
+          onToggleActions={() =>
+            setExpandedActionsId((current) =>
+              current === comment._id ? null : comment._id
+            )
+          }
+          onReply={() => {
+            setReplyingTo(comment);
+            setEditingComment(null);
+            setCommentText('');
+            focusComposer();
+          }}
+          onEdit={() => {
+            setEditingComment(comment);
+            setReplyingTo(null);
+            setCommentText(comment.content);
+            setExpandedActionsId(null);
+            focusComposer();
+          }}
+          onDelete={() => setDeletingComment(comment._id)}
+          onCancelDelete={() => setDeletingComment(null)}
+          onConfirmDelete={() =>
+            actions.removeComment.mutate(comment._id, {
+              onSuccess: () => {
+                setDeletingComment(null);
+                setExpandedActionsId(null);
+              },
+            })
+          }
+          onReport={() => {
+            onNavigateAway?.();
+            router.push({
+              pathname: '/community/report',
+              params: { targetType: 'comment', targetId: comment._id },
+            });
+          }}
+        />
       ))}
     </View>
   );
@@ -344,6 +306,193 @@ export function PostComments({
   );
 }
 
+function CommentRow({
+  comment,
+  parent,
+  userId,
+  vi,
+  busy,
+  actionsExpanded,
+  deleting,
+  onToggleActions,
+  onReply,
+  onEdit,
+  onDelete,
+  onCancelDelete,
+  onConfirmDelete,
+  onReport,
+}: {
+  comment: PostComment;
+  parent?: PostComment;
+  userId?: string;
+  vi: boolean;
+  busy: boolean;
+  actionsExpanded: boolean;
+  deleting: boolean;
+  onToggleActions: () => void;
+  onReply: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
+  onReport: () => void;
+}) {
+  const author = usePublicProfile(comment.authorId);
+  const parentAuthor = usePublicProfile(parent?.authorId);
+  const mine = comment.authorId === userId;
+  const parentMine = parent?.authorId === userId;
+  const fallbackName = vi ? 'Thành viên cộng đồng' : 'Community member';
+  const authorName = mine
+    ? vi
+      ? 'Bạn'
+      : 'You'
+    : author.data?.displayName?.trim() || fallbackName;
+  const parentName = parentMine
+    ? vi
+      ? 'Bạn'
+      : 'You'
+    : parentAuthor.data?.displayName?.trim() || fallbackName;
+
+  return (
+    <View style={[styles.comment, comment.parentCommentId && styles.replyComment]}>
+      {author.data?.avatarUrl ? (
+        <Image
+          source={{ uri: author.data.avatarUrl }}
+          style={styles.commentAvatarImage}
+          accessibilityLabel={
+            vi ? `Ảnh của ${authorName}` : `${authorName}'s avatar`
+          }
+        />
+      ) : (
+        <View style={styles.commentAvatar}>
+          <AppIcon name="user" size={15} color={colors.primary[700]} decorative />
+        </View>
+      )}
+      <View style={styles.commentBody}>
+        <View style={styles.commentHeader}>
+          <AppText
+            variant="caption"
+            color={colors.primary[700]}
+            numberOfLines={1}
+            style={styles.commentAuthor}
+          >
+            {authorName}
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={vi ? 'Thêm thao tác' : 'More actions'}
+            accessibilityState={{ expanded: actionsExpanded }}
+            onPress={onToggleActions}
+            hitSlop={8}
+            style={({ pressed }) => [styles.moreAction, pressed && styles.pressed]}
+          >
+            <AppText variant="bodyStrong" color={colors.text.secondary}>
+              •••
+            </AppText>
+          </Pressable>
+        </View>
+
+        {parent ? (
+          <View style={styles.replyContext}>
+            <AppIcon
+              name="reply"
+              size={12}
+              color={colors.text.secondary}
+              decorative
+            />
+            <AppText
+              variant="caption"
+              color={colors.text.secondary}
+              numberOfLines={1}
+            >
+              {vi ? `Trả lời ${parentName}` : `Replying to ${parentName}`}
+            </AppText>
+          </View>
+        ) : null}
+
+        <AppText>{comment.content}</AppText>
+
+        {!comment.parentCommentId || actionsExpanded ? (
+          <View style={styles.commentFooterActions}>
+            {!comment.parentCommentId ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
+                disabled={busy}
+                onPress={onReply}
+                hitSlop={6}
+                style={({ pressed }) => [
+                  styles.replyAction,
+                  pressed && styles.pressed,
+                  busy && styles.disabled,
+                ]}
+              >
+                <AppIcon
+                  name="reply"
+                  size={13}
+                  color={colors.text.secondary}
+                  decorative
+                />
+                <AppText variant="caption" color={colors.text.secondary}>
+                  {vi ? 'Trả lời' : 'Reply'}
+                </AppText>
+              </Pressable>
+            ) : null}
+
+            {actionsExpanded ? (
+              <>
+                {mine ? (
+                  <>
+                    <CommentAction
+                      icon="edit"
+                      label={vi ? 'Sửa' : 'Edit'}
+                      disabled={busy}
+                      onPress={onEdit}
+                    />
+                    <CommentAction
+                      icon="trash"
+                      label={vi ? 'Xóa' : 'Delete'}
+                      disabled={busy}
+                      destructive
+                      onPress={onDelete}
+                    />
+                  </>
+                ) : (
+                  <CommentAction
+                    icon="flag"
+                    label={vi ? 'Báo cáo' : 'Report'}
+                    onPress={onReport}
+                  />
+                )}
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
+        {deleting ? (
+          <View style={styles.deleteConfirmation}>
+            <AppText variant="caption" color={colors.status.danger}>
+              {vi ? 'Xóa bình luận này?' : 'Delete this comment?'}
+            </AppText>
+            <CommentAction
+              icon="trash"
+              label={vi ? 'Xác nhận' : 'Confirm'}
+              disabled={busy}
+              destructive
+              onPress={onConfirmDelete}
+            />
+            <CommentAction
+              icon="close"
+              label={vi ? 'Hủy' : 'Cancel'}
+              onPress={onCancelDelete}
+            />
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 function CommentAction({
   icon,
   label,
@@ -441,7 +590,7 @@ const styles = StyleSheet.create({
   comment: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   replyComment: {
     marginLeft: spacing.xl,
@@ -450,23 +599,57 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.primary[300],
   },
   commentAvatar: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: radius.full,
+    backgroundColor: colors.background.selected,
+  },
+  commentAvatarImage: {
+    width: 28,
+    height: 28,
     borderRadius: radius.full,
     backgroundColor: colors.background.selected,
   },
   commentBody: {
     flex: 1,
     minWidth: 0,
-    gap: spacing.sm,
-    padding: spacing.md,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.lg,
     backgroundColor: colors.background.muted,
   },
+  commentHeader: {
+    minHeight: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  commentAuthor: { flex: 1, minWidth: 0 },
+  moreAction: {
+    minWidth: 30,
+    minHeight: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  replyContext: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  replyAction: {
+    minHeight: 26,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
   commentAction: {
-    minHeight: 32,
+    minHeight: 28,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -475,11 +658,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
   commentActionDestructive: { backgroundColor: colors.background.surface },
-  commentActions: {
+  commentFooterActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   deleteConfirmation: {
     flexDirection: 'row',

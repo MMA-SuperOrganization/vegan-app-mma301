@@ -47,6 +47,27 @@ test('native Google sign-in ships in the main bundle instead of a lazy Metro chu
   );
 });
 
+test('password and Google sign-in buttons keep independent loading states', async () => {
+  const [loginScreenSource, googleHookSource] = await Promise.all([
+    readFile(
+      new URL('../src/features/auth/screens/LoginScreen.tsx', import.meta.url),
+      'utf8'
+    ),
+    readFile(
+      new URL('../src/features/auth/hooks/useGoogleSignIn.ts', import.meta.url),
+      'utf8'
+    ),
+  ]);
+
+  assert.match(loginScreenSource, /loading=\{isPasswordLoginLoading\}/);
+  assert.doesNotMatch(
+    loginScreenSource,
+    /const isLoading = useAuthStore\(\(state\) => state\.isLoading\)/
+  );
+  assert.match(googleHookSource, /isLoading: isPrompting/);
+  assert.doesNotMatch(googleHookSource, /storeLoading/);
+});
+
 test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
   const details = toAppErrorDetails(
     new AppError('Firebase chưa được cấu hình.', 'FIREBASE_NOT_CONFIGURED', 503),

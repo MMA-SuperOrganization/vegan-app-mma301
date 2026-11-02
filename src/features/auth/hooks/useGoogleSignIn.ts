@@ -26,7 +26,6 @@ export function useGoogleSignIn() {
   const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const reportError = useAuthStore((state) => state.reportError);
   const clearError = useAuthStore((state) => state.clearError);
-  const storeLoading = useAuthStore((state) => state.isLoading);
   const [isPrompting, setIsPrompting] = useState(false);
   const handledResponse = useRef<unknown>(null);
   const webClientId = appConfig.googleWebClientId;
@@ -83,7 +82,6 @@ export function useGoogleSignIn() {
         googleDiscovery
       )
         .then(async (authentication) => {
-          setIsPrompting(false);
           if (!authentication.idToken) {
             throw new AppError(
               translate('auth.google.firebaseTokenMissing'),
@@ -91,6 +89,7 @@ export function useGoogleSignIn() {
             );
           }
           await finishLogin(authentication.idToken, redirectUri);
+          setIsPrompting(false);
         })
         .catch((error) => {
           setIsPrompting(false);
@@ -197,6 +196,6 @@ export function useGoogleSignIn() {
 
   return {
     start,
-    isLoading: isPrompting || storeLoading,
+    isLoading: isPrompting,
   };
 }

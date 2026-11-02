@@ -139,7 +139,11 @@ export function PostDetailScreen() {
                         onReport={() =>
                           router.push({
                             pathname: '/community/report',
-                            params: { targetType: 'post', targetId: id },
+                            params: {
+                              targetType: 'post',
+                              targetId: id,
+                              targetPreview: post.title,
+                            },
                           })
                         }
                       />

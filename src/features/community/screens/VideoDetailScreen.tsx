@@ -195,7 +195,11 @@ export function VideoDetailScreen() {
             onPress={() =>
               router.push({
                 pathname: '/community/report',
-                params: { targetType: 'video', targetId: video.data!._id },
+                params: {
+                  targetType: 'video',
+                  targetId: video.data!._id,
+                  targetPreview: video.data!.title,
+                },
               })
             }
           />

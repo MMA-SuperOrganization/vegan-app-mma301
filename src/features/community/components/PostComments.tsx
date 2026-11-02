@@ -10,6 +10,7 @@ import {
   Animated,
   Image,
   Keyboard,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -30,6 +31,8 @@ import { colors, inputTypography, radius, shadows, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { formatCommentRelativeTime } from '../commentPresentation';
 import type { PostComment } from '../types';
+
+const REPLIES_PAGE_SIZE = 10;
 
 interface PostCommentsProps {
   postId?: string;
@@ -64,8 +67,9 @@ export function PostComments({
   const [newlyCreatedCommentId, setNewlyCreatedCommentId] = useState<string | null>(
     null
   );
-  const [deletingComment, setDeletingComment] = useState<string | null>(null);
-  const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
+  const [menuComment, setMenuComment] = useState<PostComment | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [shownReplies, setShownReplies] = useState<Record<string, number>>({});
   const composerRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
@@ -130,6 +134,21 @@ export function PostComments({
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
   );
+  const { rootComments, repliesByParent } = useMemo(() => {
+    const roots: PostComment[] = [];
+    const grouped = new Map<string, PostComment[]>();
+    for (const comment of comments) {
+      const parentId = comment.parentCommentId;
+      if (parentId && commentsById.has(parentId)) {
+        const list = grouped.get(parentId) ?? [];
+        list.push(comment);
+        grouped.set(parentId, list);
+      } else {
+        roots.push(comment);
+      }
+    }
+    return { rootComments: roots, repliesByParent: grouped };
+  }, [comments, commentsById]);
 
   useEffect(() => {
     if (!newlyCreatedCommentId) return;
@@ -155,8 +174,9 @@ export function PostComments({
     setCommentText('');
     setEditingComment(null);
     setReplyingTo(null);
-    setDeletingComment(null);
-    setExpandedActionsId(null);
+    setMenuComment(null);
+    setConfirmingDelete(false);
+    setShownReplies({});
   }, [postId]);
 
   useEffect(() => {
@@ -202,10 +222,42 @@ export function PostComments({
           if (newComment?._id) {
             setNewlyCreatedCommentId(newComment._id);
           }
+          if (targetParentId) {
+            // Make sure the thread holding the new reply is fully visible.
+            setShownReplies((current) => ({ ...current, [targetParentId]: 9999 }));
+          }
         },
       }
     );
   };
+
+  const renderComment = (comment: PostComment) => (
+    <CommentRow
+      key={comment._id}
+      comment={comment}
+      parent={
+        comment.parentCommentId
+          ? commentsById.get(comment.parentCommentId)
+          : undefined
+      }
+      userId={userId}
+      vi={vi}
+      busy={busy}
+      isReplyTarget={replyingTo?._id === comment._id}
+      isNewlyCreated={newlyCreatedCommentId === comment._id}
+      onLayout={(y, height) => {
+        commentLayouts.current[comment._id] = {
+          y: commentSectionOffsetY.current + y,
+          height,
+        };
+      }}
+      onOpenMenu={() => {
+        setConfirmingDelete(false);
+        setMenuComment(comment);
+      }}
+      onReply={() => startReply(comment)}
+    />
+  );
 
   const commentList = (
     <View
@@ -244,70 +296,179 @@ export function PostComments({
         </View>
       ) : null}
 
-      {comments.map((comment) => (
-        <CommentRow
-          key={comment._id}
-          comment={comment}
-          parent={
-            comment.parentCommentId
-              ? commentsById.get(comment.parentCommentId)
-              : undefined
-          }
-          userId={userId}
-          vi={vi}
-          busy={busy}
-          actionsExpanded={expandedActionsId === comment._id}
-          deleting={deletingComment === comment._id}
-          isReplyTarget={replyingTo?._id === comment._id}
-          isNewlyCreated={newlyCreatedCommentId === comment._id}
-          onLayout={(y, height) => {
-            commentLayouts.current[comment._id] = {
-              y: commentSectionOffsetY.current + y,
-              height,
-            };
-          }}
-          onToggleActions={() =>
-            setExpandedActionsId((current) =>
-              current === comment._id ? null : comment._id
-            )
-          }
-          onReply={() => {
-            setReplyingTo(comment);
-            setNewlyCreatedCommentId(null);
-            setEditingComment(null);
-            setCommentText('');
-            focusComposer();
-            // If the keyboard is already open, scroll once after the composer
-            // settles. Otherwise keyboardDidShow replaces this fallback call.
-            scrollToComment(comment._id, Keyboard.isVisible() ? 120 : 360);
-          }}
-          onEdit={() => {
-            setEditingComment(comment);
-            setReplyingTo(null);
-            setCommentText(comment.content);
-            setExpandedActionsId(null);
-            focusComposer();
-          }}
-          onDelete={() => setDeletingComment(comment._id)}
-          onCancelDelete={() => setDeletingComment(null)}
-          onConfirmDelete={() =>
-            actions.removeComment.mutate(comment._id, {
-              onSuccess: () => {
-                setDeletingComment(null);
-                setExpandedActionsId(null);
-              },
-            })
-          }
-          onReport={() => {
-            onNavigateAway?.();
-            router.push({
-              pathname: '/community/report',
-              params: { targetType: 'comment', targetId: comment._id },
-            });
-          }}
-        />
-      ))}
+      {rootComments.flatMap((root) => {
+        const replies = repliesByParent.get(root._id) ?? [];
+        const shown = Math.min(shownReplies[root._id] ?? 0, replies.length);
+        const remaining = replies.length - shown;
+        const items = [renderComment(root), ...replies.slice(0, shown).map(renderComment)];
+        if (replies.length > 0) {
+          items.push(
+            <View key={`${root._id}-replies-toggle`} style={styles.repliesToggleRow}>
+              {remaining > 0 ? (
+                <ReplyToggle
+                  label={
+                    shown === 0
+                      ? vi
+                        ? `Xem ${remaining} câu trả lời`
+                        : `View ${remaining} ${remaining === 1 ? 'reply' : 'replies'}`
+                      : vi
+                        ? `Xem thêm ${remaining} câu trả lời`
+                        : `View ${remaining} more ${remaining === 1 ? 'reply' : 'replies'}`
+                  }
+                  onPress={() =>
+                    setShownReplies((current) => ({
+                      ...current,
+                      [root._id]: shown + REPLIES_PAGE_SIZE,
+                    }))
+                  }
+                />
+              ) : null}
+              {shown > 0 ? (
+                <ReplyToggle
+                  label={vi ? 'Ẩn câu trả lời' : 'Hide replies'}
+                  onPress={() =>
+                    setShownReplies((current) => ({ ...current, [root._id]: 0 }))
+                  }
+                />
+              ) : null}
+            </View>
+          );
+        }
+        return items;
+      })}
     </View>
+  );
+
+  const startReply = (comment: PostComment) => {
+    setMenuComment(null);
+    setReplyingTo(comment);
+    setNewlyCreatedCommentId(null);
+    setEditingComment(null);
+    setCommentText('');
+    focusComposer();
+    // If the keyboard is already open, scroll once after the composer
+    // settles. Otherwise keyboardDidShow replaces this fallback call.
+    scrollToComment(comment._id, Keyboard.isVisible() ? 120 : 360);
+  };
+
+  const closeMenu = () => {
+    setMenuComment(null);
+    setConfirmingDelete(false);
+  };
+
+  const menuMine = menuComment?.authorId === userId;
+  const menuModal = (
+    <Modal
+      visible={Boolean(menuComment)}
+      transparent
+      animationType="fade"
+      onRequestClose={closeMenu}
+      statusBarTranslucent
+    >
+      <Pressable
+        accessibilityLabel={vi ? 'Đóng menu' : 'Close menu'}
+        style={styles.menuBackdrop}
+        onPress={closeMenu}
+      >
+        {menuComment ? (
+          <Pressable style={styles.menuContent} onPress={() => undefined}>
+            <CommentPreviewCard
+              comment={menuComment}
+              parent={
+                menuComment.parentCommentId
+                  ? commentsById.get(menuComment.parentCommentId)
+                  : undefined
+              }
+              userId={userId}
+              vi={vi}
+            />
+            <View style={styles.menuList}>
+              {confirmingDelete ? (
+                <>
+                  <View style={styles.menuConfirmCopy}>
+                    <AppText variant="bodyStrong" color={colors.status.danger}>
+                      {vi ? 'Xóa bình luận này?' : 'Delete this comment?'}
+                    </AppText>
+                    <AppText variant="caption" color={colors.text.secondary}>
+                      {vi
+                        ? 'Hành động này không thể hoàn tác.'
+                        : 'This action cannot be undone.'}
+                    </AppText>
+                  </View>
+                  <MenuItem
+                    icon="trash"
+                    label={vi ? 'Xóa' : 'Delete'}
+                    destructive
+                    disabled={busy}
+                    onPress={() =>
+                      actions.removeComment.mutate(menuComment._id, {
+                        onSuccess: closeMenu,
+                      })
+                    }
+                  />
+                  <MenuItem
+                    icon="close"
+                    label={vi ? 'Hủy' : 'Cancel'}
+                    onPress={() => setConfirmingDelete(false)}
+                  />
+                </>
+              ) : (
+                <>
+                  <MenuItem
+                    icon="reply"
+                    label={vi ? 'Trả lời' : 'Reply'}
+                    disabled={busy}
+                    onPress={() => startReply(menuComment)}
+                  />
+                  {menuMine ? (
+                    <>
+                      <MenuItem
+                        icon="edit"
+                        label={vi ? 'Sửa' : 'Edit'}
+                        disabled={busy}
+                        onPress={() => {
+                          const target = menuComment;
+                          closeMenu();
+                          setEditingComment(target);
+                          setReplyingTo(null);
+                          setCommentText(target.content);
+                          focusComposer();
+                        }}
+                      />
+                      <MenuItem
+                        icon="trash"
+                        label={vi ? 'Xóa' : 'Delete'}
+                        destructive
+                        disabled={busy}
+                        onPress={() => setConfirmingDelete(true)}
+                      />
+                    </>
+                  ) : (
+                    <MenuItem
+                      icon="flag"
+                      label={vi ? 'Báo cáo' : 'Report'}
+                      onPress={() => {
+                        const target = menuComment;
+                        closeMenu();
+                        onNavigateAway?.();
+                        router.push({
+                          pathname: '/community/report',
+                          params: {
+                            targetType: 'comment',
+                            targetId: target._id,
+                            targetPreview: target.content.slice(0, 120),
+                          },
+                        });
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </View>
+          </Pressable>
+        ) : null}
+      </Pressable>
+    </Modal>
   );
 
   if (!showComments) {
@@ -327,6 +488,7 @@ export function PostComments({
 
   return (
     <View style={[styles.root, scrollable && styles.fill]}>
+      {menuModal}
       {scrollable ? (
         <ScrollView
           ref={scrollRef}
@@ -431,36 +593,22 @@ function CommentRow({
   userId,
   vi,
   busy,
-  actionsExpanded,
-  deleting,
   isReplyTarget = false,
   isNewlyCreated = false,
   onLayout,
-  onToggleActions,
+  onOpenMenu,
   onReply,
-  onEdit,
-  onDelete,
-  onCancelDelete,
-  onConfirmDelete,
-  onReport,
 }: {
   comment: PostComment;
   parent?: PostComment;
   userId?: string;
   vi: boolean;
   busy: boolean;
-  actionsExpanded: boolean;
-  deleting: boolean;
   isReplyTarget?: boolean;
   isNewlyCreated?: boolean;
   onLayout?: (y: number, height: number) => void;
-  onToggleActions: () => void;
+  onOpenMenu: () => void;
   onReply: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
-  onReport: () => void;
 }) {
   const newHighlightProgress = useRef(new Animated.Value(0)).current;
   const author = usePublicProfile(comment.authorId);
@@ -504,7 +652,12 @@ function CommentRow({
   }, [isNewlyCreated, newHighlightProgress]);
 
   return (
-    <View
+    <Pressable
+      accessibilityHint={
+        vi ? 'Nhấn giữ để mở menu bình luận' : 'Press and hold for comment options'
+      }
+      onLongPress={onOpenMenu}
+      delayLongPress={450}
       onLayout={(e) =>
         onLayout?.(e.nativeEvent.layout.y, e.nativeEvent.layout.height)
       }
@@ -537,10 +690,6 @@ function CommentRow({
               inputRange: [0, 1],
               outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.28)'],
             }),
-            borderLeftColor: newHighlightProgress.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.65)'],
-            }),
           },
         ]}
       >
@@ -567,8 +716,7 @@ function CommentRow({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={vi ? 'Thêm thao tác' : 'More actions'}
-            accessibilityState={{ expanded: actionsExpanded }}
-            onPress={onToggleActions}
+            onPress={onOpenMenu}
             hitSlop={8}
             style={({ pressed }) => [styles.moreAction, pressed && styles.pressed]}
           >
@@ -611,71 +759,116 @@ function CommentRow({
               busy && styles.disabled,
             ]}
           >
-            <AppIcon
-              name="reply"
-              size={13}
-              color={colors.text.secondary}
-              decorative
-            />
             <AppText variant="caption" color={colors.text.secondary}>
               {vi ? 'Trả lời' : 'Reply'}
             </AppText>
           </Pressable>
 
-          {actionsExpanded ? (
-            <>
-              {mine ? (
-                <>
-                  <CommentAction
-                    icon="edit"
-                    label={vi ? 'Sửa' : 'Edit'}
-                    disabled={busy}
-                    onPress={onEdit}
-                  />
-                  <CommentAction
-                    icon="trash"
-                    label={vi ? 'Xóa' : 'Delete'}
-                    disabled={busy}
-                    destructive
-                    onPress={onDelete}
-                  />
-                </>
-              ) : (
-                <CommentAction
-                  icon="flag"
-                  label={vi ? 'Báo cáo' : 'Report'}
-                  onPress={onReport}
-                />
-              )}
-            </>
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+function CommentPreviewCard({
+  comment,
+  parent,
+  userId,
+  vi,
+}: {
+  comment: PostComment;
+  parent?: PostComment;
+  userId?: string;
+  vi: boolean;
+}) {
+  const author = usePublicProfile(comment.authorId);
+  const parentAuthor = usePublicProfile(parent?.authorId);
+  const fallbackName = vi ? 'Thành viên cộng đồng' : 'Community member';
+  const you = vi ? 'Bạn' : 'You';
+  const authorName =
+    comment.authorId === userId
+      ? you
+      : author.data?.displayName?.trim() || fallbackName;
+  const parentName =
+    parent?.authorId === userId
+      ? you
+      : parentAuthor.data?.displayName?.trim() || fallbackName;
+  const timeAgo = formatCommentRelativeTime(
+    comment.createdAt ?? comment.updatedAt,
+    vi ? 'vi' : 'en'
+  );
+  return (
+    <View style={styles.menuPreview}>
+      {author.data?.avatarUrl ? (
+        <Image
+          source={{ uri: author.data.avatarUrl }}
+          style={styles.commentAvatarImage}
+        />
+      ) : (
+        <View style={styles.commentAvatar}>
+          <AppIcon name="user" size={15} color={colors.primary[700]} decorative />
+        </View>
+      )}
+      <View style={styles.menuPreviewBody}>
+        <View style={styles.menuPreviewAuthor}>
+          <AppText
+            variant="caption"
+            color={colors.primary[700]}
+            numberOfLines={1}
+            style={styles.commentAuthor}
+          >
+            {authorName}
+          </AppText>
+          {timeAgo ? (
+            <AppText
+              variant="caption"
+              color={colors.text.secondary}
+              style={styles.commentTime}
+            >
+              {` · ${timeAgo}`}
+            </AppText>
           ) : null}
         </View>
-
-        {deleting ? (
-          <View style={styles.deleteConfirmation}>
-            <AppText variant="caption" color={colors.status.danger}>
-              {vi ? 'Xóa bình luận này?' : 'Delete this comment?'}
+        {parent ? (
+          <View style={styles.replyContext}>
+            <AppIcon
+              name="reply"
+              size={12}
+              color={colors.text.secondary}
+              decorative
+            />
+            <AppText
+              variant="caption"
+              color={colors.text.secondary}
+              numberOfLines={1}
+            >
+              {vi ? `Trả lời ${parentName}` : `Replying to ${parentName}`}
             </AppText>
-            <CommentAction
-              icon="trash"
-              label={vi ? 'Xác nhận' : 'Confirm'}
-              disabled={busy}
-              destructive
-              onPress={onConfirmDelete}
-            />
-            <CommentAction
-              icon="close"
-              label={vi ? 'Hủy' : 'Cancel'}
-              onPress={onCancelDelete}
-            />
           </View>
         ) : null}
-      </Animated.View>
+        <AppText>{comment.content}</AppText>
+      </View>
     </View>
   );
 }
 
-function CommentAction({
+function ReplyToggle({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [styles.replyToggle, pressed && styles.pressed]}
+    >
+      <View style={styles.replyToggleLine} />
+      <AppText variant="caption" color={colors.text.secondary}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
+function MenuItem({
   icon,
   label,
   onPress,
@@ -688,32 +881,21 @@ function CommentAction({
   disabled?: boolean;
   destructive?: boolean;
 }) {
+  const tint = destructive ? colors.status.danger : colors.text.primary;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      hitSlop={6}
       style={({ pressed }) => [
-        styles.commentAction,
-        destructive && styles.commentActionDestructive,
-        pressed && styles.pressed,
+        styles.menuItem,
+        pressed && styles.menuItemPressed,
         disabled && styles.disabled,
       ]}
     >
-      <AppIcon
-        name={icon}
-        size={14}
-        color={destructive ? colors.status.danger : colors.text.secondary}
-        decorative
-      />
-      <AppText
-        variant="caption"
-        color={destructive ? colors.status.danger : colors.text.secondary}
-      >
-        {label}
-      </AppText>
+      <AppIcon name={icon} size={20} color={tint} decorative />
+      <AppText color={tint}>{label}</AppText>
     </Pressable>
   );
 }
@@ -750,6 +932,71 @@ export function PostCommentsSheet({
 }
 
 const styles = StyleSheet.create({
+  repliesToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+    marginLeft: 28 + spacing.xs,
+    paddingLeft: spacing.md,
+  },
+  replyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 28,
+  },
+  replyToggleLine: {
+    width: 20,
+    height: StyleSheet.hairlineWidth * 2,
+    backgroundColor: colors.border.default,
+  },
+  menuBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  menuContent: { gap: spacing.md },
+  menuPreview: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background.surface,
+    ...shadows.md,
+  },
+  menuPreviewBody: { flex: 1, minWidth: 0, gap: spacing.xs },
+  menuPreviewAuthor: {
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  menuList: {
+    alignSelf: 'flex-end',
+    minWidth: 220,
+    maxWidth: '100%',
+    overflow: 'hidden',
+    paddingVertical: spacing.xs,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+    ...shadows.md,
+  },
+  menuConfirmCopy: {
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+  },
+  menuItemPressed: { backgroundColor: colors.background.muted },
   root: { gap: 0 },
   fill: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: spacing.sm },
@@ -824,14 +1071,11 @@ const styles = StyleSheet.create({
   },
   commentBodyReplyHighlight: {
     backgroundColor: 'rgba(46, 125, 50, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(46, 125, 50, 0.28)',
-    borderLeftWidth: 3,
-    borderLeftColor: 'rgba(46, 125, 50, 0.65)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(46, 125, 50, 0.45)',
   },
   commentBodyNewHighlightFrame: {
-    borderWidth: 1,
-    borderLeftWidth: 3,
+    borderWidth: 1.5,
   },
   commentAuthor: { flexShrink: 1, minWidth: 0 },
   moreAction: {

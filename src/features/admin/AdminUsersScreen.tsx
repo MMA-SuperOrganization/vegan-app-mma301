@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.muted,
   },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay.modal },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: colors.overlay.modal },
   sheet: {
     maxHeight: '86%',
     padding: spacing.xl,

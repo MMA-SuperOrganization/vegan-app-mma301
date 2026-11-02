@@ -63,12 +63,12 @@ export function MasterDataPanel() {
     isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
     isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
   });
-  const [serving, setServing] = useState(MASTER_FOOD_DEFAULTS.SERVING_G);
-  const [calories, setCalories] = useState(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
-  const [protein, setProtein] = useState(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
-  const [carbs, setCarbs] = useState(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
-  const [fat, setFat] = useState(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
-  const [fiber, setFiber] = useState(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [serving, setServing] = useState<string>(MASTER_FOOD_DEFAULTS.SERVING_G);
+  const [calories, setCalories] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [protein, setProtein] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [carbs, setCarbs] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fat, setFat] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fiber, setFiber] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
 
   const refresh = () =>
     client.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.MASTER_ROOT });

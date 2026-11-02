@@ -71,10 +71,21 @@ export function PostComments({
   const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
   const commentSectionOffsetY = useRef(0);
   const scrollViewHeight = useRef<number>(300);
+  const scrollFrameRef = useRef<number | null>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const scrollToComment = useCallback((commentId: string, delay = 80) => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+    if (scrollFrameRef.current !== null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+    }
+    if (scrollTimerRef.current !== null) {
+      clearTimeout(scrollTimerRef.current);
+    }
+
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      scrollTimerRef.current = setTimeout(() => {
+        scrollTimerRef.current = null;
         const layout = commentLayouts.current[commentId];
         if (layout && scrollRef.current) {
           const vh = scrollViewHeight.current || 300;
@@ -91,6 +102,18 @@ export function PostComments({
       }, delay);
     });
   }, []);
+
+  useEffect(
+    () => () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+      }
+      if (scrollTimerRef.current !== null) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidShow', () => {
@@ -254,7 +277,9 @@ export function PostComments({
             setEditingComment(null);
             setCommentText('');
             focusComposer();
-            scrollToComment(comment._id, 180);
+            // If the keyboard is already open, scroll once after the composer
+            // settles. Otherwise keyboardDidShow replaces this fallback call.
+            scrollToComment(comment._id, Keyboard.isVisible() ? 120 : 360);
           }}
           onEdit={() => {
             setEditingComment(comment);

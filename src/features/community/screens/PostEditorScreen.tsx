@@ -74,6 +74,8 @@ export function PostEditorScreen() {
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.85,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (!result.canceled) {
       setExistingMediaIds([]);

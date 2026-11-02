@@ -9,6 +9,16 @@ test('media uploads honor the mobile-safe signed header contract', () => {
 
   assert.match(mediaApi, /upload\.headers \?\? upload\.requiredHeaders/);
   assert.match(mediaApi, /key\.toLowerCase\(\) !== 'content-length'/);
+  assert.match(
+    mediaApi,
+    /await uploadBlob\(upload\.uploadUrl, local\.blob!, headers/
+  );
+  assert.match(mediaApi, /FileSystem\.createUploadTask\(/);
+  assert.match(mediaApi, /FileSystemUploadType\.BINARY_CONTENT/);
+  assert.match(mediaApi, /sizeBytes: local\.sizeBytes/);
+  assert.match(mediaApi, /method: 'PUT'/);
+  assert.match(mediaApi, /if \(!result\.ok\) throw new Error\('UPLOAD_FAILED'\)/);
+  assert.doesNotMatch(mediaApi, /axios\.put\(upload\.uploadUrl/);
   assert.match(mediaApi, /apiClient\.post\(`\/media\/\$\{upload\.assetId\}\/confirm`/);
 });
 

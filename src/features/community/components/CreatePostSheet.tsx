@@ -38,6 +38,8 @@ export function CreatePostSheet({
       mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.85,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
     });
     if (!result.canceled) {
       selectImage(result.assets[0]);

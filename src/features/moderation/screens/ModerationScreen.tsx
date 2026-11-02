@@ -5,7 +5,6 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import {
   AdminEmptyState,
   AdminFilterChips,
-  AdminPageIntro,
   AdminSectionHeader,
   AdminSegmentedTabs,
 } from '@/features/admin/AdminUi';
@@ -115,15 +114,6 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         />
       }
     >
-      <AdminPageIntro
-        eyebrow={vi ? 'Hàng đợi vận hành' : 'Operations queue'}
-        title={t('admin.moderation.title')}
-        description={
-          vi
-            ? 'Tách nội dung chờ duyệt, báo cáo và hồ sơ để xử lý từng loại công việc đúng ngữ cảnh.'
-            : 'Separate pending content, reports, and cases so each workflow keeps the right context.'
-        }
-      />
       <AdminSegmentedTabs
         value={tab}
         onChange={selectTab}

@@ -17,7 +17,6 @@ import {
   AdminEmptyState,
   AdminFilterChips,
   AdminMetricCard,
-  AdminPageIntro,
   AdminSectionHeader,
   AdminStatusBadge,
   AdminSurface,
@@ -95,16 +94,6 @@ export function AdminUsersScreen() {
       contentContainerStyle={styles.screen}
       header={<CustomHeader title={t('admin.users.title')} showBack={false} />}
     >
-      <AdminPageIntro
-        eyebrow={vi ? 'Tài khoản & phân quyền' : 'Accounts & access'}
-        title={t('admin.users.title')}
-        description={
-          vi
-            ? 'Tìm đúng tài khoản, lọc theo trạng thái rồi mới mở các thao tác quản trị.'
-            : 'Find the right account, filter by status, then open management actions as needed.'
-        }
-      />
-
       <AdminSurface>
         <AppInput
           type="search"

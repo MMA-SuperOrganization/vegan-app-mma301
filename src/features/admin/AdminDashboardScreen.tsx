@@ -9,7 +9,6 @@ import { adminApi } from './adminApi';
 import {
   AdminActionCard,
   AdminMetricCard,
-  AdminPageIntro,
   AdminSectionHeader,
   AdminStatusBadge,
   AdminSurface,
@@ -37,12 +36,6 @@ export function AdminDashboardScreen() {
       contentContainerStyle={styles.screen}
       header={<CustomHeader title={t('admin.title')} showBack={false} />}
     >
-      <AdminPageIntro
-        eyebrow={t('admin.overview.workspaceEyebrow')}
-        title={t('admin.overview.title')}
-        description={t('admin.dashboard.centerDescription')}
-      />
-
       <FeatureState
         loading={summary.isLoading}
         error={summary.error}

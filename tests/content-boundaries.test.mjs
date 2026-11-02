@@ -153,16 +153,21 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
 test('admin review queues are explicit content types while reports still handle posts', () => {
   const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
   const moderationApi = read('../src/features/moderation/moderationApi.ts');
+  const reportCard = read(
+    '../src/features/moderation/components/ReportReviewCard.tsx'
+  );
   const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
 
-  assert.match(moderation, /'recipes' \| 'reports' \| 'cases'/);
+  assert.match(moderation, /'recipes' \| 'reports'/);
   assert.match(moderationApi, /recipes: \(\) =>/);
   assert.match(moderationApi, /params: \{ page, limit: 50, type: 'recipe' \}/);
   assert.doesNotMatch(moderation, /admin\.moderation\.pending/);
   assert.match(dashboard, /isPostContentType\(type\) \? total/);
   assert.match(dashboard, /!isPostContentType\(type\)/);
   assert.match(moderation, /actions\.reports\.data/);
-  assert.match(moderation, /actions\.cases\.data/);
+  assert.doesNotMatch(moderation, /cases|CaseReviewCard/);
+  assert.doesNotMatch(moderationApi, /moderation-cases|createCase|updateCase/);
+  assert.doesNotMatch(reportCard, /createCase|Create \/ merge case/);
 });
 
 test('admin navigation tabs fit the screen without horizontal scrolling', () => {

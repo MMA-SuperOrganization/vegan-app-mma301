@@ -20,7 +20,7 @@ export function ReportReviewCard({
   const [expanded, setExpanded] = useState(false);
   const [resolution, setResolution] = useState('');
   const [close, setClose] = useState<'resolved' | 'dismissed' | null>(null);
-  const busy = actions.report.isPending || actions.createCase.isPending;
+  const busy = actions.report.isPending;
   const active = ['open', 'reviewing'].includes(report.status);
 
   return (
@@ -51,7 +51,15 @@ export function ReportReviewCard({
         </AppText>
       ) : null}
       <AppButton
-        title={expanded ? (vi ? 'Thu gọn' : 'Collapse') : vi ? 'Mở báo cáo' : 'Open report'}
+        title={
+          expanded
+            ? vi
+              ? 'Thu gọn'
+              : 'Collapse'
+            : vi
+              ? 'Mở báo cáo'
+              : 'Open report'
+        }
         variant="outline"
         onPress={() => setExpanded((value) => !value)}
       />
@@ -72,20 +80,14 @@ export function ReportReviewCard({
           ) : null}
           {active ? (
             <>
-              <View style={styles.secondaryActions}>
-                <AppButton
-                  title={vi ? 'Nhận xử lý' : 'Assign to me'}
-                  variant="outline"
-                  disabled={busy || report.status === 'reviewing'}
-                  onPress={() => actions.report.mutate({ report, status: 'reviewing' })}
-                />
-                <AppButton
-                  title={vi ? 'Tạo / gộp hồ sơ' : 'Create / merge case'}
-                  variant="outline"
-                  disabled={busy}
-                  onPress={() => actions.createCase.mutate(report)}
-                />
-              </View>
+              <AppButton
+                title={vi ? 'Nhận xử lý' : 'Assign to me'}
+                variant="outline"
+                disabled={busy || report.status === 'reviewing'}
+                onPress={() =>
+                  actions.report.mutate({ report, status: 'reviewing' })
+                }
+              />
               <AppInput
                 label={vi ? 'Kết quả xử lý' : 'Resolution'}
                 value={resolution}
@@ -133,7 +135,7 @@ export function ReportReviewCard({
               ) : null}
             </>
           ) : null}
-          <FeatureState error={actions.report.error || actions.createCase.error} />
+          <FeatureState error={actions.report.error} />
         </View>
       ) : null}
     </View>
@@ -185,7 +187,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.background.muted,
   },
-  secondaryActions: { gap: spacing.sm },
   confirmation: {
     padding: spacing.md,
     gap: spacing.sm,

@@ -13,9 +13,8 @@ import { colors, spacing, webLayout } from '@/theme';
 import { useModeration } from '../hooks';
 import { ReviewCard } from '../components/ReviewCard';
 import { ReportReviewCard } from '../components/ReportReviewCard';
-import { CaseReviewCard } from '../components/CaseReviewCard';
 
-type ModerationTab = 'recipes' | 'reports' | 'cases';
+type ModerationTab = 'recipes' | 'reports';
 type WorkFilter = 'all' | 'open' | 'reviewing' | 'closed';
 
 export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
@@ -28,23 +27,12 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
   const query = actions[tab];
   const recipes = actions.recipes.data?.data ?? [];
   const reports = actions.reports.data?.data ?? [];
-  const cases = actions.cases.data?.data ?? [];
   const filterCounts = {
-    all: tab === 'reports' ? reports.length : cases.length,
-    open:
-      tab === 'reports'
-        ? reports.filter((item) => item.status === 'open').length
-        : cases.filter((item) => item.status === 'open').length,
-    reviewing:
-      tab === 'reports'
-        ? reports.filter((item) => item.status === 'reviewing').length
-        : cases.filter((item) => item.status === 'reviewing').length,
-    closed:
-      tab === 'reports'
-        ? reports.filter((item) => ['resolved', 'dismissed'].includes(item.status))
-            .length
-        : cases.filter((item) => ['resolved', 'dismissed'].includes(item.status))
-            .length,
+    all: reports.length,
+    open: reports.filter((item) => item.status === 'open').length,
+    reviewing: reports.filter((item) => item.status === 'reviewing').length,
+    closed: reports.filter((item) => ['resolved', 'dismissed'].includes(item.status))
+      .length,
   };
   const needle = search.trim().toLocaleLowerCase();
   const visibleRecipes = recipes.filter((item) =>
@@ -66,28 +54,8 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
       }),
     [filter, needle, reports]
   );
-  const visibleCases = useMemo(
-    () =>
-      cases.filter((item) => {
-        const matchesStatus =
-          filter === 'all' ||
-          (filter === 'closed'
-            ? ['resolved', 'dismissed'].includes(item.status)
-            : item.status === filter);
-        const matchesSearch =
-          `${item.targetType} ${item.priority} ${item.resolution ?? ''}`
-            .toLocaleLowerCase()
-            .includes(needle);
-        return matchesStatus && matchesSearch;
-      }),
-    [cases, filter, needle]
-  );
   const visibleCount =
-    tab === 'recipes'
-      ? visibleRecipes.length
-      : tab === 'reports'
-        ? visibleReports.length
-        : visibleCases.length;
+    tab === 'recipes' ? visibleRecipes.length : visibleReports.length;
 
   const selectTab = (value: ModerationTab) => {
     setTab(value);
@@ -122,11 +90,6 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
             label: t('admin.moderation.reports'),
             count: reports.length,
           },
-          {
-            value: 'cases',
-            label: t('admin.moderation.cases'),
-            count: cases.length,
-          },
         ]}
       />
       <AppInput
@@ -144,7 +107,7 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         value={search}
         onChangeText={setSearch}
       />
-      {tab === 'reports' || tab === 'cases' ? (
+      {tab === 'reports' ? (
         <AdminFilterChips
           value={filter}
           onChange={setFilter}
@@ -174,9 +137,7 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
           title={
             tab === 'recipes'
               ? t('admin.moderation.recipes')
-              : tab === 'reports'
-                ? t('admin.moderation.reports')
-                : t('admin.moderation.cases')
+              : t('admin.moderation.reports')
           }
           description={`${visibleCount} ${vi ? 'mục phù hợp' : 'matching items'}`}
         />
@@ -201,13 +162,9 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
           ? visibleRecipes.map((item) => (
               <ReviewCard key={item._id} target={item} vi={vi} />
             ))
-          : tab === 'reports'
-            ? visibleReports.map((item) => (
-                <ReportReviewCard key={item._id} report={item} vi={vi} />
-              ))
-            : visibleCases.map((item) => (
-                <CaseReviewCard key={item._id} item={item} vi={vi} />
-              ))}
+          : visibleReports.map((item) => (
+              <ReportReviewCard key={item._id} report={item} vi={vi} />
+            ))}
       </View>
       {visibleCount > 4 ? (
         <AppText

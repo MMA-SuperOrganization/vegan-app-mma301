@@ -1,21 +1,6 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
-import type {
-  CommunityPost,
-  ReportTarget,
-  UserReport,
-} from '@/features/community/types';
-export interface ModerationCase {
-  _id: string;
-  targetType: ReportTarget;
-  targetId: string;
-  status: UserReport['status'];
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  reportIds: string[];
-  assignedAdminId?: string;
-  resolution?: string;
-  actions?: Array<{ type: string; reason: string; at: string }>;
-}
+import type { CommunityPost, UserReport } from '@/features/community/types';
 export interface RecipeReviewItem {
   _id: string;
   title: string;
@@ -36,12 +21,6 @@ export const moderationApi = {
     collectPages((page) =>
       unwrapApiPageRequest<UserReport>(() =>
         apiClient.get('/admin/reports', { params: { page, limit: 100 } })
-      )
-    ),
-  cases: () =>
-    collectPages((page) =>
-      unwrapApiPageRequest<ModerationCase>(() =>
-        apiClient.get('/admin/moderation-cases', { params: { page, limit: 100 } })
       )
     ),
   recipes: () =>
@@ -78,38 +57,5 @@ export const moderationApi = {
   ) =>
     unwrapApiRequest<UserReport>(() =>
       apiClient.patch('/admin/reports/' + report._id, input)
-    ),
-  createCase: (report: UserReport, assignedAdminId: string) =>
-    unwrapApiRequest<ModerationCase>(() =>
-      apiClient.post('/admin/moderation-cases', {
-        targetType: report.targetType,
-        targetId: report.targetId,
-        reportIds: [report._id],
-        assignedAdminId,
-        priority: 'normal',
-      })
-    ),
-  updateCase: (
-    id: string,
-    input: {
-      status?: UserReport['status'];
-      resolution?: string;
-      priority?: ModerationCase['priority'];
-      assignedAdminId?: string;
-    }
-  ) =>
-    unwrapApiRequest<ModerationCase>(() =>
-      apiClient.patch('/admin/moderation-cases/' + id, input)
-    ),
-  visibility: (item: ModerationCase, hide: boolean, reason: string) =>
-    unwrapApiRequest(() =>
-      apiClient.post(
-        '/admin/moderation/' +
-          item.targetType +
-          '/' +
-          item.targetId +
-          (hide ? '/hide' : '/restore'),
-        { caseId: item._id, reason }
-      )
     ),
 };

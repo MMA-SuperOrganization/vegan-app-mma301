@@ -137,7 +137,6 @@ export const vi = {
   'admin.moderation.title': 'Kiểm duyệt',
   'admin.moderation.recipes': 'Công thức',
   'admin.moderation.reports': 'Báo cáo',
-  'admin.moderation.cases': 'Hồ sơ kiểm duyệt',
   'admin.moderation.empty': 'Chưa có mục nào.',
   'admin.overview.workspaceEyebrow': 'Không gian quản trị',
   'admin.overview.glanceTitle': 'Tình hình hôm nay',
@@ -149,7 +148,7 @@ export const vi = {
   'admin.overview.publishedInRange': '{{count}} đã xuất bản trong kỳ',
   'admin.overview.quickActionsDescription': 'Công cụ thường dùng',
   'admin.overview.moderationDescription':
-    'Xử lý nội dung chờ duyệt, báo cáo và hồ sơ',
+    'Duyệt công thức và xử lý báo cáo người dùng',
   'admin.overview.usersDescription':
     'Tìm kiếm, phân loại và quản lý quyền tài khoản',
   'admin.overview.masterDataDescription': 'Quản lý danh mục, dị nguyên và thực phẩm',
@@ -1589,7 +1588,6 @@ export const en: Record<TranslationKey, string> = {
   'admin.moderation.title': 'Moderation',
   'admin.moderation.recipes': 'Recipes',
   'admin.moderation.reports': 'Reports',
-  'admin.moderation.cases': 'Moderation cases',
   'admin.moderation.empty': 'No items.',
   'admin.overview.workspaceEyebrow': 'Admin workspace',
   'admin.overview.glanceTitle': 'At a glance',
@@ -1600,8 +1598,7 @@ export const en: Record<TranslationKey, string> = {
     'A categorized view of the moderation queue',
   'admin.overview.publishedInRange': '{{count}} published in range',
   'admin.overview.quickActionsDescription': 'Frequently used tools',
-  'admin.overview.moderationDescription':
-    'Review pending content, reports, and cases',
+  'admin.overview.moderationDescription': 'Review recipes and handle user reports',
   'admin.overview.usersDescription': 'Find, filter, and manage account access',
   'admin.overview.masterDataDescription': 'Manage categories, allergens, and foods',
   'admin.overview.aiDescription': 'Monitor AI service status and activity',

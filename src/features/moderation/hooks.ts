@@ -3,7 +3,7 @@ import { useAuthStore } from '@/features/auth';
 import {
   moderationApi,
   type ModerationCase,
-  type PendingContent,
+  type RecipeReviewItem,
 } from './moderationApi';
 import type { UserReport } from '@/features/community/types';
 export function useModeration() {
@@ -28,9 +28,9 @@ export function useModeration() {
       queryFn: moderationApi.cases,
       enabled,
     }),
-    pending: useQuery({
-      queryKey: [...root, 'pending'],
-      queryFn: moderationApi.pending,
+    recipes: useQuery({
+      queryKey: [...root, 'review-queue', 'recipe'],
+      queryFn: moderationApi.recipes,
       enabled,
     }),
     review: useMutation({
@@ -40,7 +40,7 @@ export function useModeration() {
         reject,
         reason,
       }: {
-        target: PendingContent;
+        target: RecipeReviewItem;
         version: number;
         reject: boolean;
         reason: string;

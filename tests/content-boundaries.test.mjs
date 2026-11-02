@@ -150,11 +150,15 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);
 });
 
-test('admin pending review excludes posts while reports can still handle them', () => {
+test('admin review queues are explicit content types while reports still handle posts', () => {
   const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
+  const moderationApi = read('../src/features/moderation/moderationApi.ts');
   const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
 
-  assert.match(moderation, /\.filter\(\s*\(item\) => item\.type !== 'post'/);
+  assert.match(moderation, /'recipes' \| 'reports' \| 'cases'/);
+  assert.match(moderationApi, /recipes: \(\) =>/);
+  assert.match(moderationApi, /params: \{ page, limit: 50, type: 'recipe' \}/);
+  assert.doesNotMatch(moderation, /admin\.moderation\.pending/);
   assert.match(dashboard, /isPostContentType\(type\) \? total/);
   assert.match(dashboard, /!isPostContentType\(type\)/);
   assert.match(moderation, /actions\.reports\.data/);

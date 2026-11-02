@@ -15,20 +15,18 @@ import { ReviewCard } from '../components/ReviewCard';
 import { ReportReviewCard } from '../components/ReportReviewCard';
 import { CaseReviewCard } from '../components/CaseReviewCard';
 
-type ModerationTab = 'pending' | 'reports' | 'cases';
+type ModerationTab = 'recipes' | 'reports' | 'cases';
 type WorkFilter = 'all' | 'open' | 'reviewing' | 'closed';
 
 export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
   const { locale, t } = useTranslation();
   const vi = locale === 'vi';
   const actions = useModeration();
-  const [tab, setTab] = useState<ModerationTab>('pending');
+  const [tab, setTab] = useState<ModerationTab>('recipes');
   const [filter, setFilter] = useState<WorkFilter>('all');
   const [search, setSearch] = useState('');
   const query = actions[tab];
-  const pending = (actions.pending.data?.data ?? []).filter(
-    (item) => item.type !== 'post'
-  );
+  const recipes = actions.recipes.data?.data ?? [];
   const reports = actions.reports.data?.data ?? [];
   const cases = actions.cases.data?.data ?? [];
   const filterCounts = {
@@ -49,12 +47,8 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
             .length,
   };
   const needle = search.trim().toLocaleLowerCase();
-  const visiblePending = useMemo(
-    () =>
-      pending.filter((item) =>
-        `${item.title} ${item.type}`.toLocaleLowerCase().includes(needle)
-      ),
-    [needle, pending]
+  const visibleRecipes = recipes.filter((item) =>
+    item.title.toLocaleLowerCase().includes(needle)
   );
   const visibleReports = useMemo(
     () =>
@@ -89,8 +83,8 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
     [cases, filter, needle]
   );
   const visibleCount =
-    tab === 'pending'
-      ? visiblePending.length
+    tab === 'recipes'
+      ? visibleRecipes.length
       : tab === 'reports'
         ? visibleReports.length
         : visibleCases.length;
@@ -119,9 +113,9 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         onChange={selectTab}
         options={[
           {
-            value: 'pending',
-            label: t('admin.moderation.pending'),
-            count: pending.length,
+            value: 'recipes',
+            label: t('admin.moderation.recipes'),
+            count: recipes.length,
           },
           {
             value: 'reports',
@@ -139,10 +133,10 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         type="search"
         label={vi ? 'Tìm trong nhóm đang xem' : 'Search current queue'}
         placeholder={
-          tab === 'pending'
+          tab === 'recipes'
             ? vi
-              ? 'Tiêu đề hoặc loại nội dung…'
-              : 'Title or content type…'
+              ? 'Tên công thức…'
+              : 'Recipe title…'
             : vi
               ? 'Loại, lý do hoặc trạng thái…'
               : 'Type, reason, or status…'
@@ -150,7 +144,7 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         value={search}
         onChangeText={setSearch}
       />
-      {tab !== 'pending' ? (
+      {tab === 'reports' || tab === 'cases' ? (
         <AdminFilterChips
           value={filter}
           onChange={setFilter}
@@ -178,8 +172,8 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
       {!query.isLoading && !query.error ? (
         <AdminSectionHeader
           title={
-            tab === 'pending'
-              ? t('admin.moderation.pending')
+            tab === 'recipes'
+              ? t('admin.moderation.recipes')
               : tab === 'reports'
                 ? t('admin.moderation.reports')
                 : t('admin.moderation.cases')
@@ -203,8 +197,8 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         />
       ) : null}
       <View style={styles.results}>
-        {tab === 'pending'
-          ? visiblePending.map((item) => (
+        {tab === 'recipes'
+          ? visibleRecipes.map((item) => (
               <ReviewCard key={item._id} target={item} vi={vi} />
             ))
           : tab === 'reports'

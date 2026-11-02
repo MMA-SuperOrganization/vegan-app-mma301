@@ -16,10 +16,10 @@ export interface ModerationCase {
   resolution?: string;
   actions?: Array<{ type: string; reason: string; at: string }>;
 }
-export interface PendingContent {
+export interface RecipeReviewItem {
   _id: string;
   title: string;
-  type: 'recipe' | 'post' | 'video';
+  type: 'recipe';
   status: string;
 }
 export interface ReviewContent extends Omit<CommunityPost, 'content'> {
@@ -44,20 +44,20 @@ export const moderationApi = {
         apiClient.get('/admin/moderation-cases', { params: { page, limit: 100 } })
       )
     ),
-  pending: () =>
+  recipes: () =>
     collectPages((page) =>
-      unwrapApiPageRequest<PendingContent>(() =>
+      unwrapApiPageRequest<RecipeReviewItem>(() =>
         apiClient.get('/admin/content/pending', {
-          params: { page, limit: 50, type: 'all' },
+          params: { page, limit: 50, type: 'recipe' },
         })
       )
     ),
-  content: (target: PendingContent) =>
+  content: (target: RecipeReviewItem) =>
     unwrapApiRequest<ReviewContent>(() =>
       apiClient.get('/' + target.type + 's/' + target._id)
     ),
   review: (
-    target: PendingContent,
+    target: RecipeReviewItem,
     version: number,
     reject: boolean,
     reason: string

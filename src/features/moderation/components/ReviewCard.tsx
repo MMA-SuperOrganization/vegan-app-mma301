@@ -3,10 +3,10 @@ import { Linking, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { AppButton, AppInput, AppText } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
-import { moderationApi, type PendingContent } from '../moderationApi';
+import { moderationApi, type RecipeReviewItem } from '../moderationApi';
 import { useModeration } from '../hooks';
 import { colors, radius, spacing } from '@/theme';
-export function ReviewCard({ target, vi }: { target: PendingContent; vi: boolean }) {
+export function ReviewCard({ target, vi }: { target: RecipeReviewItem; vi: boolean }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [confirm, setConfirm] = useState<'publish' | 'reject' | null>(null);
@@ -27,9 +27,8 @@ export function ReviewCard({ target, vi }: { target: PendingContent; vi: boolean
       }}
     >
       <AppText variant="heading4">{target.title}</AppText>
-      <AppText>{target.type}</AppText>
       <AppButton
-        title={vi ? 'Xem nội dung để duyệt' : 'Review content'}
+        title={vi ? 'Duyệt công thức' : 'Review recipe'}
         variant="outline"
         onPress={() => setOpen(!open)}
         disabled={busy}

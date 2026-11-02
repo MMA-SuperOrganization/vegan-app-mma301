@@ -2,7 +2,7 @@ import React, { type ReactNode } from 'react';
 import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import type { Href } from 'expo-router';
 
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { AppText } from '../ui';
 import { CustomHeader } from './CustomHeader';
 import { ScreenWrapper } from './ScreenWrapper';
@@ -32,6 +32,7 @@ export function SettingsScreenLayout({
   return (
     <ScreenWrapper
       scrollable={scrollable}
+      webMaxWidth={webLayout.formMaxWidth}
       header={
         <CustomHeader
           title={title}

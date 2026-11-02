@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { AppText } from '../AppText';
 import { Button } from '../Button';
 
@@ -96,14 +96,16 @@ export function BottomSheet({
       transparent
       statusBarTranslucent
       navigationBarTranslucent
-      animationType="slide"
+      animationType={Platform.OS === 'web' ? 'fade' : 'slide'}
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.backdrop}>
+        <View
+          style={[styles.backdrop, Platform.OS === 'web' && styles.webBackdrop]}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
@@ -115,6 +117,7 @@ export function BottomSheet({
               styles.sheetMotion,
               tall && styles.tall,
               height !== undefined && { height },
+              Platform.OS === 'web' && styles.webSheetMotion,
               { transform: [{ translateY }] },
             ]}
           >
@@ -124,6 +127,7 @@ export function BottomSheet({
                 styles.sheet,
                 compact && styles.sheetCompact,
                 tall && styles.fill,
+                Platform.OS === 'web' && styles.webSheet,
               ]}
             >
               <View
@@ -214,5 +218,19 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: radius.full,
     backgroundColor: colors.border.strong,
+  },
+  webBackdrop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: webLayout.pageGutter,
+  },
+  webSheetMotion: {
+    width: '100%',
+    maxWidth: webLayout.dialogMaxWidth,
+    maxHeight: '92%',
+    borderRadius: radius.xl,
+  },
+  webSheet: {
+    borderRadius: radius.xl,
   },
 });

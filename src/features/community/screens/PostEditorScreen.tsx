@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
-import { useMutation } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
+  AppIcon,
   AppInput,
   AppText,
   CustomHeader,
@@ -13,16 +13,17 @@ import {
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { useCommunityPost } from '../hooks';
-import { mediaApi } from '@/features/media/mediaApi';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { useContentCategories } from '@/features/recipes/hooks';
 import {
   hasPostFoodRelationship,
   normalizeLinkedRecipeId,
+  parsePostTags,
 } from '../postRelationship';
 import { PostFoodRelationshipFields } from '../components/PostFoodRelationshipFields';
+import { usePostImageUpload } from '../usePostImageUpload';
 
 export function PostEditorScreen() {
   const { id, recipeId: routeRecipeId } = useLocalSearchParams<{
@@ -39,13 +40,19 @@ export function PostEditorScreen() {
   const [recipeId, setRecipeId] = useState(routeRecipeId ?? '');
   const [foodItemIds, setFoodItemIds] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-  const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [existingMediaIds, setExistingMediaIds] = useState<string[]>([]);
+  const [editorVersion, setEditorVersion] = useState<number | null>(null);
+  const hydratedPostId = useRef<string | null>(null);
+  const submitting = useRef(false);
+  const { image, upload, selectImage, clearImage, ensureUploaded } =
+    usePostImageUpload();
   const categories = useContentCategories('post');
-  const upload = useMutation({
-    mutationFn: () => mediaApi.uploadImage(image!, 'post'),
-  });
   useEffect(() => {
-    if (actions.post.data) {
+    if (
+      actions.post.data &&
+      hydratedPostId.current !== actions.post.data._id
+    ) {
+      hydratedPostId.current = actions.post.data._id;
       setTitle(actions.post.data.title);
       setContent(actions.post.data.content);
       setCategoryId(actions.post.data.categoryIds?.[0] ?? null);
@@ -53,6 +60,8 @@ export function PostEditorScreen() {
       setRecipeId(actions.post.data.recipeId || '');
       setFoodItemIds(actions.post.data.foodItemIds ?? []);
       setVisibility(actions.post.data.visibility || 'public');
+      setExistingMediaIds(actions.post.data.mediaIds ?? []);
+      setEditorVersion(actions.post.data.version);
     }
   }, [actions.post.data]);
   const editable =
@@ -67,26 +76,34 @@ export function PostEditorScreen() {
       quality: 0.85,
     });
     if (!result.canceled) {
-      setImage(result.assets[0]);
-      upload.reset();
+      setExistingMediaIds([]);
+      selectImage(result.assets[0]);
     }
   };
   const save = async () => {
+    if (
+      submitting.current ||
+      !title.trim() ||
+      !content.trim() ||
+      !hasPostFoodRelationship(recipeId, foodItemIds)
+    )
+      return;
+    submitting.current = true;
     try {
-      const uploadedId = image ? await upload.mutateAsync() : undefined;
+      const uploadedId = await ensureUploaded();
       const post = await actions.save.mutateAsync({
         title: title.trim(),
         content: content.trim(),
-        mediaIds: uploadedId ? [uploadedId] : actions.post.data?.mediaIds || [],
+        mediaIds: uploadedId ? [uploadedId] : existingMediaIds,
         categoryIds: categoryId ? [categoryId] : [],
-        tags: tags
-          .split(',')
-          .map((tag) => tag.trim())
-          .filter(Boolean),
+        tags: parsePostTags(tags),
         recipeId: normalizeLinkedRecipeId(recipeId),
         foodItemIds,
         visibility,
-        previous: actions.post.data,
+        previous:
+          id && editorVersion !== null
+            ? { _id: id, version: editorVersion }
+            : undefined,
       });
       router.replace({
         pathname: '/community/post',
@@ -94,12 +111,15 @@ export function PostEditorScreen() {
       });
     } catch {
       // Mutation errors are rendered with the form.
+    } finally {
+      submitting.current = false;
     }
   };
   const busy = actions.save.isPending || upload.isPending;
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.formMaxWidth}
       contentContainerStyle={styles.screen}
       header={
         <CustomHeader
@@ -256,10 +276,32 @@ export function PostEditorScreen() {
             </AppText>
           </View>
         </View>
-        {image ? <Image source={{ uri: image.uri }} style={styles.preview} /> : null}
+        {image ||
+        (existingMediaIds.length > 0 && actions.media.data?.[0]?.downloadUrl) ? (
+          <View style={styles.previewWrap}>
+            <Image
+              source={{
+                uri: image?.uri ?? actions.media.data?.[0]?.downloadUrl,
+              }}
+              style={styles.preview}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={vi ? 'Gỡ ảnh minh họa' : 'Remove image'}
+              onPress={() => {
+                clearImage();
+                setExistingMediaIds([]);
+              }}
+              disabled={busy}
+              style={styles.removeImage}
+            >
+              <AppIcon name="close" size={18} color={colors.text.inverse} decorative />
+            </Pressable>
+          </View>
+        ) : null}
         <AppButton
           title={
-            image
+            image || existingMediaIds.length
               ? vi
                 ? 'Đổi ảnh minh họa'
                 : 'Change image'
@@ -343,5 +385,17 @@ const styles = StyleSheet.create({
   },
   contentInput: { minHeight: 180, paddingTop: spacing.md },
   preview: { width: '100%', height: 220, borderRadius: radius.lg },
+  previewWrap: { position: 'relative' },
+  removeImage: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.overlay.modal,
+  },
   submitArea: { gap: spacing.md },
 });

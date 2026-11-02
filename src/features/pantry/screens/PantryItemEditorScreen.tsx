@@ -14,7 +14,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation, type TranslationKey } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { PantryQueryState } from '../components/PantryQueryState';
 import { usePantry, usePantryActions, usePantryFoodOptions } from '../hooks';
 import {
@@ -33,6 +33,7 @@ export function PantryItemEditorScreen() {
   if (itemId && (!query.data || !item)) {
     return (
       <ScreenWrapper
+        webMaxWidth={webLayout.formMaxWidth}
         header={
           <CustomHeader
             title={t('pantry.edit')}
@@ -131,6 +132,7 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
     <>
       <ScreenWrapper
         scrollable
+        webMaxWidth={webLayout.formMaxWidth}
         testID="pantry-item-editor"
         contentContainerStyle={styles.screen}
         header={

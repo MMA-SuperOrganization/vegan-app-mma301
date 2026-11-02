@@ -14,7 +14,7 @@ import {
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { useSafeBack } from '@/hooks';
 import { useTranslation, type TranslationKey } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { useFoodOptions, useRecipeOptions } from '../hooks/usePickerOptions';
 import { useDiary, useDiaryMutations } from '../hooks/useTrackingApi';
@@ -191,6 +191,7 @@ export function DiaryEntryScreen() {
   if (id && (diary.isLoading || diary.isError)) {
     return (
       <ScreenWrapper
+        webMaxWidth={webLayout.formMaxWidth}
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
         header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
@@ -207,6 +208,7 @@ export function DiaryEntryScreen() {
   if (id && !entry) {
     return (
       <ScreenWrapper
+        webMaxWidth={webLayout.formMaxWidth}
         edges={['top', 'left', 'right', 'bottom']}
         keyboardAvoiding={false}
         header={<CustomHeader title={t('tracking.entry.titleRecipe')} showBack />}
@@ -420,6 +422,7 @@ export function DiaryEntryScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.formMaxWidth}
       edges={['top', 'left', 'right', 'bottom']}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.screen}

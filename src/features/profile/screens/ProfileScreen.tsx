@@ -1,16 +1,26 @@
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { AppIcon, AppText, ScreenWrapper } from '@/components';
 import { getDietOptions, optionLabel } from '@/features/onboarding/constants';
 import { useUnreadNotificationCount } from '@/features/settings';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { useProfileStore } from '../profileStore';
 
 export function ProfileScreen() {
   const router = useRouter();
   const { t, locale } = useTranslation();
   const vi = locale === 'vi';
+  const { width } = useWindowDimensions();
+  const desktop =
+    Platform.OS === 'web' && width >= webLayout.desktopBreakpoint;
   const dietOptions = getDietOptions(t);
   const data = useProfileStore((state) => state.data);
   const unread = useUnreadNotificationCount();
@@ -25,6 +35,7 @@ export function ProfileScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.catalogMaxWidth}
       keyboardAvoiding={false}
       edges={['top', 'left', 'right']}
       contentContainerStyle={styles.screen}
@@ -85,7 +96,8 @@ export function ProfileScreen() {
         </View>
       </View>
 
-      <MenuSection title={t('pantry.title')}>
+      <View style={[styles.sections, desktop && styles.desktopGrid]}>
+      <MenuSection title={t('pantry.title')} desktop={desktop}>
         <MenuItem
           title={vi ? 'Kho nâng cao' : 'Advanced pantry'}
           subtitle={
@@ -107,7 +119,10 @@ export function ProfileScreen() {
         />
       </MenuSection>
 
-      <MenuSection title={vi ? 'Trợ lý và cộng đồng' : 'Assistant and community'}>
+      <MenuSection
+        title={vi ? 'Trợ lý và cộng đồng' : 'Assistant and community'}
+        desktop={desktop}
+      >
         <MenuItem
           title={vi ? 'Trò chuyện với AI' : 'AI chat'}
           subtitle={
@@ -175,7 +190,7 @@ export function ProfileScreen() {
           onPress={() => router.push('/reminders')}
         />
       </MenuSection>
-      <MenuSection title={t('profile.healthSection')}>
+      <MenuSection title={t('profile.healthSection')} desktop={desktop}>
         <MenuItem
           title={t('profile.nutrition')}
           subtitle={
@@ -202,7 +217,7 @@ export function ProfileScreen() {
           onPress={() => router.push('/allergies-settings')}
         />
       </MenuSection>
-      <MenuSection title={t('profile.contentSection')}>
+      <MenuSection title={t('profile.contentSection')} desktop={desktop}>
         <MenuItem
           title={vi ? 'Lịch sử đã xem' : 'View history'}
           subtitle={
@@ -230,7 +245,7 @@ export function ProfileScreen() {
           onPress={() => router.push('/notification-settings')}
         />
       </MenuSection>
-      <MenuSection title={t('profile.settingsSection')}>
+      <MenuSection title={t('profile.settingsSection')} desktop={desktop}>
         <MenuItem
           title={vi ? 'Lịch sử trò chuyện AI' : 'AI chat history'}
           subtitle={
@@ -282,6 +297,7 @@ export function ProfileScreen() {
           onPress={() => router.push('/account-security')}
         />
       </MenuSection>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -289,12 +305,14 @@ export function ProfileScreen() {
 function MenuSection({
   title,
   children,
+  desktop = false,
 }: {
   title: string;
   children: React.ReactNode;
+  desktop?: boolean;
 }) {
   return (
-    <View style={styles.group}>
+    <View style={[styles.group, desktop && styles.desktopGroup]}>
       <AppText variant="heading4">{title}</AppText>
       <View style={styles.section}>{children}</View>
     </View>
@@ -394,4 +412,16 @@ const styles = StyleSheet.create({
   },
   menuText: { flex: 1, gap: spacing.xs },
   pressed: { backgroundColor: colors.background.selected },
+  sections: { gap: spacing.xl },
+  desktopGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    gap: spacing.xl,
+  },
+  desktopGroup: {
+    flexGrow: 1,
+    flexBasis: '46%',
+    minWidth: 0,
+  },
 });

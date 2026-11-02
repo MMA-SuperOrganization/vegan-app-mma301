@@ -45,7 +45,8 @@ test('home remains recipe-first and adds community posts afterwards', () => {
     /onViewAll=\{\(\) => router\.push\('\/\(discover\)\/explore'\)\}/
   );
   assert.match(stories, /onPress=\{onViewAll\}/);
-  assert.match(explore, /numColumns=\{2\}/);
+  assert.match(explore, /numColumns=\{columnCount\}/);
+  assert.match(explore, /Platform\.OS !== 'web'\s*\? 2/);
   assert.match(explore, /ExploreRecipeCard/);
 });
 
@@ -120,6 +121,13 @@ test('meal-plan completion logs to the diary optimistically and active tabs use 
 test('community uses an infinite newsfeed and publishes posts without admin review', () => {
   const community = read('../src/features/community/screens/CommunityScreen.tsx');
   const composer = read('../src/features/community/screens/PostEditorScreen.tsx');
+  const quickComposer = read(
+    '../src/features/community/components/CreatePostSheet.tsx'
+  );
+  const imageUpload = read(
+    '../src/features/community/usePostImageUpload.ts'
+  );
+  const communityHooks = read('../src/features/community/hooks.ts');
   const postCard = read(
     '../src/features/community/components/CommunityPostCard.tsx'
   );
@@ -135,6 +143,10 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(composer, /Bài viết công khai sẽ xuất hiện ngay/);
   assert.match(composer, /'Đăng bài'/);
   assert.doesNotMatch(composer, /Gửi quản trị viên duyệt/);
+  assert.match(composer, /submitting\.current/);
+  assert.match(quickComposer, /submitting\.current/);
+  assert.match(imageUpload, /uploaded\.current\?\.uri === image\.uri/);
+  assert.match(communityHooks, /related-posts/);
   assert.match(postCard, /Có công thức/);
   assert.match(postCard, /PostFoodSummary/);
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);

@@ -1,7 +1,12 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import {
   AppButton,
@@ -15,7 +20,7 @@ import {
 import { useProfileStore } from '@/features/profile/profileStore';
 import { matchingAllergenNames } from '@/features/profile/allergenMatching';
 import { useTranslation, type TranslationKey } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 
 import { ContentSaveButton } from '../components/ContentSaveButton';
 import { DiscoveryDetailHeader } from '../components/DiscoveryDetailHeader';
@@ -28,6 +33,9 @@ import { engagementApi } from '@/features/engagement/engagementApi';
 export function RecipeDetailScreen() {
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const { width } = useWindowDimensions();
+  const desktop =
+    Platform.OS === 'web' && width >= webLayout.desktopBreakpoint;
   const params = useLocalSearchParams<{ id?: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : (params.id ?? '');
   const recipe = useRecipeDetail(id);
@@ -110,6 +118,7 @@ export function RecipeDetailScreen() {
 
   return (
     <ScreenWrapper
+      webMaxWidth={webLayout.catalogMaxWidth}
       header={
         <DiscoveryDetailHeader
           title={data.title ?? t('recipe.detailTitle')}
@@ -120,6 +129,8 @@ export function RecipeDetailScreen() {
       scrollable
       contentContainerStyle={styles.screen}
     >
+      <View style={[styles.detailLayout, desktop && styles.desktopDetailLayout]}>
+      <View style={[styles.mainColumn, desktop && styles.desktopMainColumn]}>
       <RecipeHeroSection
         title={data.title}
         coverImageUrl={data.coverImageUrl}
@@ -174,7 +185,9 @@ export function RecipeDetailScreen() {
           })
         }
       />
+      </View>
 
+      <View style={[styles.asideColumn, desktop && styles.desktopAsideColumn]}>
       <Surface bordered padding="lg" radius="lg" style={styles.block}>
         <AppText variant="heading4">{t('recipe.allergens')}</AppText>
         <AppText color={colors.text.secondary}>{allergenText}</AppText>
@@ -201,6 +214,8 @@ export function RecipeDetailScreen() {
           })
         }
       />
+      </View>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -224,4 +239,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
   warningCopy: { flex: 1, gap: spacing.xs },
+  detailLayout: { gap: spacing.lg },
+  mainColumn: { gap: spacing.lg },
+  asideColumn: { gap: spacing.lg },
+  desktopDetailLayout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xl,
+  },
+  desktopMainColumn: { flex: 1, minWidth: 0 },
+  desktopAsideColumn: {
+    width: 320,
+  },
 });

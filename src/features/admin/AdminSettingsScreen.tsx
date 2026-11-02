@@ -6,7 +6,7 @@ import { AppButton, AppIcon, AppText, ScreenWrapper } from '@/components';
 import { useAuthStore } from '@/features/auth';
 import { useProfileStore } from '@/features/profile';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 
 export function AdminSettingsScreen() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export function AdminSettingsScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable keyboardAvoiding={false} edges={['top', 'left', 'right']} contentContainerStyle={styles.screen}>
+    <ScreenWrapper webMaxWidth={webLayout.feedMaxWidth} scrollable keyboardAvoiding={false} edges={['top', 'left', 'right']} contentContainerStyle={styles.screen}>
       <AppText variant="heading1">{t('admin.settings.title')}</AppText>
       <AppText color={colors.text.secondary}>{t('admin.settings.subtitle')}</AppText>
 

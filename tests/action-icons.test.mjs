@@ -72,7 +72,7 @@ test('post detail groups article and engagement while keeping AI accessible', ()
 test('post detail integrates back navigation into the article card instead of a tall header', () => {
   const post = read('../src/features/community/screens/PostDetailScreen.tsx');
 
-  assert.match(post, /<ScreenWrapper>/);
+  assert.match(post, /<ScreenWrapper\b/);
   assert.match(post, /style=\{styles\.articleHeaderRow\}/);
   assert.match(post, /!post \? \(/);
   assert.match(post, /style=\{styles\.loadingNavigation\}/);

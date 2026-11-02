@@ -16,7 +16,7 @@ import {
   type Edge,
 } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme';
+import { colors, webLayout } from '@/theme';
 
 export interface ScreenWrapperProps {
   children: React.ReactNode;
@@ -31,6 +31,8 @@ export interface ScreenWrapperProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
   keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'];
   testID?: string;
+  /** Optional desktop content cap. Native layouts are never affected. */
+  webMaxWidth?: number;
 }
 
 /**
@@ -50,6 +52,7 @@ export function ScreenWrapper({
   contentContainerStyle,
   keyboardShouldPersistTaps = 'handled',
   testID,
+  webMaxWidth = webLayout.contentMaxWidth,
 }: ScreenWrapperProps) {
   const insets = useSafeAreaInsets();
   const resolvedTopInsetBackgroundColor =
@@ -57,7 +60,12 @@ export function ScreenWrapper({
   const content = scrollable ? (
     <ScrollView
       style={styles.flex}
-      contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        Platform.OS === 'web' && styles.webContent,
+        Platform.OS === 'web' && { maxWidth: webMaxWidth },
+        contentContainerStyle,
+      ]}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       contentInsetAdjustmentBehavior="never"
@@ -65,7 +73,16 @@ export function ScreenWrapper({
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.content, contentContainerStyle]}>{children}</View>
+    <View
+      style={[
+        styles.content,
+        Platform.OS === 'web' && styles.webContent,
+        Platform.OS === 'web' && { maxWidth: webMaxWidth },
+        contentContainerStyle,
+      ]}
+    >
+      {children}
+    </View>
   );
 
   return (
@@ -82,7 +99,19 @@ export function ScreenWrapper({
           ]}
         />
       ) : null}
-      {header}
+      {header && Platform.OS === 'web' ? (
+        <View
+          style={[
+            styles.headerFrame,
+            styles.webHeaderFrame,
+            { maxWidth: webMaxWidth },
+          ]}
+        >
+          {header}
+        </View>
+      ) : (
+        header
+      )}
       {keyboardAvoiding ? (
         <KeyboardAvoidingView
           style={styles.flex}
@@ -102,6 +131,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background.base,
+    ...Platform.select({
+      web: { backgroundColor: colors.background.muted },
+      default: {},
+    }),
   },
   topInsetBackground: {
     position: 'absolute',
@@ -112,4 +145,15 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flex: 1 },
   scrollContent: { flexGrow: 1 },
+  headerFrame: {},
+  webHeaderFrame: {
+    width: '100%',
+    alignSelf: 'center',
+    overflow: 'hidden',
+  },
+  webContent: {
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: colors.background.base,
+  },
 });

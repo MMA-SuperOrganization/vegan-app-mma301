@@ -9,6 +9,7 @@ import { contentHref } from '../src/features/recipes/contentNavigation.ts';
 import {
   hasPostFoodRelationship,
   normalizeLinkedRecipeId,
+  parsePostTags,
 } from '../src/features/community/postRelationship.ts';
 
 test('one-time reminders use the selected IANA zone and reject skipped DST times', () => {
@@ -54,6 +55,12 @@ test('posts require a recipe or ingredient relationship', () => {
   assert.equal(hasPostFoodRelationship('', []), false);
   assert.equal(hasPostFoodRelationship('recipe-123', []), true);
   assert.equal(hasPostFoodRelationship('', ['food-123']), true);
+  assert.deepEqual(parsePostTags(' tofu, kitchen, tofu,  '), ['tofu', 'kitchen']);
+  assert.equal(parsePostTags(`${'x'.repeat(80)},second`)[0].length, 60);
+  assert.equal(
+    parsePostTags(Array.from({ length: 35 }, (_, index) => `tag-${index}`).join(',')).length,
+    30
+  );
 });
 import {
   reviewMealProposal,

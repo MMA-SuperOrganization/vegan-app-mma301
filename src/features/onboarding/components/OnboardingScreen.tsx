@@ -7,7 +7,7 @@ import {
   ProgressBar,
   ScreenWrapper,
 } from '@/components';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { useTranslation } from '@/i18n';
 
 export function OnboardingScreen({
@@ -33,7 +33,11 @@ export function OnboardingScreen({
 }) {
   const { t } = useTranslation();
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+    <ScreenWrapper
+      scrollable
+      webMaxWidth={webLayout.formMaxWidth}
+      contentContainerStyle={styles.screen}
+    >
       <View>
         <View style={styles.headerRow}>
           <BackButton onPress={onBack} />

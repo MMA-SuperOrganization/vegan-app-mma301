@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Platform,
   Pressable,
   StyleSheet,
   View,
@@ -16,7 +17,9 @@ import {
   coreTokens,
   interactionTokens,
   radius,
+  shadows,
   spacing,
+  webLayout,
   type AssetName,
 } from '@/theme';
 
@@ -87,11 +90,14 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
       accessibilityRole="tablist"
       style={[
         styles.container,
-        coreTokens.navigation.tabBarShadow,
-        { paddingBottom: insets.bottom },
+        Platform.OS !== 'web' && coreTokens.navigation.tabBarShadow,
+        Platform.OS === 'web' ? styles.webContainer : { paddingBottom: insets.bottom },
       ]}
     >
-      <View style={styles.items} onLayout={measureItems}>
+      <View
+        style={[styles.items, Platform.OS === 'web' && styles.webItems]}
+        onLayout={measureItems}
+      >
         {TAB_ORDER.map((routeName) => {
           const routeIndex = state.routes.findIndex(
             (route) => route.name === routeName
@@ -209,4 +215,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeLabel: coreTokens.navigation.activeTabLabel,
+  webContainer: {
+    alignItems: 'center',
+    paddingHorizontal: webLayout.pageGutter,
+    paddingBottom: webLayout.dockBottomSpace,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+  },
+  webItems: {
+    width: '100%',
+    maxWidth: webLayout.navigationMaxWidth,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background.surface,
+    ...shadows.lg,
+  },
 });

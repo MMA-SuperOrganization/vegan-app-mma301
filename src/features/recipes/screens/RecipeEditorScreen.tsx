@@ -18,7 +18,7 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import { usePantryFoodOptions } from '@/features/pantry/hooks';
 import { useRecipeCategories } from '../hooks';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { recipeApi } from '../recipeApi';
 import type { RecipeAuthorInput, RecipeDetail, RecipeDifficulty } from '../types';
 import { mediaApi } from '@/features/media/mediaApi';
@@ -185,6 +185,7 @@ export function RecipeEditorScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.formMaxWidth}
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={
         <CustomHeader

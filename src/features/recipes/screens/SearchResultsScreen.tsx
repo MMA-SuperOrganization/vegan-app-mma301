@@ -2,7 +2,13 @@ import { getUserErrorMessage } from '@/services/errors';
 import { contentHref } from '../contentNavigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import {
   AppButton,
@@ -15,7 +21,7 @@ import {
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
-import { spacing } from '@/theme';
+import { spacing, webLayout } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
 import { RecipeFilterSheet } from '../components/RecipeFilterSheet';
@@ -64,6 +70,9 @@ function mixContentTypes(items: ContentCardData[]) {
 export function SearchResultsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const desktop =
+    Platform.OS === 'web' && width >= webLayout.desktopBreakpoint;
   const params = useLocalSearchParams<RecipeFilterRouteParams>();
   const initialQuery = Array.isArray(params.q) ? params.q[0] : (params.q ?? '');
   const initialType = parseType(
@@ -104,6 +113,7 @@ export function SearchResultsScreen() {
 
   return (
     <ScreenWrapper
+      webMaxWidth={webLayout.catalogMaxWidth}
       header={
         <CustomHeader
           title={t('discover.resultsTitle')}
@@ -113,7 +123,10 @@ export function SearchResultsScreen() {
       }
     >
       <FlatList
+        key={`search-results-${desktop ? 2 : 1}`}
         data={content}
+        numColumns={desktop ? 2 : 1}
+        columnWrapperStyle={desktop ? styles.resultsRow : undefined}
         keyExtractor={(item) => `${item.type ?? 'recipe'}-${item._id}`}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, !content.length && styles.growList]}
@@ -182,7 +195,9 @@ export function SearchResultsScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <ContentResultCard item={item} onPress={() => openItem(item)} />
+          <View style={desktop ? styles.resultCell : undefined}>
+            <ContentResultCard item={item} onPress={() => openItem(item)} />
+          </View>
         )}
       />
       <RecipeFilterSheet
@@ -217,4 +232,6 @@ const styles = StyleSheet.create({
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   separator: { height: spacing.md },
   footer: { paddingTop: spacing.xl },
+  resultsRow: { gap: spacing.lg },
+  resultCell: { flex: 1, minWidth: 0 },
 });

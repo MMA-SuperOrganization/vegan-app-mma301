@@ -1,10 +1,19 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppIcon, AppText } from '@/components/ui';
 import { useTranslation, type TranslationKey } from '@/i18n';
-import { colors, coreTokens, interactionTokens, spacing, type AssetName } from '@/theme';
+import {
+  colors,
+  coreTokens,
+  interactionTokens,
+  radius,
+  shadows,
+  spacing,
+  webLayout,
+  type AssetName,
+} from '@/theme';
 
 type Props = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
 const CONFIG: Record<string, { key: TranslationKey; icon: AssetName }> = {
@@ -21,8 +30,16 @@ export function AdminTabBar({ state, descriptors, navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   return (
-    <View style={[styles.container, coreTokens.navigation.tabBarShadow, { paddingBottom: insets.bottom }]}>
-      <View style={styles.items}>
+    <View
+      style={[
+        styles.container,
+        Platform.OS !== 'web' && coreTokens.navigation.tabBarShadow,
+        Platform.OS === 'web'
+          ? styles.webContainer
+          : { paddingBottom: insets.bottom },
+      ]}
+    >
+      <View style={[styles.items, Platform.OS === 'web' && styles.webItems]}>
         {ORDER.map((name) => {
           const index = state.routes.findIndex((route) => route.name === name);
           if (index < 0) return null;
@@ -57,4 +74,22 @@ const styles = StyleSheet.create({
   content: { width: coreTokens.navigation.tabItemWidth, minHeight: coreTokens.navigation.tabItemHeight, alignItems: 'center', justifyContent: 'center', borderRadius: coreTokens.navigation.tabItemRadius, paddingVertical: spacing.xs },
   active: { backgroundColor: colors.background.selected },
   label: { ...coreTokens.navigation.tabLabel, marginTop: spacing.xs, textAlign: 'center' },
+  webContainer: {
+    alignItems: 'center',
+    paddingHorizontal: webLayout.pageGutter,
+    paddingBottom: webLayout.dockBottomSpace,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+  },
+  webItems: {
+    width: '100%',
+    maxWidth: webLayout.navigationMaxWidth,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.xl,
+    backgroundColor: colors.background.surface,
+    ...shadows.lg,
+  },
 });

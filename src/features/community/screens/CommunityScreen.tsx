@@ -14,7 +14,7 @@ import {
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 
 import { communityApi } from '../communityApi';
 import { CommunityPostCard } from '../components/CommunityPostCard';
@@ -101,6 +101,7 @@ export function CommunityScreen() {
   return (
     <>
       <ScreenWrapper
+        webMaxWidth={webLayout.feedMaxWidth}
         header={
           <CustomHeader
             title={vi ? 'Cộng đồng' : 'Community'}

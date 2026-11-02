@@ -50,7 +50,11 @@ export function RegisterScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+    <ScreenWrapper
+      scrollable
+      webMaxWidth={560}
+      contentContainerStyle={styles.screen}
+    >
       <View>
         <View style={styles.brand}>
           <AppIcon

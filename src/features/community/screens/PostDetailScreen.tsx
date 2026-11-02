@@ -14,7 +14,7 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
 import { useSafeBack } from '@/hooks';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { useCommunityPost, usePostReaction } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { postStatusLabel } from '../status';
@@ -44,7 +44,7 @@ export function PostDetailScreen() {
   const published = post?.status === 'published';
   const busy = actions.remove.isPending;
   return (
-    <ScreenWrapper>
+    <ScreenWrapper webMaxWidth={webLayout.feedMaxWidth}>
       <PostComments
         postId={id}
         scrollable

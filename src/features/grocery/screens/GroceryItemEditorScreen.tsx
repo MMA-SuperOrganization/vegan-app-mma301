@@ -12,7 +12,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { IngredientPickerSheet } from '../components/IngredientPickerSheet';
 import { parseGroceryQuantity } from '../groceryState';
@@ -127,6 +127,7 @@ export function GroceryItemEditorScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.formMaxWidth}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.screen}
       header={

@@ -11,7 +11,7 @@ import {
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { adminApi, type AdminUser } from './adminApi';
 
 export function AdminUsersScreen() {
@@ -55,6 +55,7 @@ export function AdminUsersScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.catalogMaxWidth}
       contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       header={<CustomHeader title={t('admin.users.title')} showBack={false} />}
     >

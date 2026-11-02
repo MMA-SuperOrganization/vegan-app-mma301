@@ -23,7 +23,7 @@ import {
   toIsoDate,
 } from '@/features/meal-plan/mealPlanState';
 import { useTranslation } from '@/i18n';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { useGroceryActions } from '../hooks';
 import { groceryDateRange } from '../groceryState';
@@ -115,6 +115,7 @@ export function GroceryGenerateScreen() {
     <>
       <ScreenWrapper
         scrollable
+        webMaxWidth={webLayout.formMaxWidth}
         contentContainerStyle={styles.screen}
         header={
           <CustomHeader

@@ -1,18 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 
 import { AppButton, AppIcon, AppInput, AppText, BottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
-import { useAuthStore } from '@/features/auth';
-import { mediaApi } from '@/features/media/mediaApi';
-import { recipeKeys, useContentCategories } from '@/features/recipes/hooks';
+import { useContentCategories } from '@/features/recipes/hooks';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { PostFoodRelationshipFields } from './PostFoodRelationshipFields';
 import { hasPostFoodRelationship } from '../postRelationship';
+import { usePostImageUpload } from '../usePostImageUpload';
 
 type Visibility = 'public' | 'private';
 
@@ -24,8 +22,6 @@ export function CreatePostSheet({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const userId = useAuthStore((state) => state.user?.id);
-  const queryClient = useQueryClient();
   const actions = useCommunityPost();
   const categories = useContentCategories('post');
   const [content, setContent] = useState('');
@@ -33,12 +29,9 @@ export function CreatePostSheet({
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [recipeId, setRecipeId] = useState('');
   const [foodItemIds, setFoodItemIds] = useState<string[]>([]);
-  const [image, setImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
-
-  const upload = useMutation({
-    mutationFn: (asset: ImagePicker.ImagePickerAsset) =>
-      mediaApi.uploadImage(asset, 'post'),
-  });
+  const submitting = useRef(false);
+  const { image, upload, selectImage, clearImage, ensureUploaded } =
+    usePostImageUpload();
 
   const chooseImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -47,8 +40,7 @@ export function CreatePostSheet({
       quality: 0.85,
     });
     if (!result.canceled) {
-      setImage(result.assets[0]);
-      upload.reset();
+      selectImage(result.assets[0]);
     }
   };
 
@@ -58,17 +50,22 @@ export function CreatePostSheet({
     setVisibility('public');
     setRecipeId('');
     setFoodItemIds([]);
-    setImage(null);
-    upload.reset();
+    clearImage();
     actions.save.reset();
   };
 
   const publish = async () => {
     const normalizedContent = content.trim();
-    if (!normalizedContent) return;
+    if (
+      submitting.current ||
+      !normalizedContent ||
+      !hasPostFoodRelationship(recipeId, foodItemIds)
+    )
+      return;
 
+    submitting.current = true;
     try {
-      const mediaId = image ? await upload.mutateAsync(image) : undefined;
+      const mediaId = await ensureUploaded();
       const firstLine = normalizedContent.split(/\r?\n/)[0].trim();
       await actions.save.mutateAsync({
         title: firstLine.slice(0, 200),
@@ -79,11 +76,12 @@ export function CreatePostSheet({
         foodItemIds,
         visibility,
       });
-      await queryClient.invalidateQueries({ queryKey: recipeKeys.home(userId) });
       reset();
       onClose();
     } catch {
       // The shared error state below keeps the composer open for retrying.
+    } finally {
+      submitting.current = false;
     }
   };
 
@@ -139,7 +137,7 @@ export function CreatePostSheet({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('postComposer.removeImage')}
-              onPress={() => setImage(null)}
+              onPress={clearImage}
               style={styles.removeImage}
             >
               <AppIcon

@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -12,7 +20,7 @@ import {
 } from '@/components';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { getUserErrorMessage } from '@/services/errors';
-import { colors, radius, spacing } from '@/theme';
+import { colors, radius, spacing, webLayout } from '@/theme';
 
 import { ExploreRecipeCard } from '../components/ExploreRecipeCard';
 import { useExploreRecipes, useRecipeCategories } from '../hooks';
@@ -25,6 +33,15 @@ export function ExploreScreen() {
   const { t } = useTranslation();
   const [category, setCategory] = useState<string>();
   const [sort, setSort] = useState<RecipeSort>('popular');
+  const { width } = useWindowDimensions();
+  const columnCount =
+    Platform.OS !== 'web'
+      ? 2
+      : width >= webLayout.wideBreakpoint
+        ? 4
+        : width >= webLayout.desktopBreakpoint
+          ? 3
+          : 2;
   const filters = useMemo(() => ({ category, sort, limit: 12 }), [category, sort]);
   const recipes = useExploreRecipes(filters);
   const categories = useRecipeCategories();
@@ -33,6 +50,7 @@ export function ExploreScreen() {
 
   return (
     <ScreenWrapper
+      webMaxWidth={webLayout.catalogMaxWidth}
       keyboardAvoiding={false}
       header={
         <CustomHeader
@@ -48,8 +66,9 @@ export function ExploreScreen() {
       }
     >
       <FlatList
+        key={`recipe-grid-${columnCount}`}
         data={content}
-        numColumns={2}
+        numColumns={columnCount}
         keyExtractor={(recipe) => recipe._id}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.screen}
@@ -178,7 +197,11 @@ export function ExploreScreen() {
           )
         }
         renderItem={({ item }) => (
-          <View style={styles.cardCell}>
+          <View
+            style={
+              Platform.OS === 'web' ? styles.webCardCell : styles.cardCell
+            }
+          >
             <ExploreRecipeCard
               recipe={item}
               onPress={() =>
@@ -325,6 +348,7 @@ const styles = StyleSheet.create({
   sortChipSelected: { backgroundColor: colors.background.selected },
   row: { gap: spacing.md, marginBottom: spacing.md },
   cardCell: { flex: 1, maxWidth: '48%' },
+  webCardCell: { flex: 1, minWidth: 0 },
   footer: { paddingVertical: spacing.xl },
   pressed: { opacity: 0.76 },
 });

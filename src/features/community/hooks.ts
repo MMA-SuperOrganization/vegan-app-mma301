@@ -7,6 +7,7 @@ import {
 import { useAuthStore } from '@/features/auth';
 import { communityApi } from './communityApi';
 import { mediaApi } from '@/features/media/mediaApi';
+import { recipeKeys } from '@/features/recipes/hooks';
 import type {
   CommunityPost,
   PostComment,
@@ -50,7 +51,15 @@ export function useCommunityPost(id?: string) {
   const userId = useAuthStore((state) => state.user?.id);
   const client = useQueryClient();
   const root = ['account', userId, 'community'];
-  const refresh = () => client.invalidateQueries({ queryKey: root });
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: root }),
+      client.invalidateQueries({ queryKey: recipeKeys.home(userId) }),
+      client.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          queryKey[0] === 'recipes' && queryKey.includes('related-posts'),
+      }),
+    ]);
   const post = useQuery({
     queryKey: [...root, 'post', id],
     queryFn: () => communityApi.post(id!),
@@ -88,7 +97,7 @@ export function useCommunityPost(id?: string) {
         foodItemIds?: string[];
         recipeId?: string | null;
         visibility?: 'public' | 'private';
-        previous?: CommunityPost;
+        previous?: Pick<CommunityPost, '_id' | 'version'>;
       }) =>
         previous
           ? communityApi.update(previous._id, previous.version, {
@@ -111,7 +120,10 @@ export function useCommunityPost(id?: string) {
               recipeId,
               visibility,
             }),
-      onSuccess: refresh,
+      onSuccess: (savedPost) => {
+        client.setQueryData([...root, 'post', savedPost._id], savedPost);
+        return refresh();
+      },
     }),
     submit: useMutation({
       mutationFn: (post: CommunityPost) =>

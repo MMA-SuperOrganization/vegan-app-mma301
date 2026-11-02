@@ -1,19 +1,25 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
-import type { CommunityPost, UserReport } from '@/features/community/types';
+import type { UserReport } from '@/features/community/types';
+import type { RecipeDetail } from '@/features/recipes/types';
 export interface RecipeReviewItem {
   _id: string;
   title: string;
   type: 'recipe';
   status: string;
-}
-export interface ReviewContent extends Omit<CommunityPost, 'content'> {
-  content?: string;
   description?: string;
-  summary?: string;
+  excerpt?: string;
+  coverImageUrl?: string;
+  coverMediaId?: string | null;
+  tags?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  totalMinutes?: number;
+  totalTimeMinutes?: number;
+  createdAt?: string;
+}
+export interface ReviewContent extends RecipeDetail {
+  content?: string;
   transcript?: string;
-  ingredients?: Array<{ foodNameSnapshot: string; quantity: number; unit: string }>;
-  steps?: Array<{ order: number; instruction: string }>;
   playback?: { downloadUrl?: string; url?: string };
 }
 export const moderationApi = {

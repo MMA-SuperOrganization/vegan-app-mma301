@@ -161,6 +161,45 @@ test('admin pending review excludes posts while reports can still handle them', 
   assert.match(moderation, /actions\.cases\.data/);
 });
 
+test('admin navigation tabs fit the screen without horizontal scrolling', () => {
+  const adminUi = read('../src/features/admin/AdminUi.tsx');
+  const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
+  const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
+  const users = read('../src/features/admin/AdminUsersScreen.tsx');
+  const segmentedTabs = adminUi.slice(
+    adminUi.indexOf('export function AdminSegmentedTabs'),
+    adminUi.indexOf('export function AdminFilterChips')
+  );
+
+  assert.match(segmentedTabs, /<View style=\{styles\.segmentTrack\}/);
+  assert.doesNotMatch(segmentedTabs, /ScrollView/);
+  assert.match(adminUi, /segment:\s*\{[\s\S]*?flex: 1/);
+  assert.match(adminUi, /filters:\s*\{[\s\S]*?flexWrap: 'wrap'/);
+  assert.doesNotMatch(adminUi, /<ScrollView/);
+  assert.doesNotMatch(dashboard, /<AdminPageIntro/);
+  assert.doesNotMatch(moderation, /<AdminPageIntro/);
+  assert.doesNotMatch(users, /<AdminPageIntro/);
+});
+
+test('admin accounts use server pagination, search filters and structured details', () => {
+  const api = read('../src/features/admin/adminApi.ts');
+  const users = read('../src/features/admin/AdminUsersScreen.tsx');
+  const usersRequest = api.slice(
+    api.indexOf('  users: ({'),
+    api.indexOf('  userDetail:')
+  );
+
+  assert.match(usersRequest, /\{ page = 1, q = '', status, role \}/);
+  assert.match(usersRequest, /limit: 20/);
+  assert.doesNotMatch(usersRequest, /collectPages/);
+  assert.match(users, /useInfiniteQuery/);
+  assert.match(users, /fetchNextPage/);
+  assert.match(users, /trailingIcon="filter"/);
+  assert.doesNotMatch(users, /<AdminFilterChips/);
+  assert.match(users, /data\.user\.email/);
+  assert.match(users, /data\.profile\?\.dietType/);
+});
+
 test('home search includes recipes, posts, ingredients and videos by default', () => {
   const search = read('../src/features/recipes/screens/SearchScreen.tsx');
   const results = read('../src/features/recipes/screens/SearchResultsScreen.tsx');

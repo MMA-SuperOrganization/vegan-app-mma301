@@ -1,19 +1,13 @@
 import type { ReactNode } from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
 import { AppIcon, AppText } from '@/components';
-import {
-  colors,
-  radius,
-  spacing,
-  type AssetName,
-} from '@/theme';
+import { colors, radius, spacing, type AssetName } from '@/theme';
 
 export function AdminPageIntro({
   eyebrow,
@@ -141,11 +135,7 @@ export function AdminSegmentedTabs<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.segmentTrack}
-    >
+    <View style={styles.segmentTrack} accessibilityRole="tablist">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -163,6 +153,8 @@ export function AdminSegmentedTabs<T extends string>({
             <AppText
               variant="bodyStrong"
               color={selected ? colors.text.inverse : colors.text.secondary}
+              numberOfLines={2}
+              style={styles.segmentLabel}
             >
               {option.label}
             </AppText>
@@ -179,7 +171,7 @@ export function AdminSegmentedTabs<T extends string>({
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -193,11 +185,7 @@ export function AdminFilterChips<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filters}
-    >
+    <View style={styles.filters}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -222,7 +210,7 @@ export function AdminFilterChips<T extends string>({
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -335,24 +323,30 @@ const styles = StyleSheet.create({
   chevron: { transform: [{ rotate: '180deg' }] },
   pressed: { opacity: 0.68 },
   segmentTrack: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'stretch',
     padding: spacing.xs,
     gap: spacing.xs,
     borderRadius: radius.lg,
     backgroundColor: colors.background.muted,
   },
   segment: {
-    minHeight: 44,
-    flexDirection: 'row',
+    minWidth: 0,
+    minHeight: 58,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
     borderRadius: radius.md,
   },
+  segmentLabel: { textAlign: 'center' },
   segmentSelected: { backgroundColor: colors.primary[700] },
   count: {
-    minWidth: 24,
-    height: 24,
+    minWidth: 22,
+    height: 20,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xs,
@@ -360,9 +354,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
   countSelected: { backgroundColor: colors.common.white },
-  filters: { gap: spacing.sm },
+  filters: {
+    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
   filter: {
-    minHeight: 38,
+    height: 40,
+    minWidth: 96,
+    flexGrow: 1,
+    flexBasis: 96,
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     borderWidth: 1,

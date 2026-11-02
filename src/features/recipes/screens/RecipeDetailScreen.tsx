@@ -210,7 +210,11 @@ export function RecipeDetailScreen() {
         onPress={() =>
           router.push({
             pathname: '/community/report',
-            params: { targetType: 'recipe', targetId: data._id },
+            params: {
+              targetType: 'recipe',
+              targetId: data._id,
+              targetPreview: data.title,
+            },
           })
         }
       />

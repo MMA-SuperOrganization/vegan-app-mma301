@@ -302,7 +302,11 @@ export function PostComments({
             onNavigateAway?.();
             router.push({
               pathname: '/community/report',
-              params: { targetType: 'comment', targetId: comment._id },
+              params: {
+                targetType: 'comment',
+                targetId: comment._id,
+                targetPreview: comment.content.slice(0, 120),
+              },
             });
           }}
         />

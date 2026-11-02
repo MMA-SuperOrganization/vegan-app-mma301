@@ -95,4 +95,5 @@ export interface UserReport {
   resolution?: string;
   description?: string;
   assignedAdminId?: string;
+  createdAt?: string;
 }

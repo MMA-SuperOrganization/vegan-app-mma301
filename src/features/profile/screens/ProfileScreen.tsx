@@ -178,7 +178,7 @@ export function ProfileScreen() {
           subtitle={
             vi ? 'Theo dõi kết quả xử lý báo cáo' : 'Track report resolutions'
           }
-          onPress={() => router.push('/community/report')}
+          onPress={() => router.push('/community/reports')}
         />
         <MenuItem
           title={vi ? 'Nhắc lịch' : 'Reminders'}

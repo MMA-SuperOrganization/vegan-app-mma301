@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import {
   AppButton,
@@ -19,84 +19,30 @@ import { colors, radius, spacing, webLayout } from '@/theme';
 import { communityApi } from '../communityApi';
 import { CommunityPostCard } from '../components/CommunityPostCard';
 import { PostCommentsSheet } from '../components/PostComments';
-import { useCommunityPosts, useCommunityVideos, usePostReaction } from '../hooks';
-import { postStatusLabel } from '../status';
-import type { CommunityPost, CommunityVideo } from '../types';
-
-type ContentType = 'posts' | 'videos';
-
-function Segment({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.segment,
-        selected && styles.segmentSelected,
-        pressed && styles.pressed,
-      ]}
-    >
-      <AppText
-        variant="bodyStrong"
-        color={selected ? colors.text.inverse : colors.text.secondary}
-      >
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
+import { useCommunityPosts, usePostReaction } from '../hooks';
+import type { CommunityPost } from '../types';
 
 export function CommunityScreen() {
   const router = useRouter();
+  const { scope } = useLocalSearchParams<{ scope?: string }>();
   const vi = useTranslation().locale === 'vi';
-  const [mine, setMine] = useState(false);
-  const [contentType, setContentType] = useState<ContentType>('posts');
+  const [mine, setMine] = useState(scope === 'mine');
   const [commentPostId, setCommentPostId] = useState<string>();
   const posts = useCommunityPosts(mine);
   const postReaction = usePostReaction();
-  const videos = useCommunityVideos(mine);
   const client = useQueryClient();
   const refresh = () => client.invalidateQueries({ queryKey: ['account'] });
   const archivePost = useMutation({
     mutationFn: communityApi.archivePost,
     onSuccess: refresh,
   });
-  const archiveVideo = useMutation({
-    mutationFn: communityApi.archiveVideo,
-    onSuccess: refresh,
-  });
-  const postFeed = posts.data?.pages.flatMap((page) => page.data) ?? [];
-  const videoFeed = videos.data?.data ?? [];
-  const feedItems: Array<
-    { kind: 'post'; value: CommunityPost } | { kind: 'video'; value: CommunityVideo }
-  > =
-    contentType === 'posts'
-      ? postFeed.map((value) => ({ kind: 'post', value }))
-      : videoFeed.map((value) => ({ kind: 'video', value }));
-  const currentLoading =
-    contentType === 'posts' ? posts.isLoading : videos.isLoading;
-  const currentError = contentType === 'posts' ? posts.error : videos.error;
-  const currentRefetching =
-    contentType === 'posts' ? posts.isRefetching : videos.isRefetching;
-  const refetchCurrent = () =>
-    contentType === 'posts' ? posts.refetch() : videos.refetch();
-  const writeLabel =
-    contentType === 'posts'
-      ? vi
-        ? 'Viết bài mới'
-        : 'Write a post'
-      : vi
-        ? 'Đăng video'
-        : 'Upload video';
+
+  useEffect(() => {
+    if (scope !== 'mine') return;
+    setMine(true);
+  }, [scope]);
+
+  const feedItems = posts.data?.pages.flatMap((page) => page.data) ?? [];
 
   return (
     <>
@@ -111,227 +57,164 @@ export function CommunityScreen() {
         }
       >
         <FlatList
-        data={feedItems}
-        keyExtractor={(item) => `${item.kind}-${item.value._id}`}
-        initialNumToRender={5}
-        maxToRenderPerBatch={6}
-        windowSize={7}
-        removeClippedSubviews
-        contentContainerStyle={styles.screen}
-        ItemSeparatorComponent={() => <View style={styles.feedSeparator} />}
-        ListHeaderComponentStyle={styles.listHeader}
-        ListHeaderComponent={
-          <>
-            <Surface tone="selected" padding="xl" radius="xl" style={styles.hero}>
-              <View style={styles.heroCopy}>
-                <AppText variant="heading2">
-                  {vi ? 'Cộng đồng ăn xanh' : 'Plant-powered community'}
-                </AppText>
-                <AppText color={colors.text.secondary}>
+          data={feedItems}
+          keyExtractor={(item) => item._id}
+          initialNumToRender={5}
+          maxToRenderPerBatch={6}
+          windowSize={7}
+          removeClippedSubviews
+          contentContainerStyle={styles.screen}
+          ItemSeparatorComponent={() => <View style={styles.feedSeparator} />}
+          ListHeaderComponentStyle={styles.listHeader}
+          ListHeaderComponent={
+            <>
+              <Surface tone="selected" padding="xl" radius="xl" style={styles.hero}>
+                <View style={styles.heroCopy}>
+                  <AppText variant="heading2">
+                    {vi ? 'Cộng đồng ăn xanh' : 'Plant-powered community'}
+                  </AppText>
+                  <AppText color={colors.text.secondary}>
+                    {vi
+                      ? 'Lướt chia sẻ mới nhất, trao đổi mẹo nấu và trải nghiệm ăn xanh. Công thức vẫn là nội dung độc lập.'
+                      : 'Browse the latest stories, cooking tips and plant-based experiences. Recipes remain independent.'}
+                  </AppText>
+                </View>
+                <AppButton
+                  title={vi ? 'Viết bài mới' : 'Write a post'}
+                  onPress={() => router.push('/community/editor')}
+                />
+                <AppText variant="caption" color={colors.text.secondary}>
                   {vi
-                    ? 'Lướt chia sẻ mới nhất, trao đổi mẹo nấu và trải nghiệm ăn xanh. Công thức vẫn là nội dung độc lập.'
-                    : 'Browse the latest stories, cooking tips and plant-based experiences. Recipes remain independent.'}
-                </AppText>
-              </View>
-              <AppButton
-                title={writeLabel}
-                onPress={() =>
-                  router.push(
-                    contentType === 'posts'
-                      ? '/community/editor'
-                      : '/community/video-editor'
-                  )
-                }
-              />
-              <AppText variant="caption" color={colors.text.secondary}>
-                {contentType === 'posts'
-                  ? vi
                     ? 'Bài viết được đăng ngay và có thể báo cáo nếu vi phạm.'
-                    : 'Posts publish immediately and can be reported if they violate rules.'
-                  : vi
-                    ? 'Video vẫn đi qua quy trình xử lý và kiểm duyệt.'
-                    : 'Videos still follow processing and review.'}
-              </AppText>
-            </Surface>
-
-            <View style={styles.segmentGroup}>
-              <Segment
-                label={vi ? 'Bài viết' : 'Posts'}
-                selected={contentType === 'posts'}
-                onPress={() => setContentType('posts')}
-              />
-              <Segment
-                label="Video"
-                selected={contentType === 'videos'}
-                onPress={() => setContentType('videos')}
-              />
-            </View>
-
-            <View style={styles.feedHeader}>
-              <View style={styles.feedCopy}>
-                <AppText variant="heading3">
-                  {mine
-                    ? vi
-                      ? 'Bài của tôi'
-                      : 'My posts'
-                    : vi
-                      ? 'Bảng tin mới nhất'
-                      : 'Latest feed'}
-                </AppText>
-                <AppText variant="bodySmall" color={colors.text.secondary}>
-                  {mine
-                    ? vi
-                      ? 'Quản lý những nội dung bạn đã đăng.'
-                      : 'Manage the content you have published.'
-                    : vi
-                      ? 'Cuộn xuống để tự động tải thêm bài viết.'
-                      : 'Scroll down to automatically load more posts.'}
-                </AppText>
-              </View>
-              <View style={styles.scopeToggle}>
-                <Pressable
-                  onPress={() => setMine(false)}
-                  style={[styles.scopeButton, !mine && styles.scopeButtonSelected]}
-                >
-                  <AppText
-                    variant="caption"
-                    color={!mine ? colors.primary[700] : undefined}
-                  >
-                    {vi ? 'Mới nhất' : 'Latest'}
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  onPress={() => setMine(true)}
-                  style={[styles.scopeButton, mine && styles.scopeButtonSelected]}
-                >
-                  <AppText
-                    variant="caption"
-                    color={mine ? colors.primary[700] : undefined}
-                  >
-                    {vi ? 'Của tôi' : 'Mine'}
-                  </AppText>
-                </Pressable>
-              </View>
-            </View>
-
-            <FeatureState
-              loading={currentLoading}
-              error={currentError}
-              retry={() => void refetchCurrent()}
-            />
-
-            {!currentLoading && feedItems.length === 0 ? (
-              <Surface bordered padding="xl" radius="xl" style={styles.empty}>
-                <AppText variant="heading4">
-                  {vi ? 'Chưa có nội dung ở đây' : 'Nothing here yet'}
-                </AppText>
-                <AppText color={colors.text.secondary}>
-                  {mine
-                    ? vi
-                      ? 'Hãy tạo bài viết đầu tiên của bạn.'
-                      : 'Create your first post.'
-                    : vi
-                      ? 'Bài viết mới sẽ xuất hiện tại đây.'
-                      : 'New posts will appear here.'}
+                    : 'Posts publish immediately and can be reported if they violate rules.'}
                 </AppText>
               </Surface>
-            ) : null}
-          </>
-        }
-        renderItem={({ item }) =>
-          item.kind === 'post' ? (
+
+              <View style={styles.feedHeader}>
+                <View style={styles.feedCopy}>
+                  <AppText variant="heading3">
+                    {mine
+                      ? vi
+                        ? 'Bài của tôi'
+                        : 'My posts'
+                      : vi
+                        ? 'Bảng tin mới nhất'
+                        : 'Latest feed'}
+                  </AppText>
+                  <AppText variant="bodySmall" color={colors.text.secondary}>
+                    {mine
+                      ? vi
+                        ? 'Quản lý những nội dung bạn đã đăng.'
+                        : 'Manage the content you have published.'
+                      : vi
+                        ? 'Cuộn xuống để tự động tải thêm bài viết.'
+                        : 'Scroll down to automatically load more posts.'}
+                  </AppText>
+                </View>
+                <View style={styles.scopeToggle}>
+                  <Pressable
+                    onPress={() => setMine(false)}
+                    style={[styles.scopeButton, !mine && styles.scopeButtonSelected]}
+                  >
+                    <AppText
+                      variant="caption"
+                      color={!mine ? colors.primary[700] : undefined}
+                    >
+                      {vi ? 'Mới nhất' : 'Latest'}
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setMine(true)}
+                    style={[styles.scopeButton, mine && styles.scopeButtonSelected]}
+                  >
+                    <AppText
+                      variant="caption"
+                      color={mine ? colors.primary[700] : undefined}
+                    >
+                      {vi ? 'Của tôi' : 'Mine'}
+                    </AppText>
+                  </Pressable>
+                </View>
+              </View>
+
+              <FeatureState
+                loading={posts.isLoading}
+                error={posts.error}
+                retry={() => void posts.refetch()}
+              />
+
+              {!posts.isLoading && feedItems.length === 0 ? (
+                <Surface bordered padding="xl" radius="xl" style={styles.empty}>
+                  <AppText variant="heading4">
+                    {vi ? 'Chưa có nội dung ở đây' : 'Nothing here yet'}
+                  </AppText>
+                  <AppText color={colors.text.secondary}>
+                    {mine
+                      ? vi
+                        ? 'Hãy tạo bài viết đầu tiên của bạn.'
+                        : 'Create your first post.'
+                      : vi
+                        ? 'Bài viết mới sẽ xuất hiện tại đây.'
+                        : 'New posts will appear here.'}
+                  </AppText>
+                </Surface>
+              ) : null}
+            </>
+          }
+          renderItem={({ item }) => (
             <CommunityPostCard
-              post={item.value}
+              post={item}
               mine={mine}
               vi={vi}
               onReact={() =>
                 postReaction.mutate({
-                  postId: item.value._id,
-                  nextReaction: item.value.reacted === 'like' ? null : 'like',
+                  postId: item._id,
+                  nextReaction: item.reacted === 'like' ? null : 'like',
                 })
               }
-              onComment={() => setCommentPostId(item.value._id)}
+              onComment={() => setCommentPostId(item._id)}
               onOpen={() =>
                 router.push({
                   pathname: '/community/post',
-                  params: { id: item.value._id },
+                  params: { id: item._id },
                 })
               }
               onArchive={
                 mine &&
-                ['draft', 'rejected', 'published'].includes(item.value.status)
+                ['draft', 'rejected', 'published'].includes(item.status)
                   ? () =>
                       appDialog.alert(
                         vi ? 'Lưu trữ bài viết?' : 'Archive post?',
-                        item.value.title,
+                        item.title,
                         [
                           { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
                           {
                             text: vi ? 'Lưu trữ' : 'Archive',
-                            onPress: () => archivePost.mutate(item.value),
+                            onPress: () => archivePost.mutate(item),
                           },
                         ]
                       )
                   : undefined
               }
             />
-          ) : (
-            <Surface bordered padding="lg" radius="xl" style={styles.videoCard}>
-              <View style={styles.videoHeading}>
-                <AppText variant="heading3" style={styles.feedCopy}>
-                  {item.value.title}
-                </AppText>
-                {mine ? (
-                  <AppText variant="caption" color={colors.primary[700]}>
-                    {postStatusLabel(item.value.status, vi)}
-                  </AppText>
-                ) : null}
-              </View>
-              <AppText color={colors.text.secondary} numberOfLines={3}>
-                {item.value.description}
-              </AppText>
-              <AppButton
-                title={vi ? 'Xem video' : 'View video'}
-                variant="outline"
-                onPress={() =>
-                  router.push({
-                    pathname: '/community/video',
-                    params: { id: item.value._id },
-                  })
-                }
-              />
-              {mine &&
-              ['draft', 'rejected', 'published'].includes(item.value.status) ? (
-                <AppButton
-                  title={vi ? 'Lưu trữ video' : 'Archive video'}
-                  variant="ghost"
-                  disabled={archiveVideo.isPending}
-                  onPress={() => archiveVideo.mutate(item.value)}
+          )}
+          ListFooterComponent={
+            posts.isFetchingNextPage ? (
+              <View style={styles.feedFooter}>
+                <LoadingSpinner
+                  text={vi ? 'Đang tải thêm bài viết…' : 'Loading more posts…'}
                 />
-              ) : null}
-            </Surface>
-          )
-        }
-        ListFooterComponent={
-          posts.isFetchingNextPage ? (
-            <View style={styles.feedFooter}>
-              <LoadingSpinner
-                text={vi ? 'Đang tải thêm bài viết…' : 'Loading more posts…'}
-              />
-            </View>
-          ) : null
-        }
-        refreshing={currentRefetching && !currentLoading}
-        onRefresh={() => void refetchCurrent()}
-        onEndReachedThreshold={0.6}
-        onEndReached={() => {
-          if (
-            contentType === 'posts' &&
-            posts.hasNextPage &&
-            !posts.isFetchingNextPage
-          )
-            void posts.fetchNextPage();
-        }}
+              </View>
+            ) : null
+          }
+          refreshing={posts.isRefetching && !posts.isLoading}
+          onRefresh={() => void posts.refetch()}
+          onEndReachedThreshold={0.6}
+          onEndReached={() => {
+            if (posts.hasNextPage && !posts.isFetchingNextPage) {
+              void posts.fetchNextPage();
+            }
+          }}
         />
       </ScreenWrapper>
       <PostCommentsSheet
@@ -351,22 +234,6 @@ const styles = StyleSheet.create({
   feedFooter: { paddingVertical: spacing.xl },
   hero: { gap: spacing.lg },
   heroCopy: { gap: spacing.sm },
-  segmentGroup: {
-    flexDirection: 'row',
-    padding: spacing.xs,
-    gap: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.background.muted,
-  },
-  segment: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentSelected: { backgroundColor: colors.primary[700] },
-  pressed: { opacity: 0.74 },
   feedHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -383,6 +250,4 @@ const styles = StyleSheet.create({
   },
   scopeButtonSelected: { backgroundColor: colors.background.selected },
   empty: { alignItems: 'center', gap: spacing.sm },
-  videoCard: { gap: spacing.md },
-  videoHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
 });

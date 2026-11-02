@@ -51,6 +51,21 @@ export function CommunityPostCard({
               size="sm"
             />
           ) : null}
+          {mine ? (
+            <Badge
+              label={
+                post.visibility === 'private'
+                  ? vi
+                    ? 'Riêng tư'
+                    : 'Private'
+                  : vi
+                    ? 'Công khai'
+                    : 'Public'
+              }
+              variant={post.visibility === 'private' ? 'warning' : 'success'}
+              size="sm"
+            />
+          ) : null}
           {post.recipeId ? (
             <Badge
               label={vi ? 'Có công thức' : 'Linked recipe'}
@@ -137,7 +152,12 @@ export function CommunityPostCard({
           onPress={onComment}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          <AppIcon name="comment" size={20} color={colors.text.secondary} decorative />
+          <AppIcon
+            name="comment"
+            size={20}
+            color={colors.text.secondary}
+            decorative
+          />
           <AppText variant="bodyStrong" color={colors.text.secondary}>
             {vi ? 'Bình luận' : 'Comments'}
           </AppText>

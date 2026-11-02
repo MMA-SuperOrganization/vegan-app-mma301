@@ -27,7 +27,9 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
   const [filter, setFilter] = useState<WorkFilter>('all');
   const [search, setSearch] = useState('');
   const query = actions[tab];
-  const pending = actions.pending.data?.data ?? [];
+  const pending = (actions.pending.data?.data ?? []).filter(
+    (item) => item.type !== 'post'
+  );
   const reports = actions.reports.data?.data ?? [];
   const cases = actions.cases.data?.data ?? [];
   const filterCounts = {
@@ -42,8 +44,10 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         : cases.filter((item) => item.status === 'reviewing').length,
     closed:
       tab === 'reports'
-        ? reports.filter((item) => ['resolved', 'dismissed'].includes(item.status)).length
-        : cases.filter((item) => ['resolved', 'dismissed'].includes(item.status)).length,
+        ? reports.filter((item) => ['resolved', 'dismissed'].includes(item.status))
+            .length
+        : cases.filter((item) => ['resolved', 'dismissed'].includes(item.status))
+            .length,
   };
   const needle = search.trim().toLocaleLowerCase();
   const visiblePending = useMemo(
@@ -61,9 +65,10 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
           (filter === 'closed'
             ? ['resolved', 'dismissed'].includes(item.status)
             : item.status === filter);
-        const matchesSearch = `${item.targetType} ${item.reason} ${item.description ?? ''}`
-          .toLocaleLowerCase()
-          .includes(needle);
+        const matchesSearch =
+          `${item.targetType} ${item.reason} ${item.description ?? ''}`
+            .toLocaleLowerCase()
+            .includes(needle);
         return matchesStatus && matchesSearch;
       }),
     [filter, needle, reports]
@@ -76,9 +81,10 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
           (filter === 'closed'
             ? ['resolved', 'dismissed'].includes(item.status)
             : item.status === filter);
-        const matchesSearch = `${item.targetType} ${item.priority} ${item.resolution ?? ''}`
-          .toLocaleLowerCase()
-          .includes(needle);
+        const matchesSearch =
+          `${item.targetType} ${item.priority} ${item.resolution ?? ''}`
+            .toLocaleLowerCase()
+            .includes(needle);
         return matchesStatus && matchesSearch;
       }),
     [cases, filter, needle]
@@ -166,7 +172,11 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
               label: vi ? 'Đang xử lý' : 'Reviewing',
               count: filterCounts.reviewing,
             },
-            { value: 'closed', label: vi ? 'Đã đóng' : 'Closed', count: filterCounts.closed },
+            {
+              value: 'closed',
+              label: vi ? 'Đã đóng' : 'Closed',
+              count: filterCounts.closed,
+            },
           ]}
         />
       ) : null}
@@ -216,7 +226,11 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
               ))}
       </View>
       {visibleCount > 4 ? (
-        <AppText variant="bodySmall" color={colors.text.secondary} style={styles.hint}>
+        <AppText
+          variant="bodySmall"
+          color={colors.text.secondary}
+          style={styles.hint}
+        >
           {vi
             ? 'Mẹo: dùng tìm kiếm và bộ lọc để rút gọn hàng đợi trước khi xử lý.'
             : 'Tip: use search and filters to narrow the queue before taking action.'}

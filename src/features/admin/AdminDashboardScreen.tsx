@@ -23,7 +23,11 @@ export function AdminDashboardScreen() {
     queryFn: adminApi.summary,
   });
   const content = summary.data ? Object.entries(summary.data.content) : [];
-  const pendingTotal = content.reduce((total, [, value]) => total + value.pending, 0);
+  const pendingTotal = content.reduce(
+    (total, [type, value]) =>
+      isPostContentType(type) ? total : total + value.pending,
+    0
+  );
   const hiddenTotal = content.reduce((total, [, value]) => total + value.hidden, 0);
 
   return (
@@ -86,7 +90,9 @@ export function AdminDashboardScreen() {
               {content.map(([type, value]) => (
                 <View key={type} style={styles.contentRow}>
                   <View style={styles.contentName}>
-                    <AppText variant="bodyStrong">{formatContentType(type, t)}</AppText>
+                    <AppText variant="bodyStrong">
+                      {formatContentType(type, t)}
+                    </AppText>
                     <AppText variant="bodySmall" color={colors.text.secondary}>
                       {t('admin.overview.publishedInRange', {
                         count: value.publishedInRange,
@@ -94,10 +100,12 @@ export function AdminDashboardScreen() {
                     </AppText>
                   </View>
                   <View style={styles.badges}>
-                    <AdminStatusBadge
-                      label={`${value.pending} ${t('admin.overview.pending').toLocaleLowerCase()}`}
-                      tone={value.pending ? 'warning' : 'success'}
-                    />
+                    {!isPostContentType(type) ? (
+                      <AdminStatusBadge
+                        label={`${value.pending} ${t('admin.overview.pending').toLocaleLowerCase()}`}
+                        tone={value.pending ? 'warning' : 'success'}
+                      />
+                    ) : null}
                     <AdminStatusBadge
                       label={`${value.hidden} ${t('admin.overview.hidden').toLocaleLowerCase()}`}
                       tone={value.hidden ? 'danger' : 'neutral'}
@@ -144,10 +152,7 @@ export function AdminDashboardScreen() {
   );
 }
 
-function formatContentType(
-  type: string,
-  t: (key: TranslationKey) => string
-) {
+function formatContentType(type: string, t: (key: TranslationKey) => string) {
   const labels: Record<string, TranslationKey> = {
     post: 'admin.overview.contentType.post',
     posts: 'admin.overview.contentType.post',
@@ -158,6 +163,10 @@ function formatContentType(
   };
   const key = labels[type.toLocaleLowerCase()];
   return key ? t(key) : type;
+}
+
+function isPostContentType(type: string) {
+  return ['post', 'posts'].includes(type.toLocaleLowerCase());
 }
 
 const styles = StyleSheet.create({

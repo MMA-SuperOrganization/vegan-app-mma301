@@ -95,7 +95,7 @@ export const vi = {
   'admin.overview.users': 'Người dùng',
   'admin.overview.active': 'Đang hoạt động',
   'admin.overview.suspended': 'Tạm khóa',
-  'admin.overview.pending': 'Chờ duyệt',
+  'admin.overview.pending': 'Nội dung chờ duyệt',
   'admin.overview.hidden': 'Đã ẩn',
   'admin.users.title': 'Quản lý tài khoản',
   'admin.users.search': 'Tìm tên hoặc email',
@@ -135,7 +135,7 @@ export const vi = {
   'admin.audit.title': 'Hoạt động hệ thống',
   'admin.audit.target': 'Đối tượng',
   'admin.moderation.title': 'Kiểm duyệt',
-  'admin.moderation.pending': 'Chờ duyệt',
+  'admin.moderation.pending': 'Nội dung chờ duyệt',
   'admin.moderation.reports': 'Báo cáo',
   'admin.moderation.cases': 'Hồ sơ kiểm duyệt',
   'admin.moderation.empty': 'Chưa có mục nào.',
@@ -152,10 +152,8 @@ export const vi = {
     'Xử lý nội dung chờ duyệt, báo cáo và hồ sơ',
   'admin.overview.usersDescription':
     'Tìm kiếm, phân loại và quản lý quyền tài khoản',
-  'admin.overview.masterDataDescription':
-    'Quản lý danh mục, dị nguyên và thực phẩm',
-  'admin.overview.aiDescription':
-    'Theo dõi trạng thái và hoạt động của dịch vụ AI',
+  'admin.overview.masterDataDescription': 'Quản lý danh mục, dị nguyên và thực phẩm',
+  'admin.overview.aiDescription': 'Theo dõi trạng thái và hoạt động của dịch vụ AI',
   'admin.overview.contentType.post': 'Bài viết',
   'admin.overview.contentType.recipe': 'Công thức',
   'admin.overview.contentType.video': 'Video',
@@ -1549,7 +1547,7 @@ export const en: Record<TranslationKey, string> = {
   'admin.overview.users': 'Users',
   'admin.overview.active': 'Active',
   'admin.overview.suspended': 'Suspended',
-  'admin.overview.pending': 'Pending',
+  'admin.overview.pending': 'Content pending review',
   'admin.overview.hidden': 'Hidden',
   'admin.users.title': 'Account management',
   'admin.users.search': 'Search name or email',
@@ -1589,7 +1587,7 @@ export const en: Record<TranslationKey, string> = {
   'admin.audit.title': 'System activity',
   'admin.audit.target': 'Target',
   'admin.moderation.title': 'Moderation',
-  'admin.moderation.pending': 'Pending content',
+  'admin.moderation.pending': 'Content pending review',
   'admin.moderation.reports': 'Reports',
   'admin.moderation.cases': 'Moderation cases',
   'admin.moderation.empty': 'No items.',
@@ -1605,8 +1603,7 @@ export const en: Record<TranslationKey, string> = {
   'admin.overview.moderationDescription':
     'Review pending content, reports, and cases',
   'admin.overview.usersDescription': 'Find, filter, and manage account access',
-  'admin.overview.masterDataDescription':
-    'Manage categories, allergens, and foods',
+  'admin.overview.masterDataDescription': 'Manage categories, allergens, and foods',
   'admin.overview.aiDescription': 'Monitor AI service status and activity',
   'admin.overview.contentType.post': 'Posts',
   'admin.overview.contentType.recipe': 'Recipes',

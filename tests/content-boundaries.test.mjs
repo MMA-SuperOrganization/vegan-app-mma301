@@ -124,9 +124,7 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   const quickComposer = read(
     '../src/features/community/components/CreatePostSheet.tsx'
   );
-  const imageUpload = read(
-    '../src/features/community/usePostImageUpload.ts'
-  );
+  const imageUpload = read('../src/features/community/usePostImageUpload.ts');
   const communityHooks = read('../src/features/community/hooks.ts');
   const postCard = read(
     '../src/features/community/components/CommunityPostCard.tsx'
@@ -150,6 +148,17 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(postCard, /Có công thức/);
   assert.match(postCard, /PostFoodSummary/);
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);
+});
+
+test('admin pending review excludes posts while reports can still handle them', () => {
+  const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
+  const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
+
+  assert.match(moderation, /\.filter\(\s*\(item\) => item\.type !== 'post'/);
+  assert.match(dashboard, /isPostContentType\(type\) \? total/);
+  assert.match(dashboard, /!isPostContentType\(type\)/);
+  assert.match(moderation, /actions\.reports\.data/);
+  assert.match(moderation, /actions\.cases\.data/);
 });
 
 test('home search includes recipes, posts, ingredients and videos by default', () => {

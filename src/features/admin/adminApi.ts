@@ -39,6 +39,27 @@ export interface AdminUser {
   role: `${AdminUserRole}`;
   createdAt?: string;
 }
+export interface AdminUserDetail {
+  user: AdminUser & {
+    avatarUrl?: string;
+    onboardingCompleted?: boolean;
+    lastLoginAt?: string;
+    updatedAt?: string;
+    deletedAt?: string | null;
+  };
+  profile?: {
+    bio?: string;
+    dietType?: string;
+    locale?: string;
+    timezone?: string;
+  };
+}
+export interface AdminUserQuery {
+  page?: number;
+  q?: string;
+  status?: `${AdminUserStatus}`;
+  role?: `${AdminUserRole}`;
+}
 export interface AuditLog {
   _id: string;
   action: string;
@@ -83,18 +104,20 @@ const collectMasterRecords = async (path: `${MasterResourcePath}`) => {
 export const adminApi = {
   summary: () =>
     unwrapApiRequest<AdminSummary>(() => apiClient.get('/admin/dashboard/summary')),
-  users: (q = '') =>
-    collectPages((page) =>
-      unwrapApiPageRequest<AdminUser>(() =>
-        apiClient.get('/admin/users', {
-          params: { page, limit: 50, ...(q.trim() ? { q: q.trim() } : {}) },
-        })
-      )
+  users: ({ page = 1, q = '', status, role }: AdminUserQuery = {}) =>
+    unwrapApiPageRequest<AdminUser>(() =>
+      apiClient.get('/admin/users', {
+        params: {
+          page,
+          limit: 20,
+          ...(q.trim() ? { q: q.trim() } : {}),
+          ...(status ? { status } : {}),
+          ...(role ? { role } : {}),
+        },
+      })
     ),
   userDetail: (id: string) =>
-    unwrapApiRequest<Record<string, unknown>>(() =>
-      apiClient.get(`/admin/users/${id}`)
-    ),
+    unwrapApiRequest<AdminUserDetail>(() => apiClient.get(`/admin/users/${id}`)),
   auditLogs: () =>
     collectPages((page) =>
       unwrapApiPageRequest<AuditLog>(() =>

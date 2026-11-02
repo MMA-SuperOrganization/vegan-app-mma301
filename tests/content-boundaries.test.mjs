@@ -124,9 +124,7 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   const quickComposer = read(
     '../src/features/community/components/CreatePostSheet.tsx'
   );
-  const imageUpload = read(
-    '../src/features/community/usePostImageUpload.ts'
-  );
+  const imageUpload = read('../src/features/community/usePostImageUpload.ts');
   const communityHooks = read('../src/features/community/hooks.ts');
   const postCard = read(
     '../src/features/community/components/CommunityPostCard.tsx'
@@ -150,6 +148,65 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(postCard, /Có công thức/);
   assert.match(postCard, /PostFoodSummary/);
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);
+});
+
+test('admin review queues are explicit content types while reports still handle posts', () => {
+  const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
+  const moderationApi = read('../src/features/moderation/moderationApi.ts');
+  const reportCard = read(
+    '../src/features/moderation/components/ReportReviewCard.tsx'
+  );
+  const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
+
+  assert.match(moderation, /'recipes' \| 'reports'/);
+  assert.match(moderationApi, /recipes: \(\) =>/);
+  assert.match(moderationApi, /params: \{ page, limit: 50, type: 'recipe' \}/);
+  assert.doesNotMatch(moderation, /admin\.moderation\.pending/);
+  assert.match(dashboard, /isPostContentType\(type\) \? total/);
+  assert.match(dashboard, /!isPostContentType\(type\)/);
+  assert.match(moderation, /actions\.reports\.data/);
+  assert.doesNotMatch(moderation, /cases|CaseReviewCard/);
+  assert.doesNotMatch(moderationApi, /moderation-cases|createCase|updateCase/);
+  assert.doesNotMatch(reportCard, /createCase|Create \/ merge case/);
+});
+
+test('admin navigation tabs fit the screen without horizontal scrolling', () => {
+  const adminUi = read('../src/features/admin/AdminUi.tsx');
+  const dashboard = read('../src/features/admin/AdminDashboardScreen.tsx');
+  const moderation = read('../src/features/moderation/screens/ModerationScreen.tsx');
+  const users = read('../src/features/admin/AdminUsersScreen.tsx');
+  const segmentedTabs = adminUi.slice(
+    adminUi.indexOf('export function AdminSegmentedTabs'),
+    adminUi.indexOf('export function AdminFilterChips')
+  );
+
+  assert.match(segmentedTabs, /<View style=\{styles\.segmentTrack\}/);
+  assert.doesNotMatch(segmentedTabs, /ScrollView/);
+  assert.match(adminUi, /segment:\s*\{[\s\S]*?flex: 1/);
+  assert.match(adminUi, /filters:\s*\{[\s\S]*?flexWrap: 'wrap'/);
+  assert.doesNotMatch(adminUi, /<ScrollView/);
+  assert.doesNotMatch(dashboard, /<AdminPageIntro/);
+  assert.doesNotMatch(moderation, /<AdminPageIntro/);
+  assert.doesNotMatch(users, /<AdminPageIntro/);
+});
+
+test('admin accounts use server pagination, search filters and structured details', () => {
+  const api = read('../src/features/admin/adminApi.ts');
+  const users = read('../src/features/admin/AdminUsersScreen.tsx');
+  const usersRequest = api.slice(
+    api.indexOf('  users: ({'),
+    api.indexOf('  userDetail:')
+  );
+
+  assert.match(usersRequest, /\{ page = 1, q = '', status, role \}/);
+  assert.match(usersRequest, /limit: 20/);
+  assert.doesNotMatch(usersRequest, /collectPages/);
+  assert.match(users, /useInfiniteQuery/);
+  assert.match(users, /fetchNextPage/);
+  assert.match(users, /trailingIcon="filter"/);
+  assert.doesNotMatch(users, /<AdminFilterChips/);
+  assert.match(users, /data\.user\.email/);
+  assert.match(users, /data\.profile\?\.dietType/);
 });
 
 test('home search includes recipes, posts, ingredients and videos by default', () => {

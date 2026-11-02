@@ -1,22 +1,73 @@
-import { useState } from 'react';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { AppInput, AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
+import {
+  AdminEmptyState,
+  AdminFilterChips,
+  AdminSectionHeader,
+  AdminSegmentedTabs,
+} from '@/features/admin/AdminUi';
 import { useTranslation } from '@/i18n';
-import { spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { useModeration } from '../hooks';
 import { ReviewCard } from '../components/ReviewCard';
 import { ReportReviewCard } from '../components/ReportReviewCard';
-import { CaseReviewCard } from '../components/CaseReviewCard';
+
+type ModerationTab = 'recipes' | 'reports';
+type WorkFilter = 'all' | 'open' | 'reviewing' | 'closed';
+
 export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
   const { locale, t } = useTranslation();
   const vi = locale === 'vi';
   const actions = useModeration();
-  const [tab, setTab] = useState<'pending' | 'reports' | 'cases'>('pending');
+  const [tab, setTab] = useState<ModerationTab>('recipes');
+  const [filter, setFilter] = useState<WorkFilter>('all');
+  const [search, setSearch] = useState('');
   const query = actions[tab];
+  const recipes = actions.recipes.data?.data ?? [];
+  const reports = actions.reports.data?.data ?? [];
+  const filterCounts = {
+    all: reports.length,
+    open: reports.filter((item) => item.status === 'open').length,
+    reviewing: reports.filter((item) => item.status === 'reviewing').length,
+    closed: reports.filter((item) => ['resolved', 'dismissed'].includes(item.status))
+      .length,
+  };
+  const needle = search.trim().toLocaleLowerCase();
+  const visibleRecipes = recipes.filter((item) =>
+    item.title.toLocaleLowerCase().includes(needle)
+  );
+  const visibleReports = useMemo(
+    () =>
+      reports.filter((item) => {
+        const matchesStatus =
+          filter === 'all' ||
+          (filter === 'closed'
+            ? ['resolved', 'dismissed'].includes(item.status)
+            : item.status === filter);
+        const matchesSearch =
+          `${item.targetType} ${item.reason} ${item.description ?? ''}`
+            .toLocaleLowerCase()
+            .includes(needle);
+        return matchesStatus && matchesSearch;
+      }),
+    [filter, needle, reports]
+  );
+  const visibleCount =
+    tab === 'recipes' ? visibleRecipes.length : visibleReports.length;
+
+  const selectTab = (value: ModerationTab) => {
+    setTab(value);
+    setFilter('all');
+    setSearch('');
+  };
+
   return (
     <ScreenWrapper
       scrollable
-      contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
+      webMaxWidth={webLayout.catalogMaxWidth}
+      contentContainerStyle={styles.screen}
       header={
         <CustomHeader
           title={t('admin.moderation.title')}
@@ -25,35 +76,113 @@ export function ModerationScreen({ showBack = true }: { showBack?: boolean }) {
         />
       }
     >
-      {(['pending', 'reports', 'cases'] as const).map((value, index) => (
-        <AppButton
-          key={value}
-          variant={tab === value ? 'primary' : 'outline'}
-          title={
-            [t('admin.moderation.pending'), t('admin.moderation.reports'), t('admin.moderation.cases')][index]
-          }
-          onPress={() => setTab(value)}
+      <AdminSegmentedTabs
+        value={tab}
+        onChange={selectTab}
+        options={[
+          {
+            value: 'recipes',
+            label: t('admin.moderation.recipes'),
+            count: recipes.length,
+          },
+          {
+            value: 'reports',
+            label: t('admin.moderation.reports'),
+            count: reports.length,
+          },
+        ]}
+      />
+      <AppInput
+        type="search"
+        label={vi ? 'Tìm trong nhóm đang xem' : 'Search current queue'}
+        placeholder={
+          tab === 'recipes'
+            ? vi
+              ? 'Tên công thức…'
+              : 'Recipe title…'
+            : vi
+              ? 'Loại, lý do hoặc trạng thái…'
+              : 'Type, reason, or status…'
+        }
+        value={search}
+        onChangeText={setSearch}
+      />
+      {tab === 'reports' ? (
+        <AdminFilterChips
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: vi ? 'Tất cả' : 'All', count: filterCounts.all },
+            { value: 'open', label: vi ? 'Mới' : 'Open', count: filterCounts.open },
+            {
+              value: 'reviewing',
+              label: vi ? 'Đang xử lý' : 'Reviewing',
+              count: filterCounts.reviewing,
+            },
+            {
+              value: 'closed',
+              label: vi ? 'Đã đóng' : 'Closed',
+              count: filterCounts.closed,
+            },
+          ]}
         />
-      ))}
+      ) : null}
       <FeatureState
         loading={query.isLoading}
         error={query.error}
         retry={() => void query.refetch()}
       />
-      {query.data?.data.length === 0 ? (
-        <AppText>{t('admin.moderation.empty')}</AppText>
+      {!query.isLoading && !query.error ? (
+        <AdminSectionHeader
+          title={
+            tab === 'recipes'
+              ? t('admin.moderation.recipes')
+              : t('admin.moderation.reports')
+          }
+          description={`${visibleCount} ${vi ? 'mục phù hợp' : 'matching items'}`}
+        />
       ) : null}
-      {tab === 'pending'
-        ? actions.pending.data?.data.map((item) => (
-            <ReviewCard key={item._id} target={item} vi={vi} />
-          ))
-        : tab === 'reports'
-          ? actions.reports.data?.data.map((item) => (
-              <ReportReviewCard key={item._id} report={item} vi={vi} />
+      {!query.isLoading && !query.error && visibleCount === 0 ? (
+        <AdminEmptyState
+          icon="flag"
+          title={vi ? 'Không có việc cần hiển thị' : 'Nothing to show'}
+          description={
+            search || filter !== 'all'
+              ? vi
+                ? 'Thử thay đổi từ khóa hoặc bộ lọc.'
+                : 'Try changing the search term or filter.'
+              : vi
+                ? 'Hàng đợi này hiện đã được xử lý hết.'
+                : 'This queue is currently clear.'
+          }
+        />
+      ) : null}
+      <View style={styles.results}>
+        {tab === 'recipes'
+          ? visibleRecipes.map((item) => (
+              <ReviewCard key={item._id} target={item} vi={vi} />
             ))
-          : actions.cases.data?.data.map((item) => (
-              <CaseReviewCard key={item._id} item={item} vi={vi} />
+          : visibleReports.map((item) => (
+              <ReportReviewCard key={item._id} report={item} vi={vi} />
             ))}
+      </View>
+      {visibleCount > 4 ? (
+        <AppText
+          variant="bodySmall"
+          color={colors.text.secondary}
+          style={styles.hint}
+        >
+          {vi
+            ? 'Mẹo: dùng tìm kiếm và bộ lọc để rút gọn hàng đợi trước khi xử lý.'
+            : 'Tip: use search and filters to narrow the queue before taking action.'}
+        </AppText>
+      ) : null}
     </ScreenWrapper>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { padding: spacing.xl, paddingBottom: spacing['4xl'], gap: spacing.lg },
+  results: { gap: spacing.md },
+  hint: { textAlign: 'center' },
+});

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 
 import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
 import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
@@ -41,6 +41,7 @@ type HomeListItem =
 
 export function DiscoveryHomeScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { t } = useTranslation();
   const [postComposerOpen, setPostComposerOpen] = useState(false);
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
@@ -48,6 +49,24 @@ export function DiscoveryHomeScreen() {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const listRef = useRef<FlatList<HomeListItem>>(null);
+
+  const scrollToTop = () => {
+    listRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  useEffect(() => {
+    const parent = navigation.getParent();
+    const unsubParent = parent?.addListener('tabPress' as never, () => {
+      scrollToTop();
+    });
+    const unsubSelf = (navigation as any)?.addListener?.('tabPress', () => {
+      scrollToTop();
+    });
+    return () => {
+      unsubParent?.();
+      unsubSelf?.();
+    };
+  }, [navigation]);
   const homeContentReveal = useRef(new Animated.Value(1)).current;
   const postsReveal = useRef(new Animated.Value(1)).current;
   const activeSearchQuery = normalizeSearchQuery(searchQuery);
@@ -165,6 +184,7 @@ export function DiscoveryHomeScreen() {
         keyExtractor={(item) => item.key}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
+        scrollsToTop
         initialNumToRender={4}
         maxToRenderPerBatch={5}
         windowSize={7}
@@ -178,6 +198,7 @@ export function DiscoveryHomeScreen() {
             ]}
           >
             <HomeSocialHeader
+              onScrollToTop={scrollToTop}
               onCreatePost={() => setPostComposerOpen(true)}
               searchExpanded={searchExpanded}
               searchQuery={searchQuery}
@@ -342,6 +363,7 @@ export function DiscoveryHomeScreen() {
         onClose={() => setRecipeComposerOpen(false)}
       />
       <PostCommentsSheet
+        key={commentPostId ?? 'comments-closed'}
         visible={Boolean(commentPostId)}
         postId={commentPostId}
         onClose={() => setCommentPostId(undefined)}

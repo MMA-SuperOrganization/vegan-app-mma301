@@ -33,8 +33,7 @@ type MasterSection = 'categories' | 'allergens' | 'foods';
 type RecordFilter = 'all' | 'active' | 'inactive';
 
 export function MasterDataPanel() {
-  const { t, locale } = useTranslation();
-  const vi = locale === 'vi';
+  const { t } = useTranslation();
   const keys = ADMIN_TRANSLATION_KEYS.MASTER;
   const [activeSection, setActiveSection] = useState<MasterSection>('categories');
   const [filter, setFilter] = useState<RecordFilter>('active');
@@ -184,13 +183,9 @@ export function MasterDataPanel() {
   return (
     <View style={styles.root}>
       <AdminPageIntro
-        eyebrow={vi ? 'Danh mục dùng chung' : 'Shared catalog'}
+        eyebrow={t('admin.master.catalogEyebrow')}
         title={t('admin.master.title')}
-        description={
-          vi
-            ? 'Quản lý từng nhóm dữ liệu riêng, lọc bản ghi đang dùng và chỉ mở biểu mẫu khi cần.'
-            : 'Manage each data group separately, filter active records, and open forms only when needed.'
-        }
+        description={t('admin.master.catalogDescription')}
       />
       <AdminSegmentedTabs
         value={activeSection}
@@ -223,10 +218,16 @@ export function MasterDataPanel() {
         <>
           <AdminSectionHeader
             title={sectionLabel}
-            description={`${visibleRecords.length} ${vi ? 'bản ghi phù hợp' : 'matching records'}`}
+            description={t('admin.master.matchingCount', {
+              count: visibleRecords.length,
+            })}
             action={
               <AppButton
-                title={formOpen ? (vi ? 'Đóng' : 'Close') : vi ? 'Thêm mới' : 'Add new'}
+                title={
+                  formOpen
+                    ? t('admin.master.closeForm')
+                    : t('admin.master.addNew')
+                }
                 variant={formOpen ? 'ghost' : 'outline'}
                 fullWidth={false}
                 onPress={() => (formOpen ? closeForm() : setFormOpen(true))}
@@ -235,7 +236,9 @@ export function MasterDataPanel() {
           />
           <AppInput
             type="search"
-            label={vi ? `Tìm ${sectionLabel.toLocaleLowerCase()}` : `Search ${sectionLabel.toLocaleLowerCase()}`}
+            label={t('admin.master.searchGroup', {
+              type: sectionLabel.toLocaleLowerCase(),
+            })}
             value={search}
             onChangeText={setSearch}
           />
@@ -243,9 +246,21 @@ export function MasterDataPanel() {
             value={filter}
             onChange={setFilter}
             options={[
-              { value: 'active', label: vi ? 'Đang dùng' : 'Active', count: counts.active },
-              { value: 'inactive', label: vi ? 'Ngưng dùng' : 'Inactive', count: counts.inactive },
-              { value: 'all', label: vi ? 'Tất cả' : 'All', count: counts.all },
+              {
+                value: 'active',
+                label: t('admin.master.filter.active'),
+                count: counts.active,
+              },
+              {
+                value: 'inactive',
+                label: t('admin.master.filter.inactive'),
+                count: counts.inactive,
+              },
+              {
+                value: 'all',
+                label: t('admin.master.filter.all'),
+                count: counts.all,
+              },
             ]}
           />
         </>
@@ -263,9 +278,7 @@ export function MasterDataPanel() {
                     ? t('admin.master.update', { type: sectionLabel })
                     : t('admin.master.add', { type: sectionLabel })
             }
-            description={
-              vi ? 'Nhập thông tin rồi lưu thay đổi' : 'Enter the information and save your changes'
-            }
+            description={t('admin.master.formDescription')}
           />
           {activeSection === 'categories' ? (
             <>
@@ -345,7 +358,7 @@ export function MasterDataPanel() {
               />
               <View style={styles.nutritionGroup}>
                 <AppText variant="bodyStrong">
-                  {vi ? 'Dinh dưỡng trên 100g' : 'Nutrition per 100g'}
+                  {t('admin.master.nutritionTitle')}
                 </AppText>
                 <AppInput
                   label={t(keys.KCAL_PER_100G)}
@@ -415,12 +428,8 @@ export function MasterDataPanel() {
       {activeQuery.data && visibleRecords.length === 0 ? (
         <AdminEmptyState
           icon="pantry"
-          title={vi ? 'Không có bản ghi phù hợp' : 'No matching records'}
-          description={
-            vi
-              ? 'Thử đổi bộ lọc, từ khóa hoặc thêm một bản ghi mới.'
-              : 'Try another filter, keyword, or add a new record.'
-          }
+          title={t('admin.master.emptyTitle')}
+          description={t('admin.master.emptyDescription')}
         />
       ) : null}
       <View style={styles.list}>
@@ -448,7 +457,10 @@ export function MasterDataPanel() {
             </View>
             {activeSection === 'foods' && record.nutritionPer100g ? (
               <AppText variant="bodySmall" color={colors.text.secondary}>
-                {record.nutritionPer100g.caloriesKcal || 0} kcal · {record.nutritionPer100g.proteinG || 0}g {vi ? 'đạm' : 'protein'}
+                {t('admin.master.nutritionSummary', {
+                  calories: record.nutritionPer100g.caloriesKcal || 0,
+                  protein: record.nutritionPer100g.proteinG || 0,
+                })}
               </AppText>
             ) : null}
             <View style={styles.actions}>

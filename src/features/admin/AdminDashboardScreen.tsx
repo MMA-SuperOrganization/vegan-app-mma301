@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
-import { useTranslation } from '@/i18n';
+import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, spacing, webLayout } from '@/theme';
 import { adminApi } from './adminApi';
 import {
@@ -17,8 +17,7 @@ import {
 
 export function AdminDashboardScreen() {
   const router = useRouter();
-  const { t, locale } = useTranslation();
-  const vi = locale === 'vi';
+  const { t } = useTranslation();
   const summary = useQuery({
     queryKey: ['admin', 'summary'],
     queryFn: adminApi.summary,
@@ -35,13 +34,9 @@ export function AdminDashboardScreen() {
       header={<CustomHeader title={t('admin.title')} showBack={false} />}
     >
       <AdminPageIntro
-        eyebrow={vi ? 'Không gian quản trị' : 'Admin workspace'}
+        eyebrow={t('admin.overview.workspaceEyebrow')}
         title={t('admin.overview.title')}
-        description={
-          vi
-            ? 'Ưu tiên việc cần xử lý, theo dõi sức khỏe hệ thống và đi nhanh đến đúng công cụ.'
-            : 'Prioritize work, monitor system health, and jump directly to the right tool.'
-        }
+        description={t('admin.dashboard.centerDescription')}
       />
 
       <FeatureState
@@ -53,16 +48,16 @@ export function AdminDashboardScreen() {
       {summary.data ? (
         <>
           <AdminSectionHeader
-            title={vi ? 'Tình hình hôm nay' : 'At a glance'}
-            description={
-              vi ? 'Những chỉ số cần chú ý trước tiên' : 'The numbers that need attention first'
-            }
+            title={t('admin.overview.glanceTitle')}
+            description={t('admin.overview.glanceDescription')}
           />
           <View style={styles.metrics}>
             <AdminMetricCard
               label={t('admin.overview.users')}
               value={summary.data.users.total}
-              hint={`${summary.data.users.newInRange} ${vi ? 'mới trong kỳ' : 'new in range'}`}
+              hint={t('admin.overview.newInRange', {
+                count: summary.data.users.newInRange,
+              })}
             />
             <AdminMetricCard
               label={t('admin.overview.active')}
@@ -85,19 +80,17 @@ export function AdminDashboardScreen() {
           {content.length ? (
             <AdminSurface>
               <AdminSectionHeader
-                title={vi ? 'Nội dung theo loại' : 'Content by type'}
-                description={
-                  vi
-                    ? 'Phân loại hàng chờ thay vì trộn tất cả nội dung'
-                    : 'A categorized view of the moderation queue'
-                }
+                title={t('admin.overview.contentByType')}
+                description={t('admin.overview.contentByTypeDescription')}
               />
               {content.map(([type, value]) => (
                 <View key={type} style={styles.contentRow}>
                   <View style={styles.contentName}>
-                    <AppText variant="bodyStrong">{formatContentType(type, vi)}</AppText>
+                    <AppText variant="bodyStrong">{formatContentType(type, t)}</AppText>
                     <AppText variant="bodySmall" color={colors.text.secondary}>
-                      {value.publishedInRange} {vi ? 'đã xuất bản trong kỳ' : 'published in range'}
+                      {t('admin.overview.publishedInRange', {
+                        count: value.publishedInRange,
+                      })}
                     </AppText>
                   </View>
                   <View style={styles.badges}>
@@ -119,39 +112,31 @@ export function AdminDashboardScreen() {
 
       <AdminSectionHeader
         title={t('admin.overview.quickActions')}
-        description={vi ? 'Công cụ thường dùng' : 'Frequently used tools'}
+        description={t('admin.overview.quickActionsDescription')}
       />
       <View style={styles.actions}>
         <AdminActionCard
           icon="flag"
           title={t('admin.overview.moderation')}
-          description={
-            vi ? 'Xử lý nội dung chờ duyệt, báo cáo và hồ sơ' : 'Review pending content, reports, and cases'
-          }
+          description={t('admin.overview.moderationDescription')}
           onPress={() => router.push('/admin/moderation')}
         />
         <AdminActionCard
           icon="user"
           title={t('admin.tabs.users')}
-          description={
-            vi ? 'Tìm kiếm, phân loại và quản lý quyền tài khoản' : 'Find, filter, and manage account access'
-          }
+          description={t('admin.overview.usersDescription')}
           onPress={() => router.push('/admin/users')}
         />
         <AdminActionCard
           icon="pantry"
           title={t('admin.tabs.masterData')}
-          description={
-            vi ? 'Quản lý danh mục, dị nguyên và thực phẩm' : 'Manage categories, allergens, and foods'
-          }
+          description={t('admin.overview.masterDataDescription')}
           onPress={() => router.push('/admin/master-data')}
         />
         <AdminActionCard
           icon="spark"
           title={t('admin.overview.aiMonitoring')}
-          description={
-            vi ? 'Theo dõi trạng thái và hoạt động của dịch vụ AI' : 'Monitor AI service status and activity'
-          }
+          description={t('admin.overview.aiDescription')}
           onPress={() => router.push('/ai/monitoring')}
         />
       </View>
@@ -159,16 +144,20 @@ export function AdminDashboardScreen() {
   );
 }
 
-function formatContentType(type: string, vi: boolean) {
-  const labels: Record<string, [string, string]> = {
-    post: ['Bài viết', 'Posts'],
-    posts: ['Bài viết', 'Posts'],
-    recipe: ['Công thức', 'Recipes'],
-    recipes: ['Công thức', 'Recipes'],
-    video: ['Video', 'Videos'],
-    videos: ['Video', 'Videos'],
+function formatContentType(
+  type: string,
+  t: (key: TranslationKey) => string
+) {
+  const labels: Record<string, TranslationKey> = {
+    post: 'admin.overview.contentType.post',
+    posts: 'admin.overview.contentType.post',
+    recipe: 'admin.overview.contentType.recipe',
+    recipes: 'admin.overview.contentType.recipe',
+    video: 'admin.overview.contentType.video',
+    videos: 'admin.overview.contentType.video',
   };
-  return labels[type.toLocaleLowerCase()]?.[vi ? 0 : 1] ?? type;
+  const key = labels[type.toLocaleLowerCase()];
+  return key ? t(key) : type;
 }
 
 const styles = StyleSheet.create({

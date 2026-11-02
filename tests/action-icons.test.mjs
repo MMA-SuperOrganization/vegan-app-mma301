@@ -58,8 +58,8 @@ test('post detail groups article and engagement while keeping AI accessible', ()
   assert.doesNotMatch(post, /<CustomHeader/);
   assert.match(post, /<PostComments/);
   assert.match(comments, /style=\{styles\.commentFooterActions\}/);
-  assert.match(comments, /styles\.commentAction/);
-  assert.match(comments, /expandedActionsId/);
+  assert.match(comments, /styles\.menuItem/);
+  assert.match(comments, /menuComment/);
   assert.match(comments, /usePublicProfile/);
   assert.match(comments, /Trả lời \$\{parentName\}/);
   assert.doesNotMatch(comments, /reactComment|commentReaction/);

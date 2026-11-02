@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Animated,
+  Easing,
   KeyboardAvoidingView,
   Modal,
   PanResponder,
@@ -8,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   View,
+  useWindowDimensions,
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,7 +48,9 @@ export function BottomSheet({
   compact = false,
 }: BottomSheetProps) {
   const { t } = useTranslation();
+  const { height: screenHeight } = useWindowDimensions();
   const translateY = useRef(new Animated.Value(0)).current;
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -59,13 +63,13 @@ export function BottomSheet({
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dy > 90 || gesture.vy > 0.8) {
             Animated.timing(translateY, {
-              toValue: 700,
-              duration: 180,
+              toValue: screenHeight,
+              duration: 240,
+              easing: Easing.out(Easing.cubic),
               useNativeDriver: true,
             }).start(({ finished }) => {
               if (!finished) return;
               onClose();
-              translateY.setValue(0);
             });
             return;
           }
@@ -83,7 +87,7 @@ export function BottomSheet({
           }).start();
         },
       }),
-    [onClose, translateY]
+    [onClose, screenHeight, translateY]
   );
 
   useEffect(() => {
@@ -103,9 +107,7 @@ export function BottomSheet({
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View
-          style={[styles.backdrop, Platform.OS === 'web' && styles.webBackdrop]}
-        >
+        <View style={[styles.backdrop, Platform.OS === 'web' && styles.webBackdrop]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
@@ -137,7 +139,11 @@ export function BottomSheet({
                   tall && styles.fill,
                 ]}
               >
-                <View style={styles.dragArea} {...panResponder.panHandlers}>
+                <View
+                  style={styles.dragArea}
+                  {...panResponder.panHandlers}
+                  hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+                >
                   <View style={styles.dragHandle} />
                 </View>
                 {title || headerAction ? (

@@ -335,6 +335,7 @@ export function CommunityScreen() {
         />
       </ScreenWrapper>
       <PostCommentsSheet
+        key={commentPostId ?? 'comments-closed'}
         visible={Boolean(commentPostId)}
         postId={commentPostId}
         onClose={() => setCommentPostId(undefined)}

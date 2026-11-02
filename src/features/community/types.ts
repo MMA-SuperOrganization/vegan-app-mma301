@@ -41,6 +41,8 @@ export interface PostComment {
   authorId: string;
   version: number;
   parentCommentId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export interface CommunityVideo {
   _id: string;

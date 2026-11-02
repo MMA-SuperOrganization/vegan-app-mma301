@@ -1,6 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  Animated,
   Image,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +28,7 @@ import { useTranslation } from '@/i18n';
 import { colors, inputTypography, radius, shadows, spacing } from '@/theme';
 
 import { useCommunityPost } from '../hooks';
+import { formatCommentRelativeTime } from '../commentPresentation';
 import type { PostComment } from '../types';
 
 interface PostCommentsProps {
@@ -51,14 +61,91 @@ export function PostComments({
   const [commentText, setCommentText] = useState('');
   const [editingComment, setEditingComment] = useState<PostComment | null>(null);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
+  const [newlyCreatedCommentId, setNewlyCreatedCommentId] = useState<string | null>(
+    null
+  );
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
   const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
   const composerRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
+  const commentSectionOffsetY = useRef(0);
+  const scrollViewHeight = useRef<number>(300);
+  const scrollFrameRef = useRef<number | null>(null);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scrollToComment = useCallback((commentId: string, delay = 80) => {
+    if (scrollFrameRef.current !== null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+    }
+    if (scrollTimerRef.current !== null) {
+      clearTimeout(scrollTimerRef.current);
+    }
+
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      scrollTimerRef.current = setTimeout(() => {
+        scrollTimerRef.current = null;
+        const layout = commentLayouts.current[commentId];
+        if (layout && scrollRef.current) {
+          const vh = scrollViewHeight.current || 300;
+          // Never scroll past the top of the comment:
+          const maxTargetY = Math.max(0, layout.y - 12);
+          // Keep the comment bottom 35dp above the composer area.
+          const bottomTargetY = Math.max(0, layout.y + layout.height + 35 - vh);
+          const targetY = Math.min(maxTargetY, bottomTargetY);
+          scrollRef.current.scrollTo({
+            y: targetY,
+            animated: true,
+          });
+        }
+      }, delay);
+    });
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+      }
+      if (scrollTimerRef.current !== null) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      const targetId = replyingTo?._id || newlyCreatedCommentId;
+      if (targetId) {
+        scrollToComment(targetId, 60);
+      }
+    });
+    return () => sub.remove();
+  }, [newlyCreatedCommentId, replyingTo?._id, scrollToComment]);
+
   const comments = actions.comments.data?.data ?? [];
   const commentsById = useMemo(
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
   );
+
+  useEffect(() => {
+    if (!newlyCreatedCommentId) return;
+    const timer = setTimeout(() => {
+      scrollToComment(newlyCreatedCommentId, 0);
+    }, 220);
+
+    const fadeTimer = setTimeout(() => {
+      setNewlyCreatedCommentId(null);
+    }, 3600);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fadeTimer);
+    };
+  }, [newlyCreatedCommentId, comments, scrollToComment]);
   const busy =
     actions.comment.isPending ||
     actions.editComment.isPending ||
@@ -91,6 +178,7 @@ export function PostComments({
 
   const focusComposer = () => {
     requestAnimationFrame(() => composerRef.current?.focus());
+    setTimeout(() => composerRef.current?.focus(), 80);
   };
 
   const submitComment = () => {
@@ -103,14 +191,29 @@ export function PostComments({
       );
       return;
     }
+    const targetParentId = replyingTo?.parentCommentId || replyingTo?._id;
     actions.comment.mutate(
-      { content, parentCommentId: replyingTo?._id },
-      { onSuccess: resetComposer }
+      { content, parentCommentId: targetParentId },
+      {
+        onSuccess: (newComment) => {
+          setCommentText('');
+          setEditingComment(null);
+          setReplyingTo(null);
+          if (newComment?._id) {
+            setNewlyCreatedCommentId(newComment._id);
+          }
+        },
+      }
     );
   };
 
   const commentList = (
-    <View style={styles.commentSection}>
+    <View
+      style={styles.commentSection}
+      onLayout={(event) => {
+        commentSectionOffsetY.current = event.nativeEvent.layout.y;
+      }}
+    >
       {showSectionHeader ? (
         <View style={styles.sectionTitle}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
@@ -155,6 +258,14 @@ export function PostComments({
           busy={busy}
           actionsExpanded={expandedActionsId === comment._id}
           deleting={deletingComment === comment._id}
+          isReplyTarget={replyingTo?._id === comment._id}
+          isNewlyCreated={newlyCreatedCommentId === comment._id}
+          onLayout={(y, height) => {
+            commentLayouts.current[comment._id] = {
+              y: commentSectionOffsetY.current + y,
+              height,
+            };
+          }}
           onToggleActions={() =>
             setExpandedActionsId((current) =>
               current === comment._id ? null : comment._id
@@ -162,9 +273,13 @@ export function PostComments({
           }
           onReply={() => {
             setReplyingTo(comment);
+            setNewlyCreatedCommentId(null);
             setEditingComment(null);
             setCommentText('');
             focusComposer();
+            // If the keyboard is already open, scroll once after the composer
+            // settles. Otherwise keyboardDidShow replaces this fallback call.
+            scrollToComment(comment._id, Keyboard.isVisible() ? 120 : 360);
           }}
           onEdit={() => {
             setEditingComment(comment);
@@ -200,7 +315,7 @@ export function PostComments({
       <ScrollView
         style={styles.fill}
         contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
       >
         {contentHeader}
@@ -214,10 +329,14 @@ export function PostComments({
     <View style={[styles.root, scrollable && styles.fill]}>
       {scrollable ? (
         <ScrollView
+          ref={scrollRef}
           style={styles.fill}
           contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode="on-drag"
+          onLayout={(e) => {
+            scrollViewHeight.current = e.nativeEvent.layout.height;
+          }}
         >
           {contentHeader}
           {commentList}
@@ -314,6 +433,9 @@ function CommentRow({
   busy,
   actionsExpanded,
   deleting,
+  isReplyTarget = false,
+  isNewlyCreated = false,
+  onLayout,
   onToggleActions,
   onReply,
   onEdit,
@@ -329,6 +451,9 @@ function CommentRow({
   busy: boolean;
   actionsExpanded: boolean;
   deleting: boolean;
+  isReplyTarget?: boolean;
+  isNewlyCreated?: boolean;
+  onLayout?: (y: number, height: number) => void;
   onToggleActions: () => void;
   onReply: () => void;
   onEdit: () => void;
@@ -337,6 +462,7 @@ function CommentRow({
   onConfirmDelete: () => void;
   onReport: () => void;
 }) {
+  const newHighlightProgress = useRef(new Animated.Value(0)).current;
   const author = usePublicProfile(comment.authorId);
   const parentAuthor = usePublicProfile(parent?.authorId);
   const mine = comment.authorId === userId;
@@ -353,8 +479,37 @@ function CommentRow({
       : 'You'
     : parentAuthor.data?.displayName?.trim() || fallbackName;
 
+  const timeAgo = formatCommentRelativeTime(
+    comment.createdAt ?? comment.updatedAt,
+    vi ? 'vi' : 'en'
+  );
+
+  useEffect(() => {
+    if (!isNewlyCreated) {
+      newHighlightProgress.setValue(0);
+      return;
+    }
+
+    newHighlightProgress.setValue(1);
+    const animation = Animated.sequence([
+      Animated.delay(3000),
+      Animated.timing(newHighlightProgress, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: false,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [isNewlyCreated, newHighlightProgress]);
+
   return (
-    <View style={[styles.comment, comment.parentCommentId && styles.replyComment]}>
+    <View
+      onLayout={(e) =>
+        onLayout?.(e.nativeEvent.layout.y, e.nativeEvent.layout.height)
+      }
+      style={[styles.comment, comment.parentCommentId && styles.replyComment]}
+    >
       {author.data?.avatarUrl ? (
         <Image
           source={{ uri: author.data.avatarUrl }}
@@ -368,16 +523,47 @@ function CommentRow({
           <AppIcon name="user" size={15} color={colors.primary[700]} decorative />
         </View>
       )}
-      <View style={styles.commentBody}>
+      <Animated.View
+        style={[
+          styles.commentBody,
+          isReplyTarget && styles.commentBodyReplyHighlight,
+          isNewlyCreated && styles.commentBodyNewHighlightFrame,
+          isNewlyCreated && {
+            backgroundColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [colors.background.muted, 'rgba(46, 125, 50, 0.08)'],
+            }),
+            borderColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.28)'],
+            }),
+            borderLeftColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.65)'],
+            }),
+          },
+        ]}
+      >
         <View style={styles.commentHeader}>
-          <AppText
-            variant="caption"
-            color={colors.primary[700]}
-            numberOfLines={1}
-            style={styles.commentAuthor}
-          >
-            {authorName}
-          </AppText>
+          <View style={styles.authorRow}>
+            <AppText
+              variant="caption"
+              color={colors.primary[700]}
+              numberOfLines={1}
+              style={styles.commentAuthor}
+            >
+              {authorName}
+            </AppText>
+            {timeAgo ? (
+              <AppText
+                variant="caption"
+                color={colors.text.secondary}
+                style={styles.commentTime}
+              >
+                {` · ${timeAgo}`}
+              </AppText>
+            ) : null}
+          </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={vi ? 'Thêm thao tác' : 'More actions'}
@@ -412,62 +598,58 @@ function CommentRow({
 
         <AppText>{comment.content}</AppText>
 
-        {!comment.parentCommentId || actionsExpanded ? (
-          <View style={styles.commentFooterActions}>
-            {!comment.parentCommentId ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
-                disabled={busy}
-                onPress={onReply}
-                hitSlop={6}
-                style={({ pressed }) => [
-                  styles.replyAction,
-                  pressed && styles.pressed,
-                  busy && styles.disabled,
-                ]}
-              >
-                <AppIcon
-                  name="reply"
-                  size={13}
-                  color={colors.text.secondary}
-                  decorative
-                />
-                <AppText variant="caption" color={colors.text.secondary}>
-                  {vi ? 'Trả lời' : 'Reply'}
-                </AppText>
-              </Pressable>
-            ) : null}
+        <View style={styles.commentFooterActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
+            disabled={busy}
+            onPress={onReply}
+            hitSlop={12}
+            style={({ pressed }) => [
+              styles.replyAction,
+              pressed && styles.pressed,
+              busy && styles.disabled,
+            ]}
+          >
+            <AppIcon
+              name="reply"
+              size={13}
+              color={colors.text.secondary}
+              decorative
+            />
+            <AppText variant="caption" color={colors.text.secondary}>
+              {vi ? 'Trả lời' : 'Reply'}
+            </AppText>
+          </Pressable>
 
-            {actionsExpanded ? (
-              <>
-                {mine ? (
-                  <>
-                    <CommentAction
-                      icon="edit"
-                      label={vi ? 'Sửa' : 'Edit'}
-                      disabled={busy}
-                      onPress={onEdit}
-                    />
-                    <CommentAction
-                      icon="trash"
-                      label={vi ? 'Xóa' : 'Delete'}
-                      disabled={busy}
-                      destructive
-                      onPress={onDelete}
-                    />
-                  </>
-                ) : (
+          {actionsExpanded ? (
+            <>
+              {mine ? (
+                <>
                   <CommentAction
-                    icon="flag"
-                    label={vi ? 'Báo cáo' : 'Report'}
-                    onPress={onReport}
+                    icon="edit"
+                    label={vi ? 'Sửa' : 'Edit'}
+                    disabled={busy}
+                    onPress={onEdit}
                   />
-                )}
-              </>
-            ) : null}
-          </View>
-        ) : null}
+                  <CommentAction
+                    icon="trash"
+                    label={vi ? 'Xóa' : 'Delete'}
+                    disabled={busy}
+                    destructive
+                    onPress={onDelete}
+                  />
+                </>
+              ) : (
+                <CommentAction
+                  icon="flag"
+                  label={vi ? 'Báo cáo' : 'Report'}
+                  onPress={onReport}
+                />
+              )}
+            </>
+          ) : null}
+        </View>
 
         {deleting ? (
           <View style={styles.deleteConfirmation}>
@@ -488,7 +670,7 @@ function CommentRow({
             />
           </View>
         ) : null}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -588,6 +770,7 @@ const styles = StyleSheet.create({
   },
   emptyCommentCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   comment: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.xs,
@@ -628,7 +811,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  commentAuthor: { flex: 1, minWidth: 0 },
+  authorRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  commentTime: {
+    flexShrink: 0,
+    fontSize: 12,
+  },
+  commentBodyReplyHighlight: {
+    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(46, 125, 50, 0.28)',
+    borderLeftWidth: 3,
+    borderLeftColor: 'rgba(46, 125, 50, 0.65)',
+  },
+  commentBodyNewHighlightFrame: {
+    borderWidth: 1,
+    borderLeftWidth: 3,
+  },
+  commentAuthor: { flexShrink: 1, minWidth: 0 },
   moreAction: {
     minWidth: 30,
     minHeight: 24,

@@ -50,3 +50,7 @@ serviceAccount*.json
 
 # Generated device/browser screenshots, UI dumps and run logs
 /test-results/
+
+
+#test
+tests/

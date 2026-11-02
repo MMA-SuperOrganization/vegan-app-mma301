@@ -32,6 +32,8 @@ import { useCommunityPost } from '../hooks';
 import { formatCommentRelativeTime } from '../commentPresentation';
 import type { PostComment } from '../types';
 
+const REPLIES_PAGE_SIZE = 10;
+
 interface PostCommentsProps {
   postId?: string;
   scrollable?: boolean;
@@ -67,6 +69,7 @@ export function PostComments({
   );
   const [menuComment, setMenuComment] = useState<PostComment | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [shownReplies, setShownReplies] = useState<Record<string, number>>({});
   const composerRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
   const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
@@ -131,6 +134,21 @@ export function PostComments({
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
   );
+  const { rootComments, repliesByParent } = useMemo(() => {
+    const roots: PostComment[] = [];
+    const grouped = new Map<string, PostComment[]>();
+    for (const comment of comments) {
+      const parentId = comment.parentCommentId;
+      if (parentId && commentsById.has(parentId)) {
+        const list = grouped.get(parentId) ?? [];
+        list.push(comment);
+        grouped.set(parentId, list);
+      } else {
+        roots.push(comment);
+      }
+    }
+    return { rootComments: roots, repliesByParent: grouped };
+  }, [comments, commentsById]);
 
   useEffect(() => {
     if (!newlyCreatedCommentId) return;
@@ -158,6 +176,7 @@ export function PostComments({
     setReplyingTo(null);
     setMenuComment(null);
     setConfirmingDelete(false);
+    setShownReplies({});
   }, [postId]);
 
   useEffect(() => {
@@ -203,10 +222,42 @@ export function PostComments({
           if (newComment?._id) {
             setNewlyCreatedCommentId(newComment._id);
           }
+          if (targetParentId) {
+            // Make sure the thread holding the new reply is fully visible.
+            setShownReplies((current) => ({ ...current, [targetParentId]: 9999 }));
+          }
         },
       }
     );
   };
+
+  const renderComment = (comment: PostComment) => (
+    <CommentRow
+      key={comment._id}
+      comment={comment}
+      parent={
+        comment.parentCommentId
+          ? commentsById.get(comment.parentCommentId)
+          : undefined
+      }
+      userId={userId}
+      vi={vi}
+      busy={busy}
+      isReplyTarget={replyingTo?._id === comment._id}
+      isNewlyCreated={newlyCreatedCommentId === comment._id}
+      onLayout={(y, height) => {
+        commentLayouts.current[comment._id] = {
+          y: commentSectionOffsetY.current + y,
+          height,
+        };
+      }}
+      onOpenMenu={() => {
+        setConfirmingDelete(false);
+        setMenuComment(comment);
+      }}
+      onReply={() => startReply(comment)}
+    />
+  );
 
   const commentList = (
     <View
@@ -245,33 +296,46 @@ export function PostComments({
         </View>
       ) : null}
 
-      {comments.map((comment) => (
-        <CommentRow
-          key={comment._id}
-          comment={comment}
-          parent={
-            comment.parentCommentId
-              ? commentsById.get(comment.parentCommentId)
-              : undefined
-          }
-          userId={userId}
-          vi={vi}
-          busy={busy}
-          isReplyTarget={replyingTo?._id === comment._id}
-          isNewlyCreated={newlyCreatedCommentId === comment._id}
-          onLayout={(y, height) => {
-            commentLayouts.current[comment._id] = {
-              y: commentSectionOffsetY.current + y,
-              height,
-            };
-          }}
-          onOpenMenu={() => {
-            setConfirmingDelete(false);
-            setMenuComment(comment);
-          }}
-          onReply={() => startReply(comment)}
-        />
-      ))}
+      {rootComments.flatMap((root) => {
+        const replies = repliesByParent.get(root._id) ?? [];
+        const shown = Math.min(shownReplies[root._id] ?? 0, replies.length);
+        const remaining = replies.length - shown;
+        const items = [renderComment(root), ...replies.slice(0, shown).map(renderComment)];
+        if (replies.length > 0) {
+          items.push(
+            <View key={`${root._id}-replies-toggle`} style={styles.repliesToggleRow}>
+              {remaining > 0 ? (
+                <ReplyToggle
+                  label={
+                    shown === 0
+                      ? vi
+                        ? `Xem ${remaining} câu trả lời`
+                        : `View ${remaining} ${remaining === 1 ? 'reply' : 'replies'}`
+                      : vi
+                        ? `Xem thêm ${remaining} câu trả lời`
+                        : `View ${remaining} more ${remaining === 1 ? 'reply' : 'replies'}`
+                  }
+                  onPress={() =>
+                    setShownReplies((current) => ({
+                      ...current,
+                      [root._id]: shown + REPLIES_PAGE_SIZE,
+                    }))
+                  }
+                />
+              ) : null}
+              {shown > 0 ? (
+                <ReplyToggle
+                  label={vi ? 'Ẩn câu trả lời' : 'Hide replies'}
+                  onPress={() =>
+                    setShownReplies((current) => ({ ...current, [root._id]: 0 }))
+                  }
+                />
+              ) : null}
+            </View>
+          );
+        }
+        return items;
+      })}
     </View>
   );
 
@@ -695,12 +759,6 @@ function CommentRow({
               busy && styles.disabled,
             ]}
           >
-            <AppIcon
-              name="reply"
-              size={13}
-              color={colors.text.secondary}
-              decorative
-            />
             <AppText variant="caption" color={colors.text.secondary}>
               {vi ? 'Trả lời' : 'Reply'}
             </AppText>
@@ -794,6 +852,22 @@ function CommentPreviewCard({
   );
 }
 
+function ReplyToggle({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [styles.replyToggle, pressed && styles.pressed]}
+    >
+      <View style={styles.replyToggleLine} />
+      <AppText variant="caption" color={colors.text.secondary}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
+
 function MenuItem({
   icon,
   label,
@@ -858,6 +932,25 @@ export function PostCommentsSheet({
 }
 
 const styles = StyleSheet.create({
+  repliesToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+    marginLeft: 28 + spacing.xs,
+    paddingLeft: spacing.md,
+  },
+  replyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 28,
+  },
+  replyToggleLine: {
+    width: 20,
+    height: StyleSheet.hairlineWidth * 2,
+    backgroundColor: colors.border.default,
+  },
   menuBackdrop: {
     flex: 1,
     justifyContent: 'center',

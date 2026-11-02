@@ -42,7 +42,12 @@ export function DiscussionPanel({
     mutationFn: () =>
       editing
         ? engagementApi.updateComment(editing, content.trim())
-        : engagementApi.comment(targetType, targetId, content.trim(), replyTo?._id),
+        : engagementApi.comment(
+            targetType,
+            targetId,
+            content.trim(),
+            replyTo?.parentCommentId || replyTo?._id
+          ),
     onSuccess: async () => {
       setContent('');
       setReplyTo(null);
@@ -94,19 +99,17 @@ export function DiscussionPanel({
           }}
         >
           <AppText>{comment.content}</AppText>
-          {!comment.parentCommentId ? (
-            <AppButton
-              title={vi ? 'Trả lời' : 'Reply'}
-              variant="ghost"
-              fullWidth={false}
-              disabled={busy}
-              onPress={() => {
-                setReplyTo(comment);
-                setEditing(null);
-                setContent('');
-              }}
-            />
-          ) : null}
+          <AppButton
+            title={vi ? 'Trả lời' : 'Reply'}
+            variant="ghost"
+            fullWidth={false}
+            disabled={busy}
+            onPress={() => {
+              setReplyTo(comment);
+              setEditing(null);
+              setContent('');
+            }}
+          />
           {comment.authorId === userId ? (
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
               <AppButton

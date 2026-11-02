@@ -15,6 +15,7 @@ import { useTranslation } from '@/i18n';
 import { colors, inputTypography, radius, spacing } from '@/theme';
 
 export function HomeSocialHeader({
+  onScrollToTop,
   onCreatePost,
   searchExpanded,
   searchQuery,
@@ -23,6 +24,7 @@ export function HomeSocialHeader({
   onChangeSearch,
   onSubmitSearch,
 }: {
+  onScrollToTop?: () => void;
   onCreatePost: () => void;
   searchExpanded: boolean;
   searchQuery: string;
@@ -31,7 +33,7 @@ export function HomeSocialHeader({
   onChangeSearch: (query: string) => void;
   onSubmitSearch: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const window = useWindowDimensions();
   const inputRef = useRef<TextInput>(null);
   const closingRef = useRef(false);
@@ -100,12 +102,21 @@ export function HomeSocialHeader({
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <View style={styles.brandRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Về đầu trang' : 'Scroll to top'}
+          onPress={onScrollToTop}
+          hitSlop={{ top: 16, bottom: 12, left: 16, right: 16 }}
+          style={({ pressed }) => [
+            styles.brandRow,
+            pressed && styles.brandRowPressed,
+          ]}
+        >
           <View style={styles.brandIcon}>
             <AppIcon name="mam-companion" size={30} decorative />
           </View>
           <BrandWordmark size={26} />
-        </View>
+        </Pressable>
 
         {!searchExpanded ? (
           <View style={styles.actions}>
@@ -284,6 +295,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  brandRowPressed: { opacity: 0.75 },
   brandIcon: {
     width: 34,
     height: 34,

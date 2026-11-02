@@ -363,6 +363,7 @@ export function DiscoveryHomeScreen() {
         onClose={() => setRecipeComposerOpen(false)}
       />
       <PostCommentsSheet
+        key={commentPostId ?? 'comments-closed'}
         visible={Boolean(commentPostId)}
         postId={commentPostId}
         onClose={() => setCommentPostId(undefined)}

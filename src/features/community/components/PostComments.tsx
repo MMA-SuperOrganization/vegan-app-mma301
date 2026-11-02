@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  Animated,
   Image,
   Keyboard,
   Pressable,
@@ -53,45 +61,68 @@ export function PostComments({
   const [commentText, setCommentText] = useState('');
   const [editingComment, setEditingComment] = useState<PostComment | null>(null);
   const [replyingTo, setReplyingTo] = useState<PostComment | null>(null);
+  const [newlyCreatedCommentId, setNewlyCreatedCommentId] = useState<string | null>(
+    null
+  );
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
   const [expandedActionsId, setExpandedActionsId] = useState<string | null>(null);
   const composerRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const commentLayouts = useRef<Record<string, number>>({});
+  const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
+  const commentSectionOffsetY = useRef(0);
+  const scrollViewHeight = useRef<number>(300);
 
-  const scrollToComment = (commentId: string) => {
+  const scrollToComment = useCallback((commentId: string, delay = 80) => {
     requestAnimationFrame(() => {
       setTimeout(() => {
-        const y = commentLayouts.current[commentId];
-        if (typeof y === 'number' && scrollRef.current) {
+        const layout = commentLayouts.current[commentId];
+        if (layout && scrollRef.current) {
+          const vh = scrollViewHeight.current || 300;
+          // Never scroll past the top of the comment:
+          const maxTargetY = Math.max(0, layout.y - 12);
+          // Keep the comment bottom 35dp above the composer area.
+          const bottomTargetY = Math.max(0, layout.y + layout.height + 35 - vh);
+          const targetY = Math.min(maxTargetY, bottomTargetY);
           scrollRef.current.scrollTo({
-            y: Math.max(0, y - 60),
+            y: targetY,
             animated: true,
           });
         }
-      }, 160);
+      }, delay);
     });
-  };
+  }, []);
 
   useEffect(() => {
     const sub = Keyboard.addListener('keyboardDidShow', () => {
-      if (replyingTo?._id) {
-        const y = commentLayouts.current[replyingTo._id];
-        if (typeof y === 'number' && scrollRef.current) {
-          scrollRef.current.scrollTo({
-            y: Math.max(0, y - 60),
-            animated: true,
-          });
-        }
+      const targetId = replyingTo?._id || newlyCreatedCommentId;
+      if (targetId) {
+        scrollToComment(targetId, 60);
       }
     });
     return () => sub.remove();
-  }, [replyingTo?._id]);
+  }, [newlyCreatedCommentId, replyingTo?._id, scrollToComment]);
+
   const comments = actions.comments.data?.data ?? [];
   const commentsById = useMemo(
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
   );
+
+  useEffect(() => {
+    if (!newlyCreatedCommentId) return;
+    const timer = setTimeout(() => {
+      scrollToComment(newlyCreatedCommentId, 0);
+    }, 220);
+
+    const fadeTimer = setTimeout(() => {
+      setNewlyCreatedCommentId(null);
+    }, 3600);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fadeTimer);
+    };
+  }, [newlyCreatedCommentId, comments, scrollToComment]);
   const busy =
     actions.comment.isPending ||
     actions.editComment.isPending ||
@@ -124,6 +155,7 @@ export function PostComments({
 
   const focusComposer = () => {
     requestAnimationFrame(() => composerRef.current?.focus());
+    setTimeout(() => composerRef.current?.focus(), 80);
   };
 
   const submitComment = () => {
@@ -139,12 +171,26 @@ export function PostComments({
     const targetParentId = replyingTo?.parentCommentId || replyingTo?._id;
     actions.comment.mutate(
       { content, parentCommentId: targetParentId },
-      { onSuccess: resetComposer }
+      {
+        onSuccess: (newComment) => {
+          setCommentText('');
+          setEditingComment(null);
+          setReplyingTo(null);
+          if (newComment?._id) {
+            setNewlyCreatedCommentId(newComment._id);
+          }
+        },
+      }
     );
   };
 
   const commentList = (
-    <View style={styles.commentSection}>
+    <View
+      style={styles.commentSection}
+      onLayout={(event) => {
+        commentSectionOffsetY.current = event.nativeEvent.layout.y;
+      }}
+    >
       {showSectionHeader ? (
         <View style={styles.sectionTitle}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
@@ -189,9 +235,13 @@ export function PostComments({
           busy={busy}
           actionsExpanded={expandedActionsId === comment._id}
           deleting={deletingComment === comment._id}
-          isReplying={replyingTo?._id === comment._id}
-          onLayout={(y) => {
-            commentLayouts.current[comment._id] = y;
+          isReplyTarget={replyingTo?._id === comment._id}
+          isNewlyCreated={newlyCreatedCommentId === comment._id}
+          onLayout={(y, height) => {
+            commentLayouts.current[comment._id] = {
+              y: commentSectionOffsetY.current + y,
+              height,
+            };
           }}
           onToggleActions={() =>
             setExpandedActionsId((current) =>
@@ -200,10 +250,11 @@ export function PostComments({
           }
           onReply={() => {
             setReplyingTo(comment);
+            setNewlyCreatedCommentId(null);
             setEditingComment(null);
             setCommentText('');
             focusComposer();
-            scrollToComment(comment._id);
+            scrollToComment(comment._id, 180);
           }}
           onEdit={() => {
             setEditingComment(comment);
@@ -239,7 +290,7 @@ export function PostComments({
       <ScrollView
         style={styles.fill}
         contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
       >
         {contentHeader}
@@ -256,8 +307,11 @@ export function PostComments({
           ref={scrollRef}
           style={styles.fill}
           contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyboardDismissMode="on-drag"
+          onLayout={(e) => {
+            scrollViewHeight.current = e.nativeEvent.layout.height;
+          }}
         >
           {contentHeader}
           {commentList}
@@ -346,8 +400,6 @@ export function PostComments({
   );
 }
 
-
-
 function CommentRow({
   comment,
   parent,
@@ -356,7 +408,8 @@ function CommentRow({
   busy,
   actionsExpanded,
   deleting,
-  isReplying = false,
+  isReplyTarget = false,
+  isNewlyCreated = false,
   onLayout,
   onToggleActions,
   onReply,
@@ -373,8 +426,9 @@ function CommentRow({
   busy: boolean;
   actionsExpanded: boolean;
   deleting: boolean;
-  isReplying?: boolean;
-  onLayout?: (y: number) => void;
+  isReplyTarget?: boolean;
+  isNewlyCreated?: boolean;
+  onLayout?: (y: number, height: number) => void;
   onToggleActions: () => void;
   onReply: () => void;
   onEdit: () => void;
@@ -383,6 +437,7 @@ function CommentRow({
   onConfirmDelete: () => void;
   onReport: () => void;
 }) {
+  const newHighlightProgress = useRef(new Animated.Value(0)).current;
   const author = usePublicProfile(comment.authorId);
   const parentAuthor = usePublicProfile(parent?.authorId);
   const mine = comment.authorId === userId;
@@ -404,14 +459,31 @@ function CommentRow({
     vi ? 'vi' : 'en'
   );
 
+  useEffect(() => {
+    if (!isNewlyCreated) {
+      newHighlightProgress.setValue(0);
+      return;
+    }
+
+    newHighlightProgress.setValue(1);
+    const animation = Animated.sequence([
+      Animated.delay(3000),
+      Animated.timing(newHighlightProgress, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: false,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [isNewlyCreated, newHighlightProgress]);
+
   return (
     <View
-      onLayout={(e) => onLayout?.(e.nativeEvent.layout.y)}
-      style={[
-        styles.comment,
-        comment.parentCommentId && styles.replyComment,
-        isReplying && styles.commentActiveReplying,
-      ]}
+      onLayout={(e) =>
+        onLayout?.(e.nativeEvent.layout.y, e.nativeEvent.layout.height)
+      }
+      style={[styles.comment, comment.parentCommentId && styles.replyComment]}
     >
       {author.data?.avatarUrl ? (
         <Image
@@ -426,7 +498,27 @@ function CommentRow({
           <AppIcon name="user" size={15} color={colors.primary[700]} decorative />
         </View>
       )}
-      <View style={[styles.commentBody, isReplying && styles.commentBodyActiveReplying]}>
+      <Animated.View
+        style={[
+          styles.commentBody,
+          isReplyTarget && styles.commentBodyReplyHighlight,
+          isNewlyCreated && styles.commentBodyNewHighlightFrame,
+          isNewlyCreated && {
+            backgroundColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: [colors.background.muted, 'rgba(46, 125, 50, 0.08)'],
+            }),
+            borderColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.28)'],
+            }),
+            borderLeftColor: newHighlightProgress.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['rgba(46, 125, 50, 0)', 'rgba(46, 125, 50, 0.65)'],
+            }),
+          },
+        ]}
+      >
         <View style={styles.commentHeader}>
           <View style={styles.authorRow}>
             <AppText
@@ -438,7 +530,11 @@ function CommentRow({
               {authorName}
             </AppText>
             {timeAgo ? (
-              <AppText variant="caption" color={colors.text.secondary} style={styles.commentTime}>
+              <AppText
+                variant="caption"
+                color={colors.text.secondary}
+                style={styles.commentTime}
+              >
                 {` · ${timeAgo}`}
               </AppText>
             ) : null}
@@ -483,7 +579,7 @@ function CommentRow({
             accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
             disabled={busy}
             onPress={onReply}
-            hitSlop={6}
+            hitSlop={12}
             style={({ pressed }) => [
               styles.replyAction,
               pressed && styles.pressed,
@@ -549,7 +645,7 @@ function CommentRow({
             />
           </View>
         ) : null}
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -649,6 +745,7 @@ const styles = StyleSheet.create({
   },
   emptyCommentCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   comment: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.xs,
@@ -700,17 +797,16 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     fontSize: 12,
   },
-  commentActiveReplying: {
-    backgroundColor: '#EDF7ED',
-    borderColor: colors.primary[300],
-    borderWidth: 1.5,
-    borderRadius: radius.lg,
-    padding: spacing.xs,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary[700],
+  commentBodyReplyHighlight: {
+    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(46, 125, 50, 0.28)',
+    borderLeftWidth: 3,
+    borderLeftColor: 'rgba(46, 125, 50, 0.65)',
   },
-  commentBodyActiveReplying: {
-    backgroundColor: 'transparent',
+  commentBodyNewHighlightFrame: {
+    borderWidth: 1,
+    borderLeftWidth: 3,
   },
   commentAuthor: { flexShrink: 1, minWidth: 0 },
   moreAction: {

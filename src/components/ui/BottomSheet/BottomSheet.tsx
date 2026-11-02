@@ -47,6 +47,7 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const { t } = useTranslation();
   const translateY = useRef(new Animated.Value(0)).current;
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -103,9 +104,7 @@ export function BottomSheet({
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View
-          style={[styles.backdrop, Platform.OS === 'web' && styles.webBackdrop]}
-        >
+        <View style={[styles.backdrop, Platform.OS === 'web' && styles.webBackdrop]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('common.close')}
@@ -137,7 +136,11 @@ export function BottomSheet({
                   tall && styles.fill,
                 ]}
               >
-                <View style={styles.dragArea} {...panResponder.panHandlers}>
+                <View
+                  style={styles.dragArea}
+                  {...panResponder.panHandlers}
+                  hitSlop={{ top: 20, bottom: 20, left: 40, right: 40 }}
+                >
                   <View style={styles.dragHandle} />
                 </View>
                 {title || headerAction ? (

@@ -1,27 +1,13 @@
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AppButton, AppInput, AppText } from '@/components';
-import { FeatureState } from '@/components/feedback/FeatureState';
+import { useRouter } from 'expo-router';
+import { AppButton, AppText } from '@/components';
 import { postStatusLabel as reportStatusLabel } from '@/features/community/status';
 import type { UserReport } from '@/features/community/types';
 import { AdminStatusBadge } from '@/features/admin/AdminUi';
-import { useModeration } from '../hooks';
-import { ReportTargetPreview } from './ReportTargetPreview';
 import { colors, radius, spacing } from '@/theme';
 
-export function ReportReviewCard({
-  report,
-  vi,
-}: {
-  report: UserReport;
-  vi: boolean;
-}) {
-  const actions = useModeration();
-  const [expanded, setExpanded] = useState(false);
-  const [resolution, setResolution] = useState('');
-  const [close, setClose] = useState<'resolved' | 'dismissed' | null>(null);
-  const busy = actions.report.isPending;
-  const active = ['open', 'reviewing'].includes(report.status);
+export function ReportReviewCard({ report, vi }: { report: UserReport; vi: boolean }) {
+  const router = useRouter();
 
   return (
     <View style={styles.card}>
@@ -51,98 +37,17 @@ export function ReportReviewCard({
         </AppText>
       ) : null}
       <AppButton
-        title={
-          expanded
-            ? vi
-              ? 'Thu gọn'
-              : 'Collapse'
-            : vi
-              ? 'Mở báo cáo'
-              : 'Open report'
-        }
+        title={vi ? 'Mở báo cáo' : 'Open report'}
         variant="outline"
-        onPress={() => setExpanded((value) => !value)}
+        onPress={() =>
+          router.push({ pathname: '/moderation/report/[id]', params: { id: report._id } })
+        }
       />
-      {expanded ? (
-        <View style={styles.details}>
-          <ReportTargetPreview
-            targetType={report.targetType}
-            targetId={report.targetId}
-            vi={vi}
-          />
-          {report.resolution ? (
-            <View style={styles.resolution}>
-              <AppText variant="bodySmall" color={colors.text.secondary}>
-                {vi ? 'Kết quả xử lý' : 'Resolution'}
-              </AppText>
-              <AppText>{report.resolution}</AppText>
-            </View>
-          ) : null}
-          {active ? (
-            <>
-              <AppButton
-                title={vi ? 'Nhận xử lý' : 'Assign to me'}
-                variant="outline"
-                disabled={busy || report.status === 'reviewing'}
-                onPress={() =>
-                  actions.report.mutate({ report, status: 'reviewing' })
-                }
-              />
-              <AppInput
-                label={vi ? 'Kết quả xử lý' : 'Resolution'}
-                value={resolution}
-                onChangeText={setResolution}
-                maxLength={2000}
-                editable={!busy}
-                multiline
-              />
-              <AppButton
-                title={vi ? 'Đánh dấu đã giải quyết' : 'Resolve'}
-                disabled={busy || !resolution.trim()}
-                onPress={() => setClose('resolved')}
-              />
-              <AppButton
-                title={vi ? 'Bác bỏ báo cáo' : 'Dismiss report'}
-                variant="ghost"
-                disabled={busy || !resolution.trim()}
-                onPress={() => setClose('dismissed')}
-              />
-              {close ? (
-                <View style={styles.confirmation}>
-                  <AppText variant="bodyStrong">
-                    {vi
-                      ? 'Xác nhận đóng báo cáo với kết quả trên?'
-                      : 'Close the report with this resolution?'}
-                  </AppText>
-                  <AppButton
-                    title={vi ? 'Xác nhận' : 'Confirm'}
-                    loading={busy}
-                    disabled={busy}
-                    onPress={() =>
-                      actions.report.mutate(
-                        { report, status: close, resolution: resolution.trim() },
-                        { onSuccess: () => setClose(null) }
-                      )
-                    }
-                  />
-                  <AppButton
-                    title={vi ? 'Hủy' : 'Cancel'}
-                    variant="ghost"
-                    disabled={busy}
-                    onPress={() => setClose(null)}
-                  />
-                </View>
-              ) : null}
-            </>
-          ) : null}
-          <FeatureState error={actions.report.error} />
-        </View>
-      ) : null}
     </View>
   );
 }
 
-function targetLabel(value: string, vi: boolean) {
+export function targetLabel(value: string, vi: boolean) {
   const labels: Record<string, [string, string]> = {
     recipe: ['Công thức', 'Recipe'],
     post: ['Bài viết', 'Post'],
@@ -153,7 +58,7 @@ function targetLabel(value: string, vi: boolean) {
   return labels[value]?.[vi ? 0 : 1] ?? value;
 }
 
-function reasonLabel(value: string, vi: boolean) {
+export function reasonLabel(value: string, vi: boolean) {
   const labels: Record<string, [string, string]> = {
     spam: ['Spam', 'Spam'],
     harmful: ['Có hại', 'Harmful'],
@@ -180,17 +85,4 @@ const styles = StyleSheet.create({
   },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   heading: { flex: 1, minWidth: 0, gap: spacing.xs },
-  details: { gap: spacing.md },
-  resolution: {
-    padding: spacing.md,
-    gap: spacing.xs,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background.muted,
-  },
-  confirmation: {
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background.selected,
-  },
 });

@@ -30,16 +30,18 @@ export function HomeSocialPostCard({
 }) {
   const { t, locale } = useTranslation();
   const liked = post.reacted === 'like';
-  const profile = usePublicProfile(post.author ? undefined : post.authorId);
+  const profile = usePublicProfile(
+    post.author?.displayName ? undefined : post.authorId
+  );
   const author =
-    post.author ??
-    (profile.data
+    profile.data
       ? {
-          userId: post.authorId ?? '',
-          displayName: profile.data.displayName,
-          avatarUrl: profile.data.avatarUrl,
+          ...post.author,
+          userId: post.authorId ?? profile.data.userId ?? '',
+          displayName: profile.data.displayName ?? post.author?.displayName,
+          avatarUrl: profile.data.avatarUrl ?? post.author?.avatarUrl,
         }
-      : null);
+      : post.author ?? null;
   const copy = postCopy(
     post.title,
     post.excerpt ?? post.description ?? post.content

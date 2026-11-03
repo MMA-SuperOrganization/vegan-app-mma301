@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText } from '@/components';
 import type { ReactionType } from '@/features/engagement/engagementApi';
@@ -7,6 +7,12 @@ import {
   formatEngagementCount,
   formatFullEngagementCount,
 } from '../engagementPresentation';
+
+// Kept as a non-visual action for callers that need native sharing; the post
+// detail UI intentionally does not render a share button.
+export function sharePost(message: string) {
+  return Share.share({ message });
+}
 
 interface PostDetailEngagementProps {
   vi: boolean;

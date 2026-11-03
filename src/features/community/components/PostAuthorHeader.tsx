@@ -1,4 +1,4 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import type { ReactNode } from 'react';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
@@ -16,6 +16,7 @@ export function PostAuthorHeader({
   visibility = 'public',
   vi,
   trailing,
+  onAuthorPress,
 }: {
   author?: PostAuthorSummary | null;
   createdAt?: string;
@@ -24,6 +25,8 @@ export function PostAuthorHeader({
   visibility?: 'public' | 'private';
   vi: boolean;
   trailing?: ReactNode;
+  /** Opens the public author profile when provided. */
+  onAuthorPress?: () => void;
 }) {
   const relativeTime = formatCommentRelativeTime(
     publishedAt ?? createdAt,
@@ -32,8 +35,8 @@ export function PostAuthorHeader({
   const authorName =
     author?.displayName?.trim() || (vi ? 'Thành viên' : 'Member');
 
-  return (
-    <View style={styles.container}>
+  const identity = (
+    <>
       {author?.avatarUrl ? (
         <Image
           source={{ uri: author.avatarUrl }}
@@ -46,7 +49,11 @@ export function PostAuthorHeader({
         </View>
       )}
       <View style={styles.copy}>
-        <AppText variant="bodyStrong" numberOfLines={1}>
+        <AppText
+          variant="bodyStrong"
+          numberOfLines={1}
+          color={onAuthorPress ? colors.primary[700] : undefined}
+        >
           {authorName}
         </AppText>
         <View style={styles.meta}>
@@ -74,6 +81,25 @@ export function PostAuthorHeader({
           ) : null}
         </View>
       </View>
+    </>
+  );
+
+  return (
+    <View style={styles.container}>
+      {onAuthorPress ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={
+            vi ? `Xem hồ sơ của ${authorName}` : `View ${authorName}'s profile`
+          }
+          onPress={onAuthorPress}
+          style={({ pressed }) => [styles.identity, pressed && styles.identityPressed]}
+        >
+          {identity}
+        </Pressable>
+      ) : (
+        identity
+      )}
       {trailing}
     </View>
   );
@@ -103,6 +129,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  identity: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  identityPressed: {
+    opacity: 0.72,
   },
   avatar: {
     width: 42,

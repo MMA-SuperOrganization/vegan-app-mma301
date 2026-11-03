@@ -112,6 +112,9 @@ export const authApi = {
     return firebaseAuth.sendPasswordReset(email);
   },
 
+  // Drops the local session only; used when the API rejects a blocked account.
+  clearLocalSession: clearStoredSession,
+
   async logout() {
     const user = await readCachedUser();
     if (user) await unregisterStoredDevice(user.id);

@@ -700,6 +700,11 @@ function CommentRow({
       >
         <View style={styles.commentHeader}>
           <View style={styles.authorRow}>
+            {/* FR-PROFILE-05: tạm tắt. Bật lại bằng cách bọc tên tác giả trong
+            <Pressable accessibilityRole="link" onPress={() => {
+              onNavigateAway?.();
+              openAuthorProfile(router, comment.authorId);
+            }}> (truyền onNavigateAway và router từ PostComments xuống CommentRow). */}
             <AppText
               variant="caption"
               color={colors.primary[700]}

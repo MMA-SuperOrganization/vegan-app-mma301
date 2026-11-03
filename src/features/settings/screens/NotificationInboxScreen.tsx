@@ -1,5 +1,6 @@
 import { getUserErrorMessage } from '@/services/errors';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   AppButton,
   AppText,
@@ -12,13 +13,26 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useNotificationActions, useNotifications } from '../hooks';
 import type { NotificationItem } from '../types';
+import { notificationHref } from '../notificationNavigation';
 
 export function NotificationInboxScreen() {
   const { t, locale } = useTranslation();
   const goBack = useSafeBack('/(tabs)/profile');
+  const router = useRouter();
   const notifications = useNotifications();
   const actions = useNotificationActions();
   const unread = notifications.data?.data.filter((item) => !item.readAt).length ?? 0;
+  const openNotification = async (item: NotificationItem) => {
+    if (!item.readAt) {
+      try {
+        await actions.markRead.mutateAsync(item._id);
+      } catch {
+        // Opening the related content should not be blocked by a read-state sync failure.
+      }
+    }
+    const href = notificationHref(item);
+    if (href) router.push(href);
+  };
   return (
     <SettingsScreenLayout title={t('notifications.title')} onBack={goBack}>
       <AppText color={colors.text.secondary}>
@@ -50,7 +64,7 @@ export function NotificationInboxScreen() {
             item={item}
             locale={locale}
             pending={actions.markRead.isPending}
-            onRead={() => !item.readAt && actions.markRead.mutate(item._id)}
+            onOpen={() => void openNotification(item)}
           />
         ))}
       </View>
@@ -71,18 +85,18 @@ function NotificationCard({
   item,
   locale,
   pending,
-  onRead,
+  onOpen,
 }: {
   item: NotificationItem;
   locale: string;
   pending: boolean;
-  onRead: () => void;
+  onOpen: () => void;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={pending || Boolean(item.readAt)}
-      onPress={onRead}
+      disabled={pending}
+      onPress={onOpen}
       style={[styles.card, !item.readAt && styles.unread]}
     >
       <View style={styles.cardHeader}>

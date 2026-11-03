@@ -5,13 +5,13 @@ import {
   AppButton,
   AppInput,
   AppText,
-  CalendarInputField,
   CustomHeader,
   EmptyState,
   ScreenWrapper,
   Toggle,
 } from '@/components';
 import { WeekNavigator } from '@/features/meal-plan/components/WeekNavigator';
+import { WeekDaySelector } from '@/features/meal-plan/components/WeekDaySelector';
 import { WeekPickerSheet } from '@/features/meal-plan/components/WeekPickerSheet';
 import { useWeekMealPlans } from '@/features/meal-plan/hooks';
 import { selectEditablePlan } from '@/features/meal-plan/mealPlanState';
@@ -25,13 +25,15 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
+import { GroceryGenerationScopeSelector } from '../components/GroceryGenerationScopeSelector';
+import { GroceryMealPreview } from '../components/GroceryMealPreview';
 import { useGroceryActions } from '../hooks';
-import { groceryDateRange } from '../groceryState';
-import { addDays, formatDayMonthYear } from '@/features/tracking/trackingState';
+import type { GroceryGenerationInput, GroceryGenerationScope } from '../types';
 
 export function GroceryGenerateScreen() {
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const [scope, setScope] = useState<GroceryGenerationScope>('day');
   const [subtractPantry, setSubtractPantry] = useState(false);
   const today = toIsoDate(new Date());
   const currentWeekStartDate = startOfWeek(new Date());
@@ -43,20 +45,6 @@ export function GroceryGenerateScreen() {
     week: string;
     id: string;
   } | null>(null);
-  const [rangeDraft, setRangeDraft] = useState<{
-    week: string;
-    from: string;
-    to: string;
-  } | null>(null);
-  const fromText =
-    rangeDraft?.week === weekStartDate
-      ? rangeDraft.from
-      : formatDayMonthYear(weekStartDate);
-  const toText =
-    rangeDraft?.week === weekStartDate
-      ? rangeDraft.to
-      : formatDayMonthYear(addDays(weekStartDate, 6));
-  const range = groceryDateRange(fromText, toText, weekStartDate);
   const planQuery = useWeekMealPlans(weekStartDate);
   const actions = useGroceryActions();
   const plans = planQuery.data?.data ?? [];
@@ -67,19 +55,19 @@ export function GroceryGenerateScreen() {
     selectEditablePlan(plans) ??
     plans[0] ??
     null;
+  const mealCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        (plan?.days ?? []).map((day) => [day.date, day.meals.length])
+      ),
+    [plan?.days]
+  );
   const dishCount = useMemo(
     () =>
-      range
-        ? (plan?.days.reduce(
-            (total, day) =>
-              total +
-              (day.date >= range.from && day.date <= range.to
-                ? day.meals.length
-                : 0),
-            0
-          ) ?? 0)
-        : 0,
-    [plan?.days, range?.from, range?.to]
+      scope === 'day'
+        ? (mealCounts[selectedDate] ?? 0)
+        : Object.values(mealCounts).reduce((total, count) => total + count, 0),
+    [mealCounts, scope, selectedDate]
   );
 
   const moveToWeek = (weekDelta: number) => {
@@ -97,13 +85,19 @@ export function GroceryGenerateScreen() {
   };
 
   const generate = async () => {
-    if (!plan || !range || dishCount === 0 || actions.generate.isPending) return;
+    if (!plan || dishCount === 0 || actions.generate.isPending) return;
+    const commonInput = {
+      ...(name.trim() ? { name: name.trim() } : {}),
+      subtractPantry,
+    };
+    const input: GroceryGenerationInput =
+      scope === 'day'
+        ? { ...commonInput, scope, date: selectedDate }
+        : { ...commonInput, scope };
     try {
       const list = await actions.generate.mutateAsync({
         planId: plan._id,
-        name: name.trim() || undefined,
-        range,
-        subtractPantry,
+        input,
       });
       router.replace({ pathname: '/(grocery)/[id]', params: { id: list._id } });
     } catch {
@@ -129,6 +123,11 @@ export function GroceryGenerateScreen() {
           <AppText color={colors.text.secondary}>
             {t('grocery.generateDescription')}
           </AppText>
+          <GroceryGenerationScopeSelector
+            value={scope}
+            disabled={actions.generate.isPending}
+            onChange={setScope}
+          />
           <WeekNavigator
             weekStartDate={weekStartDate}
             currentWeekStartDate={currentWeekStartDate}
@@ -180,6 +179,41 @@ export function GroceryGenerateScreen() {
           {plan ? (
             <View style={styles.planCard}>
               <AppText variant="heading4">{plan.title}</AppText>
+              {scope === 'day' ? (
+                <>
+                  <AppText variant="bodyStrong">
+                    {t('grocery.generateChooseDay')}
+                  </AppText>
+                  <WeekDaySelector
+                    weekStartDate={weekStartDate}
+                    selectedDate={selectedDate}
+                    locale={locale}
+                    mealCounts={mealCounts}
+                    onSelect={setSelectedDate}
+                  />
+                </>
+              ) : null}
+              <AppText color={colors.text.secondary}>
+                {t(
+                  scope === 'day'
+                    ? 'grocery.generateDayDishCount'
+                    : 'grocery.generateWeekDishCount',
+                  { count: dishCount }
+                )}
+              </AppText>
+              {dishCount > 0 ? (
+                <GroceryMealPreview
+                  days={plan.days}
+                  scope={scope}
+                  selectedDate={selectedDate}
+                  onOpenRecipe={(recipeId) =>
+                    router.push({
+                      pathname: '/(discover)/recipe/[id]',
+                      params: { id: recipeId },
+                    })
+                  }
+                />
+              ) : null}
               <Toggle
                 label={
                   locale === 'vi'
@@ -190,38 +224,6 @@ export function GroceryGenerateScreen() {
                 onValueChange={setSubtractPantry}
                 disabled={actions.generate.isPending}
               />
-              <CalendarInputField
-                label={t('grocery.fromDate')}
-                value={fromText}
-                format="DD/MM/YYYY"
-                disabled={actions.generate.isPending}
-                minimumDate={isoDateToLocalDate(weekStartDate)}
-                maximumDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
-                defaultDate={isoDateToLocalDate(weekStartDate)}
-                onChangeText={(from) =>
-                  setRangeDraft({ week: weekStartDate, from, to: toText })
-                }
-              />
-              <CalendarInputField
-                label={t('grocery.toDate')}
-                value={toText}
-                format="DD/MM/YYYY"
-                disabled={actions.generate.isPending}
-                minimumDate={isoDateToLocalDate(weekStartDate)}
-                maximumDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
-                defaultDate={isoDateToLocalDate(addDays(weekStartDate, 6))}
-                onChangeText={(to) =>
-                  setRangeDraft({ week: weekStartDate, from: fromText, to })
-                }
-              />
-              {!range ? (
-                <AppText color={colors.status.danger}>
-                  {t('grocery.dateRangeError')}
-                </AppText>
-              ) : null}
-              <AppText color={colors.text.secondary}>
-                {t('grocery.generateDishCount', { count: dishCount })}
-              </AppText>
               {dishCount > 0 ? (
                 <AppInput
                   label={t('grocery.generateName')}
@@ -247,7 +249,7 @@ export function GroceryGenerateScreen() {
           <AppButton
             title={t('grocery.generateAction')}
             loading={actions.generate.isPending}
-            disabled={!plan || !range || dishCount === 0}
+            disabled={!plan || dishCount === 0}
             onPress={() => void generate()}
           />
         </View>
@@ -261,10 +263,6 @@ export function GroceryGenerateScreen() {
       />
     </>
   );
-}
-
-function isoDateToLocalDate(value: string) {
-  return new Date(`${value}T12:00:00`);
 }
 
 const styles = StyleSheet.create({

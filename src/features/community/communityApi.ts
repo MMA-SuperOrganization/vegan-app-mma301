@@ -75,10 +75,6 @@ export const communityApi = {
     unwrapApiRequest(() =>
       apiClient.put(`/videos/${id}/progress`, { progressSeconds, completed })
     ),
-  generateVideoSummary: (id: string) =>
-    unwrapApiRequest<{ summary: string; chapters?: unknown[] }>(() =>
-      apiClient.post(`/videos/${id}/generate-summary`, {})
-    ),
   posts: (mine: boolean, page = 1, limit = 10) =>
     unwrapApiPageRequest<CommunityPost>(() =>
       apiClient.get(mine ? '/posts/mine' : '/posts', {

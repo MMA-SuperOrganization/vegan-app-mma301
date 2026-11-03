@@ -62,7 +62,13 @@ export function MealPlanScreen() {
   );
   const [selectedDate, setSelectedDate] = useState(initialDate);
   useEffect(() => {
-    if (!params.planId || !isLocalIsoDate(params.date || '')) return;
+    if (
+      !params.planId ||
+      params.planId === 'undefined' ||
+      !isLocalIsoDate(params.date || '')
+    ) {
+      return;
+    }
     setWeekStartDate(params.date!);
     setSelectedDate(params.date!);
     setConfirmActivation(false);
@@ -285,21 +291,32 @@ export function MealPlanScreen() {
     );
   };
 
+  const clearRoutePlanParams = () => {
+    if (params.planId || params.date) {
+      try {
+        router.setParams({ planId: undefined, date: undefined });
+      } catch {}
+    }
+  };
+
   const moveToWeek = (weekDelta: number) => {
-    router.setParams({ planId: undefined });
+    clearRoutePlanParams();
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
     setSelectedDate(next.selectedDate);
   };
 
   const returnToCurrentWeek = () => {
-    router.setParams({ planId: undefined });
-    setWeekStartDate(currentWeekStartDate);
-    setSelectedDate(today);
+    clearRoutePlanParams();
+    const now = new Date();
+    const actualToday = toIsoDate(now);
+    const actualCurrentWeek = startOfWeek(now);
+    setWeekStartDate(actualCurrentWeek);
+    setSelectedDate(actualToday);
   };
 
   const selectWeek = (nextWeekStartDate: string) => {
-    router.setParams({ planId: undefined });
+    clearRoutePlanParams();
     const weekDelta = relativeWeekOffset(weekStartDate, nextWeekStartDate);
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
@@ -439,6 +456,9 @@ export function MealPlanScreen() {
           <WeekNavigator
             weekStartDate={weekStartDate}
             currentWeekStartDate={currentWeekStartDate}
+            showTodayButton={
+              weekStartDate !== currentWeekStartDate || selectedDate !== today
+            }
             disabled={pending}
             onPrevious={() => moveToWeek(-1)}
             onNext={() => moveToWeek(1)}

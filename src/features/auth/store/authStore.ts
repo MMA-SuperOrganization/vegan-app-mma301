@@ -143,13 +143,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   restoreSession: async () => {
-    set({ isRestoringSession: true });
+    set({ isRestoringSession: true, error: null });
     try {
       const result = await authApi.restoreSession();
       set({
         token: result?.token ?? null,
         user: result?.user ?? null,
         isAuthenticated: !!result,
+      });
+    } catch (error) {
+      set({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+        error: captureError(
+          error,
+          'auth.restore_session',
+          translate('error.unexpected'),
+          'SESSION_RESTORE_FAILED'
+        ),
       });
     } finally {
       set({ isRestoringSession: false });

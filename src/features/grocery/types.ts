@@ -1,4 +1,10 @@
 export type GroceryStatus = 'active' | 'completed' | 'archived';
+export type GroceryGenerationScope = 'day' | 'week';
+
+export type GroceryGenerationInput = {
+  name?: string;
+  subtractPantry?: boolean;
+} & ({ scope: 'day'; date: string } | { scope: 'week'; date?: never });
 
 export type GroceryUnit =
   'g' | 'kg' | 'ml' | 'l' | 'piece' | 'tbsp' | 'tsp' | 'cup' | 'serving';

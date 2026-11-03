@@ -7,6 +7,8 @@ import { useAuthStore } from '@/features/auth';
 import { storage } from '@/services/storage';
 import { reminderApi } from './reminderApi';
 import { pushRegistrationKey } from './deviceRegistration';
+import { notificationHref } from '@/features/settings/notificationNavigation';
+import { settingsApi } from '@/features/settings/settingsApi';
 
 export function PushNotificationBridge() {
   const userId = useAuthStore((state) => state.user?.id);
@@ -19,7 +21,7 @@ export function PushNotificationBridge() {
       handleNotification: async () => ({
         shouldShowBanner: true,
         shouldShowList: true,
-        shouldPlaySound: false,
+        shouldPlaySound: true,
         shouldSetBadge: false,
       }),
     });
@@ -27,12 +29,28 @@ export function PushNotificationBridge() {
       void client.invalidateQueries({
         queryKey: ['account', userId, 'notifications'],
       });
+      void client.invalidateQueries({
+        queryKey: ['account', userId, 'notifications', 'unread'],
+      });
     };
     const received = Notifications.addNotificationReceivedListener(refresh);
-    const tapped = Notifications.addNotificationResponseReceivedListener(() => {
+    const openResponse = (response: Notifications.NotificationResponse) => {
       refresh();
-      router.push('/notifications');
-    });
+      const data = response.notification.request.content.data;
+      const notificationId =
+        typeof data?.notificationId === 'string' ? data.notificationId : null;
+      if (notificationId)
+        void settingsApi
+          .markRead(notificationId)
+          .then(refresh)
+          .catch(() => {
+            /* Inbox state can still be synchronized when the user opens it. */
+          });
+      const type = typeof data?.event === 'string' ? data.event : '';
+      router.push(notificationHref({ type, data }) ?? '/notifications');
+    };
+    const tapped =
+      Notifications.addNotificationResponseReceivedListener(openResponse);
     const rotated = Notifications.addPushTokenListener((token) => {
       // Refresh tokens only for a device whose owner explicitly opted in.
       void storage
@@ -53,8 +71,7 @@ export function PushNotificationBridge() {
     void Notifications.getLastNotificationResponseAsync()
       .then((response) => {
         if (!active || !response) return;
-        refresh();
-        router.push('/notifications');
+        openResponse(response);
         void Notifications.clearLastNotificationResponseAsync().catch(() => {});
       })
       .catch(() => {});

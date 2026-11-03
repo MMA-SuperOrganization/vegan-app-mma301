@@ -60,6 +60,40 @@ test('AI chat cache keeps the submitted question and returned answer visible', (
   ]);
 });
 
+test('AI requests keep running in the background and stay scoped to their conversation', () => {
+  const hooks = read('../src/features/ai/hooks.ts');
+  const widget = read('../src/features/ai/components/AiChatWidget.tsx');
+  const screen = read('../src/features/ai/screens/AiChatScreen.tsx');
+
+  assert.match(hooks, /mutationKey: sendMutationKey/);
+  assert.match(hooks, /mutationKey: createMutationKey/);
+  assert.match(hooks, /variables\?\.targetConversationId === conversationId/);
+  assert.match(hooks, /aiApi\.send\(targetConversationId, content, mediaId\)/);
+  const closePanel = widget.slice(
+    widget.indexOf('const closePanel'),
+    widget.indexOf('const openFullScreenChat')
+  );
+  const selectConversation = screen.slice(
+    screen.indexOf('const selectConversation'),
+    screen.indexOf('const createConversation')
+  );
+  assert.doesNotMatch(
+    closePanel,
+    /chat\.(?:send|create)\.reset\(\)|attachment\.clear\(\)/
+  );
+  assert.doesNotMatch(
+    selectConversation,
+    /chat\.(?:send|create)\.reset\(\)/
+  );
+  assert.match(widget, /chat\.isSending/);
+  assert.match(widget, /chat\.isCreating/);
+  assert.match(widget, /accessibilityState=\{\{ busy: chat\.hasPendingWork \}\}/);
+  assert.match(widget, /conversationIdRef\.current === targetConversationId/);
+  assert.match(screen, /chat\.isSending/);
+  assert.match(screen, /chat\.isCreating/);
+  assert.match(screen, /activeIdRef\.current === targetConversationId/);
+});
+
 test('AI chat copy helper derives concise titles and formats timestamps safely via i18n', () => {
   assert.equal(AI_STARTER_PROMPTS.vi.length, 4);
   assert.equal(AI_STARTER_PROMPTS.en.length, 4);
@@ -206,6 +240,7 @@ test('AI widget lets users scroll chat history without forced jumps', () => {
   assert.match(widget, /distanceFromBottom <= AUTO_SCROLL_THRESHOLD/);
   assert.doesNotMatch(widget, /onContentSizeChange=/);
   assert.doesNotMatch(widget, /swipeResponder\.panHandlers/);
+  assert.doesNotMatch(widget, /SWIPE_HINT|composerToolbar/);
   assert.match(sheet, /style=\{StyleSheet\.absoluteFill\}/);
   assert.match(sheet, /sheetMotion:\s*\{/);
   assert.match(sheet, /zIndex: 1/);

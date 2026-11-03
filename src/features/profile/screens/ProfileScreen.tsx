@@ -148,13 +148,6 @@ export function ProfileScreen() {
             onPress={() => router.push('/ai/ingredients')}
           />
           <MenuItem
-            title={vi ? 'Tóm tắt video bằng AI' : 'AI video summary'}
-            subtitle={
-              vi ? 'Tạo tóm tắt từ bản lời thoại' : 'Summarize a video transcript'
-            }
-            onPress={() => router.push('/ai/video-summary')}
-          />
-          <MenuItem
             title={vi ? 'Công thức của tôi' : 'My recipes'}
             subtitle={
               vi
@@ -173,15 +166,6 @@ export function ProfileScreen() {
             onPress={() =>
               router.push({ pathname: '/community', params: { scope: 'mine' } })
             }
-          />
-          <MenuItem
-            title={vi ? 'Bài viết cộng đồng' : 'Community posts'}
-            subtitle={
-              vi
-                ? 'Đọc hoặc đăng bài; có thể gắn công thức liên quan'
-                : 'Read or create posts with an optional linked recipe'
-            }
-            onPress={() => router.push('/community')}
           />
           <MenuItem
             title={vi ? 'Báo cáo của tôi' : 'My reports'}

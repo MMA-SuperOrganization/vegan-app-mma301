@@ -35,6 +35,55 @@ test('the shared settings header background extends through the top safe area', 
   assert.match(source, /header \? colors\.background\.surface : undefined/);
 });
 
+test('allergen settings synchronize loaded values and save the response locally', () => {
+  const screen = readFileSync(
+    new URL(
+      '../src/features/profile/screens/AllergiesSettingsScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const store = readFileSync(
+    new URL('../src/features/profile/profileStore.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(screen, /useEffect\(\(\) => \{/);
+  assert.match(screen, /hasLocalChanges\.current/);
+  assert.match(store, /const savedNutrition = await profileApi\.updateAllergens/);
+  assert.match(store, /allergenSelectionCompleted: true/);
+  assert.match(screen, /allergyMealPlanConflictTitle/);
+  assert.match(screen, /onPress: \(\) => void save\(true\)/);
+  assert.match(store, /MEAL_PLAN_ALLERGEN_ACKNOWLEDGEMENT_REQUIRED/);
+});
+
+test('allergen saving keeps selected toggles visible and shows button progress', () => {
+  const screen = readFileSync(
+    new URL(
+      '../src/features/profile/screens/AllergiesSettingsScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const button = readFileSync(
+    new URL('../src/components/ui/Button/Button.tsx', import.meta.url),
+    'utf8'
+  );
+  const toggle = readFileSync(
+    new URL('../src/components/ui/Toggle/Toggle.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(screen, /loading=\{isSaving\}/);
+  assert.match(screen, /disabled=\{!data \|\| data\.allergensLoadFailed\}/);
+  assert.ok(
+    button.indexOf("loading || state === 'loading'") <
+      button.indexOf("disabled || state === 'disabled'")
+  );
+  assert.match(toggle, /const blocked = disabled \|\| usesDisabledPreview/);
+  assert.match(toggle, /disabled && !usesDisabledPreview && styles\.disabled/);
+});
+
 const customHeaderHosts = [
   'src/components/layout/SettingsScreenLayout.tsx',
   'src/components/navigation/PlaceholderTabScreen.tsx',

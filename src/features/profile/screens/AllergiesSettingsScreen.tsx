@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
@@ -23,11 +23,49 @@ export function AllergiesSettingsScreen() {
   const userId = useProfileStore((state) => state.userId);
   const isSaving = useProfileStore((state) => state.isSaving);
   const error = useProfileStore((state) => state.error);
-  const [selected, setSelected] = useState(
-    data?.nutritionProfile?.allergenIds ?? []
+  const storedAllergenIds = data?.nutritionProfile?.allergenIds;
+  const persistedAllergenIds = useMemo(
+    () => storedAllergenIds ?? [],
+    [storedAllergenIds]
   );
-  const save = async () => {
-    if (await update(selected)) goBack();
+  const hasLocalChanges = useRef(false);
+  const [selected, setSelected] = useState(persistedAllergenIds);
+  useEffect(() => {
+    if (!hasLocalChanges.current) setSelected(persistedAllergenIds);
+  }, [persistedAllergenIds]);
+  const save = async (acknowledgeMealPlanAllergenConflicts = false) => {
+    const result = await update(
+      selected,
+      acknowledgeMealPlanAllergenConflicts
+    );
+    if (result.status === 'saved') {
+      goBack();
+      return;
+    }
+    if (result.status !== 'confirmation-required') return;
+    const mealNames = [...new Set(result.conflicts.map((item) => item.mealName))];
+    const allergenNames = [
+      ...new Set(
+        result.conflicts.flatMap((item) =>
+          item.allergens.map((allergen) => allergen.name)
+        )
+      ),
+    ];
+    appDialog.alert(
+      t('profile.allergyMealPlanConflictTitle'),
+      t('profile.allergyMealPlanConflictDescription', {
+        meals: mealNames.join(', ') || t('profile.allergyMealPlanUnknownMeal'),
+        allergens:
+          allergenNames.join(', ') || t('recipe.unknownAllergen'),
+      }),
+      [
+        { text: t('profile.allergyKeepCurrent'), style: 'cancel' },
+        {
+          text: t('profile.allergySaveAnyway'),
+          onPress: () => void save(true),
+        },
+      ]
+    );
   };
   return (
     <SettingsScreenLayout
@@ -57,11 +95,12 @@ export function AllergiesSettingsScreen() {
               label={allergen.name}
               value={selected.includes(allergen._id)}
               disabled={isSaving}
-              onValueChange={() =>
+              onValueChange={() => {
+                hasLocalChanges.current = true;
                 setSelected((current) =>
                   toggleAllergenSelection(current, allergen._id)
-                )
-              }
+                );
+              }}
             />
           ))}
       </View>
@@ -85,8 +124,8 @@ export function AllergiesSettingsScreen() {
       <AppButton
         title={t('profile.saveAllergies')}
         loading={isSaving}
-        disabled={data?.allergensLoadFailed}
-        onPress={() => void save()}
+        disabled={!data || data.allergensLoadFailed}
+        onPress={() => void save(false)}
       />
     </SettingsScreenLayout>
   );

@@ -32,7 +32,6 @@ test('manually editable dates expose the shared branded calendar button', () => 
   for (const file of [
     '../src/features/pantry/screens/PantryItemEditorScreen.tsx',
     '../src/features/pantry/components/IngredientReviewEditor.tsx',
-    '../src/features/grocery/screens/GroceryGenerateScreen.tsx',
     '../src/features/reminders/screens/RemindersScreen.tsx',
     '../src/features/tracking/components/WeightLogModal.tsx',
     '../src/features/ai/screens/AiMealPlannerScreen.tsx',

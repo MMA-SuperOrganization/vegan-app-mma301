@@ -58,14 +58,18 @@ export function AiChatScreen() {
 
   const [content, setContent] = useState('');
   const [rated, setRated] = useState<Record<string, AiFeedbackRating>>({});
+  const activeIdRef = useRef(activeId);
+  const contentRef = useRef(content);
+  activeIdRef.current = activeId;
+  contentRef.current = content;
 
   useEffect(() => {
     setActiveId(id);
   }, [id]);
 
   const busy =
-    chat.send.isPending ||
-    chat.create.isPending ||
+    chat.isSending ||
+    chat.isCreating ||
     attachment.choose.isPending ||
     attachment.upload.isPending;
 
@@ -89,8 +93,6 @@ export function AiChatScreen() {
   }, [keyboard.overlap, keyboard.visible]);
 
   const selectConversation = (nextId: string | undefined) => {
-    chat.send.reset();
-    chat.create.reset();
     setActiveId(nextId);
     if (nextId) {
       router.setParams({ id: nextId });
@@ -123,6 +125,7 @@ export function AiChatScreen() {
         );
         targetConversationId = created._id;
         setActiveId(targetConversationId);
+        activeIdRef.current = targetConversationId;
         router.setParams({ id: targetConversationId });
       }
 
@@ -132,8 +135,10 @@ export function AiChatScreen() {
         mediaId,
         targetConversationId,
       });
-      setContent('');
-      attachment.clear();
+      if (activeIdRef.current === targetConversationId) {
+        if (contentRef.current.trim() === question) setContent('');
+        attachment.clear();
+      }
     } catch {
       // Mutation errors are rendered below and the attachment stays available to retry.
     }
@@ -540,7 +545,7 @@ export function AiChatScreen() {
           );
         })}
 
-        {chat.send.isPending ? (
+        {chat.isSending ? (
           <View style={styles.messageRow}>
             <View style={styles.aiAvatar}>
               <AppIcon name="mam-companion" size={30} decorative />
@@ -615,7 +620,7 @@ export function AiChatScreen() {
               pressed && canSend && styles.sendButtonPressed,
             ]}
           >
-            {chat.send.isPending || chat.create.isPending ? (
+            {chat.isSending || chat.isCreating ? (
               <ActivityIndicator size="small" color={colors.text.inverse} />
             ) : (
               <AppIcon

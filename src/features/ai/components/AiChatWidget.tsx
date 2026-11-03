@@ -81,6 +81,10 @@ export function AiChatWidget() {
   const [lastAction, setLastAction] = useState<AiWidgetAction>(
     AiWidgetAction.SUBMIT
   );
+  const conversationIdRef = useRef(conversationId);
+  const contentRef = useRef(content);
+  conversationIdRef.current = conversationId;
+  contentRef.current = content;
   const scrollRef = useRef<ScrollView>(null);
   const shouldAutoScrollRef = useRef(true);
   const keyboard = useKeyboardInsets();
@@ -154,8 +158,8 @@ export function AiChatWidget() {
   ).current;
 
   const busy =
-    chat.create.isPending ||
-    chat.send.isPending ||
+    chat.isCreating ||
+    chat.isSending ||
     attachment.choose.isPending ||
     attachment.upload.isPending;
   const messages = chat.messages.data?.data ?? [];
@@ -223,6 +227,7 @@ export function AiChatWidget() {
         );
         targetConversationId = conversation._id;
         setConversationId(targetConversationId);
+        conversationIdRef.current = targetConversationId;
       }
 
       const mediaId = await attachment.uploadIfNeeded();
@@ -231,17 +236,16 @@ export function AiChatWidget() {
         mediaId,
         targetConversationId,
       });
-      setContent('');
-      attachment.clear();
+      if (conversationIdRef.current === targetConversationId) {
+        if (contentRef.current.trim() === question) setContent('');
+        attachment.clear();
+      }
     } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
   };
 
   const closePanel = () => {
-    chat.create.reset();
-    chat.send.reset();
-    attachment.clear();
     setVisible(false);
   };
 
@@ -402,6 +406,7 @@ export function AiChatWidget() {
           accessibilityRole="button"
           accessibilityLabel={t(widgetKeys.OPEN_A11Y)}
           accessibilityHint={t(widgetKeys.OPEN_HINT)}
+          accessibilityState={{ busy: chat.hasPendingWork }}
           onPress={() => {
             shouldAutoScrollRef.current = true;
             setVisible(true);
@@ -415,6 +420,11 @@ export function AiChatWidget() {
           <View style={styles.aiBadge}>
             <AppText style={styles.aiBadgeText}>{t(commonKeys.BADGE)}</AppText>
           </View>
+          {chat.hasPendingWork ? (
+            <View style={styles.backgroundTaskBadge}>
+              <ActivityIndicator size="small" color={colors.text.inverse} />
+            </View>
+          ) : null}
         </Pressable>
       </Animated.View>
 
@@ -765,12 +775,6 @@ export function AiChatWidget() {
               </View>
             ) : null}
 
-            <View style={styles.composerToolbar}>
-              <AppText variant="caption" color={colors.text.secondary}>
-                {t(widgetKeys.SWIPE_HINT)}
-              </AppText>
-            </View>
-
             <FeatureState
               error={attachment.choose.error}
               retry={() => attachment.choose.mutate()}
@@ -813,7 +817,7 @@ export function AiChatWidget() {
                   pressed && canSend && styles.sendButtonPressed,
                 ]}
               >
-                {chat.send.isPending ? (
+                {chat.isSending || chat.isCreating ? (
                   <ActivityIndicator size="small" color={colors.text.inverse} />
                 ) : (
                   <AppIcon
@@ -870,6 +874,19 @@ const styles = StyleSheet.create({
     borderColor: colors.background.surface,
   },
   aiBadgeText: { color: colors.text.inverse, fontSize: 10, fontWeight: '700' },
+  backgroundTaskBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.background.surface,
+    backgroundColor: colors.primary[700],
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1030,14 +1047,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
   },
-  composerToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  toggleWrap: { flexShrink: 1 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   input: { flex: 1 },
   inputText: { maxHeight: 88 },

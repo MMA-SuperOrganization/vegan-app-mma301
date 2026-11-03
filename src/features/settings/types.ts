@@ -3,7 +3,18 @@ export interface NotificationItem {
   type: string;
   title: string;
   body: string;
-  data?: Record<string, unknown>;
+  data?: {
+    event?: string;
+    targetType?: 'recipe' | 'post' | 'video' | string;
+    targetId?: string;
+    actorId?: string;
+    reactionType?: string;
+    subjectType?: string;
+    reminderId?: string;
+    scheduledAt?: string;
+    route?: string;
+    [key: string]: unknown;
+  };
   status: 'pending' | 'sent' | 'failed' | 'read';
   readAt?: string | null;
   createdAt: string;

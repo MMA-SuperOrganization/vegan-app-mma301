@@ -60,10 +60,10 @@ export function Button({
   const { t } = useTranslation();
   const visibleLoadingTitle = loadingTitle ?? t('common.processing');
   const current =
-    disabled || state === 'disabled'
-      ? 'disabled'
-      : loading || state === 'loading'
-        ? 'loading'
+    loading || state === 'loading'
+      ? 'loading'
+      : disabled || state === 'disabled'
+        ? 'disabled'
         : state;
   const blocked = current === 'disabled' || current === 'loading';
   const visibleIcon = icon === false ? undefined : (icon ?? inferButtonIcon(title));

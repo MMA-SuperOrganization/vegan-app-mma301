@@ -303,3 +303,14 @@ test('AI meal planner shows progress steps, elapsed time and can cancel', () => 
   assert.match(panel, /elapsedLabel\(seconds\)/);
   assert.match(api, /\{ \.\.\.aiGenerationRequest, signal \}/);
 });
+
+test('ingredient recognition shows real progress phases and can be cancelled', () => {
+  const screen = read('../src/features/ai/screens/IngredientRecognitionScreen.tsx');
+  const panel = read('../src/features/ai/components/AiProgressPanel.tsx');
+  const api = read('../src/features/ai/aiApi.ts');
+  assert.match(screen, /<AiProgressPanel/);
+  assert.match(screen, /stepFloor={upload\.isPending \? 0 : 1}/);
+  assert.match(screen, /upload\.mutateAsync\(controller\.signal\)/);
+  assert.match(panel, /stepCeiling/);
+  assert.match(api, /recognize: \(mediaId: string, signal\?: AbortSignal\)/);
+});

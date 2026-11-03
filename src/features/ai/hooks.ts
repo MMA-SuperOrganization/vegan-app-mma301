@@ -170,7 +170,15 @@ export function useIngredientRecognition() {
   const userId = useAuthStore((state) => state.user?.id);
   const client = useQueryClient();
   return {
-    recognize: useMutation({ mutationFn: aiApi.recognize }),
+    recognize: useMutation({
+      mutationFn: ({
+        mediaId,
+        signal,
+      }: {
+        mediaId: string;
+        signal?: AbortSignal;
+      }) => aiApi.recognize(mediaId, signal),
+    }),
     confirm: useMutation({
       mutationFn: ({
         proposalId,

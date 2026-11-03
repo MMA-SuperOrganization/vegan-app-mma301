@@ -75,9 +75,13 @@ export const aiApi = {
         mealConfirmationInput(proposal)
       )
     ),
-  recognize: (mediaId: string) =>
+  recognize: (mediaId: string, signal?: AbortSignal) =>
     unwrapApiRequest<PantryProposal>(() =>
-      apiClient.post('/ai/ingredient-recognition', { mediaId }, aiGenerationRequest)
+      apiClient.post(
+        '/ai/ingredient-recognition',
+        { mediaId },
+        { ...aiGenerationRequest, signal }
+      )
     ),
   confirmPantry: (proposalId: string, items: RecognizedIngredient[]) =>
     unwrapApiRequest<ConfirmedProposal>(() =>

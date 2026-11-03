@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -13,6 +13,7 @@ import { IngredientReviewEditor } from '@/features/pantry/components/IngredientR
 import { AI_ROUTES, AI_TRANSLATION_KEYS, AiErrorCode } from '../aiConstants';
 import { useIngredientRecognition } from '../hooks';
 import { reviewPantryProposal } from '../proposalState';
+import { AiProgressPanel } from '../components/AiProgressPanel';
 import type { PantryProposal } from '../types';
 
 export function IngredientRecognitionScreen() {
@@ -22,8 +23,11 @@ export function IngredientRecognitionScreen() {
   const [asset, setAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [proposal, setProposal] = useState<PantryProposal | null>(null);
   const actions = useIngredientRecognition();
+  const recognition = useRef<AbortController | null>(null);
+  const [canceled, setCanceled] = useState(false);
   const upload = useMutation({
-    mutationFn: () => mediaApi.uploadImage(asset!, 'ai_ingredient'),
+    mutationFn: (signal?: AbortSignal) =>
+      mediaApi.uploadImage(asset!, 'ai_ingredient', { signal }),
   });
   const choose = useMutation({
     mutationFn: async (camera: boolean) => {
@@ -67,15 +71,30 @@ export function IngredientRecognitionScreen() {
         (!item.expiryDate || isLocalIsoDate(item.expiryDate))
     );
   const run = async () => {
+    recognition.current?.abort();
+    const controller = new AbortController();
+    recognition.current = controller;
+    setCanceled(false);
     try {
-      const mediaId = upload.data || (await upload.mutateAsync());
-      setProposal(
-        reviewPantryProposal(await actions.recognize.mutateAsync(mediaId))
-      );
+      const mediaId = upload.data || (await upload.mutateAsync(controller.signal));
+      const result = await actions.recognize.mutateAsync({
+        mediaId,
+        signal: controller.signal,
+      });
+      if (!controller.signal.aborted) setProposal(reviewPantryProposal(result));
     } catch {
-      /* Mutation error is displayed below. */
+      /* Mutation error is displayed below; a cancelled run shows its own note. */
     }
   };
+  const cancelRecognition = () => {
+    recognition.current?.abort();
+    recognition.current = null;
+    // Keep an uploaded photo so trying again only repeats the AI step.
+    if (upload.isPending) upload.reset();
+    actions.recognize.reset();
+    setCanceled(true);
+  };
+  const recognizing = upload.isPending || actions.recognize.isPending;
 
   return (
     <ScreenWrapper
@@ -109,13 +128,36 @@ export function IngredientRecognitionScreen() {
           resizeMode="contain"
         />
       ) : null}
-      {asset && !proposal ? (
-        <AppButton
-          title={t(keys.RECOGNIZE_ACTION)}
-          disabled={busy}
-          loading={upload.isPending || actions.recognize.isPending}
-          onPress={() => void run()}
+      {asset && !proposal && recognizing ? (
+        <AiProgressPanel
+          title={t(keys.PROGRESS_TITLE)}
+          steps={[
+            t(keys.PROGRESS_STEP_UPLOAD),
+            t(keys.PROGRESS_STEP_DETECT),
+            t(keys.PROGRESS_STEP_MATCH),
+            t(keys.PROGRESS_STEP_FINISH),
+          ]}
+          stepFloor={upload.isPending ? 0 : 1}
+          stepCeiling={upload.isPending ? 0 : undefined}
+          elapsedLabel={(seconds) =>
+            t(AI_TRANSLATION_KEYS.MEAL_PLANNER.PROGRESS_ELAPSED, { seconds })
+          }
+          cancelLabel={t(keys.PROGRESS_CANCEL)}
+          onCancel={cancelRecognition}
         />
+      ) : asset && !proposal ? (
+        <>
+          {canceled ? (
+            <AppText color={colors.text.secondary}>
+              {t(keys.PROGRESS_CANCELED)}
+            </AppText>
+          ) : null}
+          <AppButton
+            title={t(keys.RECOGNIZE_ACTION)}
+            disabled={busy}
+            onPress={() => void run()}
+          />
+        </>
       ) : null}
       {proposal ? (
         <>

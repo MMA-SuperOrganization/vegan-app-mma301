@@ -9,6 +9,9 @@ const STEP_SECONDS = 8;
 /**
  * Shows that a long AI request is still running: an indeterminate bar,
  * the current processing step, elapsed time and a cancel action.
+ *
+ * Steps advance on a timer between `stepFloor` and `stepCeiling`, so callers can
+ * pin the panel to a real phase (e.g. uploading) and let it move on afterwards.
  */
 export function AiProgressPanel({
   title,
@@ -16,14 +19,21 @@ export function AiProgressPanel({
   elapsedLabel,
   cancelLabel,
   onCancel,
+  stepFloor = 0,
+  stepCeiling,
 }: {
   title: string;
   steps: string[];
   elapsedLabel: (seconds: number) => string;
   cancelLabel: string;
   onCancel: () => void;
+  stepFloor?: number;
+  stepCeiling?: number;
 }) {
   const [seconds, setSeconds] = useState(0);
+  const [floorSeconds, setFloorSeconds] = useState(0);
+  const secondsRef = useRef(0);
+  secondsRef.current = seconds;
   const sweep = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -34,6 +44,11 @@ export function AiProgressPanel({
     );
     return () => clearInterval(timer);
   }, []);
+
+  // Restart the step timer whenever the caller moves to a new phase.
+  useEffect(() => {
+    setFloorSeconds(secondsRef.current);
+  }, [stepFloor]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -48,7 +63,11 @@ export function AiProgressPanel({
     return () => loop.stop();
   }, [sweep]);
 
-  const current = Math.min(Math.floor(seconds / STEP_SECONDS), steps.length - 1);
+  const lastStep = Math.min(stepCeiling ?? steps.length - 1, steps.length - 1);
+  const current = Math.min(
+    stepFloor + Math.floor((seconds - floorSeconds) / STEP_SECONDS),
+    lastStep
+  );
 
   return (
     <View

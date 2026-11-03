@@ -259,6 +259,13 @@ export const AI_TRANSLATION_KEYS = {
     SELECTED_PHOTO_A11Y: 'ai.recognition.selectedPhotoA11y',
     RECOGNIZE_ACTION: 'ai.recognition.recognizeAction',
     CONFIRM_ACTION: 'ai.recognition.confirmAction',
+    PROGRESS_TITLE: 'ai.recognition.progressTitle',
+    PROGRESS_STEP_UPLOAD: 'ai.recognition.progressStepUpload',
+    PROGRESS_STEP_DETECT: 'ai.recognition.progressStepDetect',
+    PROGRESS_STEP_MATCH: 'ai.recognition.progressStepMatch',
+    PROGRESS_STEP_FINISH: 'ai.recognition.progressStepFinish',
+    PROGRESS_CANCEL: 'ai.recognition.progressCancel',
+    PROGRESS_CANCELED: 'ai.recognition.progressCanceled',
   },
   MONITORING: {
     TITLE: 'ai.monitoring.title',

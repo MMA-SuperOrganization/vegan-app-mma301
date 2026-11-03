@@ -6,6 +6,7 @@ import { updateItemChecked } from './groceryState';
 import type {
   GroceryItemInput,
   GroceryItemUpdate,
+  GroceryGenerationInput,
   GroceryList,
   GroceryStatus,
   GroceryUnit,
@@ -81,15 +82,11 @@ export function useGroceryActions(listId?: string) {
   const generate = useMutation({
     mutationFn: ({
       planId,
-      name,
-      range,
-      subtractPantry,
+      input,
     }: {
       planId: string;
-      name?: string;
-      range?: { from: string; to: string };
-      subtractPantry?: boolean;
-    }) => groceryApi.generateFromMealPlan(planId, name, range, subtractPantry),
+      input: GroceryGenerationInput;
+    }) => groceryApi.generateFromMealPlan(planId, input),
     onSuccess: storeList,
   });
   const update = useMutation({

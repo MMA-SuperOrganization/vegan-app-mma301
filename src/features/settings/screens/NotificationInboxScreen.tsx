@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { getUserErrorMessage } from '@/services/errors';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AppButton,
@@ -12,6 +12,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { usePublicProfile } from '@/features/profile/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { useNotificationActions, useNotifications } from '../hooks';
 import type { NotificationItem } from '../types';
@@ -22,6 +23,7 @@ type GroupFilter = 'all' | NotificationGroup;
 type IconName = 'clock' | 'utensils' | 'water' | 'comment' | 'heart' | 'spark';
 
 const PAGE_SIZE = 10;
+const PREVIEW_LIMIT = 5;
 const REMINDER_TYPES = ['meal', 'water', 'custom'];
 
 /** Presentation-only grouping: reminders vs. community/social activity. */
@@ -44,7 +46,8 @@ function iconOf(item: NotificationItem): IconName {
 
 type Row =
   | { kind: 'header'; group: NotificationGroup }
-  | { kind: 'item'; item: NotificationItem };
+  | { kind: 'item'; item: NotificationItem }
+  | { kind: 'see-more'; group: NotificationGroup; total: number; remaining: number };
 
 // Social bodies look like "<name> commented on your post." – split so the actor
 // and the action can be emphasised without touching the stored text.
@@ -117,10 +120,19 @@ export function NotificationInboxScreen() {
   const rows: Row[] = [];
   if (filter === 'all') {
     for (const group of ['reminder', 'social'] as const) {
-      const items = shown.filter((item) => groupOf(item) === group);
-      if (!items.length) continue;
+      const allGroupItems = groups[group].items;
+      if (!allGroupItems.length) continue;
       rows.push({ kind: 'header', group });
-      for (const item of items) rows.push({ kind: 'item', item });
+      const topItems = allGroupItems.slice(0, PREVIEW_LIMIT);
+      for (const item of topItems) rows.push({ kind: 'item', item });
+      if (allGroupItems.length > PREVIEW_LIMIT) {
+        rows.push({
+          kind: 'see-more',
+          group,
+          total: allGroupItems.length,
+          remaining: allGroupItems.length - PREVIEW_LIMIT,
+        });
+      }
     }
   } else {
     for (const item of shown) rows.push({ kind: 'item', item });
@@ -140,9 +152,11 @@ export function NotificationInboxScreen() {
     >
       <FlatList
         data={rows}
-        keyExtractor={(row) =>
-          row.kind === 'header' ? `header-${row.group}` : row.item._id
-        }
+        keyExtractor={(row) => {
+          if (row.kind === 'header') return `header-${row.group}`;
+          if (row.kind === 'see-more') return `see-more-${row.group}`;
+          return row.item._id;
+        }}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         initialNumToRender={PAGE_SIZE}
@@ -205,35 +219,60 @@ export function NotificationInboxScreen() {
             ) : null}
           </View>
         }
-        renderItem={({ item: row }) =>
-          row.kind === 'header' ? (
-            <View style={styles.sectionHeader}>
-              <AppText variant="heading4" style={styles.sectionTitle}>
-                {row.group === 'reminder'
-                  ? vi
-                    ? 'Nhắc hẹn'
-                    : 'Reminders'
-                  : vi
-                    ? 'Cộng đồng & bài viết'
-                    : 'Community & posts'}
-              </AppText>
-              {groups[row.group].unread > 0 ? (
-                <AppText variant="caption" color={colors.primary[700]}>
-                  {vi
-                    ? `${groups[row.group].unread} chưa đọc`
-                    : `${groups[row.group].unread} unread`}
+        renderItem={({ item: row }) => {
+          if (row.kind === 'header') {
+            return (
+              <View style={styles.sectionHeader}>
+                <AppText variant="heading4" style={styles.sectionTitle}>
+                  {row.group === 'reminder'
+                    ? vi
+                      ? 'Nhắc hẹn'
+                      : 'Reminders'
+                    : vi
+                      ? 'Cộng đồng & bài viết'
+                      : 'Community & posts'}
                 </AppText>
-              ) : null}
-            </View>
-          ) : (
+                {groups[row.group].unread > 0 ? (
+                  <AppText variant="caption" color={colors.primary[700]}>
+                    {vi
+                      ? `${groups[row.group].unread} chưa đọc`
+                      : `${groups[row.group].unread} unread`}
+                  </AppText>
+                ) : null}
+              </View>
+            );
+          }
+          if (row.kind === 'see-more') {
+            return (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => selectFilter(row.group)}
+                style={({ pressed }) => [
+                  styles.seeMoreButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <AppText variant="bodySmall" color={colors.primary[700]}>
+                  {row.group === 'reminder'
+                    ? vi
+                      ? `Xem tất cả ${row.total} nhắc hẹn →`
+                      : `View all ${row.total} reminders →`
+                    : vi
+                      ? `Xem tất cả ${row.total} thông báo cộng đồng →`
+                      : `View all ${row.total} community notifications →`}
+                </AppText>
+              </Pressable>
+            );
+          }
+          return (
             <NotificationCard
               item={row.item}
               locale={locale}
               pending={actions.markRead.isPending}
               onOpen={() => void openNotification(row.item)}
             />
-          )
-        }
+          );
+        }}
         ListFooterComponent={
           <View style={styles.footer}>
             {canLoadMore ? (
@@ -297,6 +336,73 @@ function FilterChip({
   );
 }
 
+function NotificationAvatar({
+  item,
+  isUnread,
+}: {
+  item: NotificationItem;
+  isUnread: boolean;
+}) {
+  const actorId =
+    typeof item.data?.actorId === 'string'
+      ? item.data.actorId
+      : typeof (item.data as any)?.userId === 'string'
+        ? (item.data as any).userId
+        : undefined;
+
+  const directAvatar = (item.data?.avatarUrl ||
+    item.data?.actorAvatar ||
+    item.data?.authorAvatar ||
+    item.data?.userAvatar ||
+    (item as any).avatarUrl) as string | undefined;
+
+  const profile = usePublicProfile(directAvatar ? undefined : actorId);
+  const avatarUrl = directAvatar || profile.data?.avatarUrl;
+  const isSocial = groupOf(item) === 'social';
+
+  if (!isSocial) {
+    return (
+      <View style={[styles.iconBubble, isUnread && styles.iconBubbleUnread]}>
+        <AppIcon
+          name={iconOf(item)}
+          size={20}
+          color={isUnread ? colors.primary[700] : colors.text.secondary}
+          decorative
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.avatarContainer}>
+      {avatarUrl ? (
+        <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+      ) : (
+        <View style={styles.avatarFallback}>
+          <AppIcon name="user" size={20} color={colors.primary[700]} decorative />
+        </View>
+      )}
+      <View
+        style={[
+          styles.avatarBadge,
+          {
+            borderColor: isUnread
+              ? colors.background.selected
+              : colors.background.surface,
+          },
+        ]}
+      >
+        <AppIcon
+          name={iconOf(item)}
+          size={11}
+          color={colors.common.white}
+          decorative
+        />
+      </View>
+    </View>
+  );
+}
+
 function NotificationCard({
   item,
   locale,
@@ -321,14 +427,7 @@ function NotificationCard({
         pressed && styles.pressed,
       ]}
     >
-      <View style={[styles.iconBubble, unread && styles.iconBubbleUnread]}>
-        <AppIcon
-          name={iconOf(item)}
-          size={20}
-          color={unread ? colors.primary[700] : colors.text.secondary}
-          decorative
-        />
-      </View>
+      <NotificationAvatar item={item} isUnread={unread} />
       <View style={styles.cardBody}>
         <View style={styles.cardHeader}>
           {parsed ? (
@@ -385,6 +484,13 @@ const styles = StyleSheet.create({
   separator: { height: spacing.md },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sectionTitle: { flex: 1 },
+  seeMoreButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.selected,
+  },
   footer: { gap: spacing.lg, marginTop: spacing.lg },
   card: {
     flexDirection: 'row',
@@ -395,6 +501,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.default,
     backgroundColor: colors.background.surface,
+  },
+  avatarContainer: {
+    position: 'relative',
+    width: 46,
+    height: 46,
+  },
+  avatarImage: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.selected,
+  },
+  avatarFallback: {
+    width: 46,
+    height: 46,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.selected,
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 22,
+    height: 22,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[700],
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   unread: {
     borderColor: colors.primary[500],

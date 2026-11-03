@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
@@ -91,27 +91,6 @@ export function HomeSocialPostCard({
           />
         ) : null}
       </Pressable>
-      <View style={styles.stats}>
-        <View style={styles.statMetric}>
-          <AppIcon
-            name="heart"
-            size={14}
-            color={liked ? colors.primary[700] : colors.text.secondary}
-            decorative
-          />
-          <AppText
-            variant="caption"
-            color={liked ? colors.primary[700] : colors.text.secondary}
-          >
-            {t('home.likeCount', { count: post.reactionCount ?? 0 })}
-          </AppText>
-        </View>
-        <Pressable accessibilityRole="button" onPress={onComment} hitSlop={8}>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {post.commentCount ?? 0} {t('home.comments')}
-          </AppText>
-        </Pressable>
-      </View>
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
@@ -121,8 +100,8 @@ export function HomeSocialPostCard({
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
           <PostLikeIcon liked={liked} />
-          <AppText variant="caption" color={liked ? colors.primary[700] : undefined}>
-            {liked ? t('home.liked') : t('home.like')}
+          <AppText variant="caption" color={liked ? colors.primary[700] : colors.text.secondary}>
+            {post.reactionCount ?? 0}
           </AppText>
         </Pressable>
         <Pressable
@@ -136,11 +115,15 @@ export function HomeSocialPostCard({
             color={colors.text.secondary}
             decorative
           />
-          <AppText variant="caption">{t('home.comment')}</AppText>
+          <AppText variant="caption" color={colors.text.secondary}>{post.commentCount ?? 0}</AppText>
         </Pressable>
-        <Pressable style={styles.action}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Chia sẻ' : 'Share'}
+          onPress={() => void Share.share({ title: post.title, message: `${post.title}\n\n${post.content ?? ''}` })}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+        >
           <AppIcon name="share" size={20} color={colors.text.secondary} decorative />
-          <AppText variant="caption">{t('home.share')}</AppText>
         </Pressable>
       </View>
     </View>
@@ -166,13 +149,6 @@ const styles = StyleSheet.create({
   body: { gap: spacing.sm },
   copy: { paddingHorizontal: spacing.md, gap: spacing.xs },
   postImage: { width: '100%', height: 250, borderRadius: 0 },
-  stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  statMetric: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   actions: {
     borderTopWidth: 1,
     borderTopColor: colors.border.subtle,

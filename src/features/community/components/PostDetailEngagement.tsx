@@ -61,7 +61,6 @@ export function PostDetailEngagement({
       <View style={styles.actions}>
         <EngagementAction
           icon={loved ? 'heart-filled' : 'heart'}
-          label={vi ? 'Yêu thích' : 'Favorite'}
           count={formatEngagementCount(reactionCount, locale)}
           accessibilityLabel={`${vi ? 'Yêu thích bài viết' : 'Favorite post'}, ${formatFullEngagementCount(reactionCount, locale)}`}
           selected={loved}
@@ -69,14 +68,12 @@ export function PostDetailEngagement({
         />
         <EngagementAction
           icon="comment"
-          label={vi ? 'Bình luận' : 'Comment'}
           count={formatEngagementCount(commentCount, locale)}
           accessibilityLabel={`${vi ? 'Bình luận' : 'Comment'}, ${formatFullEngagementCount(commentCount, locale)}`}
           onPress={onComment}
         />
         <EngagementAction
           icon="share"
-          label={vi ? 'Chia sẻ' : 'Share'}
           accessibilityLabel={vi ? 'Chia sẻ' : 'Share'}
           onPress={() => void sharePost()}
         />
@@ -97,14 +94,12 @@ export function PostDetailEngagement({
 
 function EngagementAction({
   icon,
-  label,
   accessibilityLabel,
   count,
   selected = false,
   onPress,
 }: {
   icon: AssetName;
-  label: string;
   accessibilityLabel: string;
   count?: string;
   selected?: boolean;
@@ -123,16 +118,11 @@ function EngagementAction({
       ]}
     >
       <AppIcon name={icon} size={19} color={colors.primary[700]} decorative />
-      <View style={styles.actionCopy}>
-        <AppText variant="caption" color={colors.primary[700]} numberOfLines={1}>
-          {label}
+      {count ? (
+        <AppText variant="caption" color={colors.text.secondary} numberOfLines={1}>
+          {count}
         </AppText>
-        {count ? (
-          <AppText variant="caption" color={colors.text.secondary} numberOfLines={1}>
-            {count}
-          </AppText>
-        ) : null}
-      </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -156,11 +146,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     borderRadius: radius.full,
     backgroundColor: colors.background.muted,
-  },
-  actionCopy: {
-    minWidth: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actionSelected: { backgroundColor: colors.background.selected },
   feedback: {

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { resolvePublicErrorMessage } from '../src/services/errors/publicError.ts';
 import { translateFor } from '../src/i18n/translator.ts';
 
@@ -50,4 +51,29 @@ test('known actionable errors use controlled localized copy and ignore incoming 
     ),
     translateFor('vi', 'profile.error.usernameTaken')
   );
+});
+
+test('blocked accounts get a clear message and are signed out', () => {
+  for (const [code, key] of [
+    ['ACCOUNT_SUSPENDED', 'error.accountSuspended'],
+    ['ACCOUNT_DISABLED', 'error.accountDisabled'],
+    ['ACCOUNT_DELETED', 'error.accountDeleted'],
+    ['ACCOUNT_INACTIVE', 'error.accountInactive'],
+  ])
+    assert.equal(
+      resolvePublicErrorMessage({ code, status: 403 }, fallback, (k) => k),
+      key
+    );
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  const client = read('../src/services/api/apiClient.ts');
+  const store = read('../src/features/auth/store/authStore.ts');
+  assert.match(client, /interceptors\.response\.use/);
+  assert.match(store, /onAccountBlocked\(/);
+  assert.match(store, /handleBlockedAccount: async/);
+});
+
+test('profile screens show account status and last update time', () => {
+  const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
+  assert.match(read('../src/features/profile/screens/ProfileScreen.tsx'), /<ProfileUpdateStatus/);
+  assert.match(read('../src/features/profile/screens/EditProfileScreen.tsx'), /<ProfileUpdateStatus/);
 });

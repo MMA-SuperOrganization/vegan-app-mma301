@@ -26,6 +26,7 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import type { PersonalProfile } from '../types';
 import { mediaApi } from '@/features/media/mediaApi';
 import { FeatureState } from '@/components/feedback/FeatureState';
+import { ProfileUpdateStatus } from '../components/ProfileUpdateStatus';
 
 export function EditProfileScreen() {
   const goBack = useSafeBack('/(tabs)/profile');
@@ -151,6 +152,10 @@ export function EditProfileScreen() {
       contentContainerStyle={styles.content}
     >
       <View style={styles.fields}>
+        <ProfileUpdateStatus
+          status={data?.user.status}
+          updatedAt={data?.profile?.updatedAt}
+        />
         <View style={styles.avatarRow}>
           {avatar?.uri || data?.user.avatarUrl ? (
             <Image

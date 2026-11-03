@@ -428,9 +428,14 @@ export const vi = {
   'auth.google.firebaseNotConfigured': 'Firebase chưa được cấu hình.',
   'auth.google.openFailed': 'Không thể mở đăng nhập Google.',
 
-  'error.accountDisabled': 'Tài khoản đã bị vô hiệu hóa.',
-  'error.accountSuspended': 'Tài khoản đang bị tạm khóa.',
-  'error.accountDeleted': 'Tài khoản không còn hoạt động.',
+  'error.accountDisabled':
+    'Tài khoản của bạn đã bị vô hiệu hóa nên không thể đăng nhập. Vui lòng liên hệ quản trị viên để biết lý do và được hỗ trợ.',
+  'error.accountSuspended':
+    'Tài khoản của bạn đang bị tạm khóa nên không thể tiếp tục sử dụng. Vui lòng liên hệ quản trị viên để biết lý do và được hỗ trợ.',
+  'error.accountDeleted':
+    'Tài khoản này đã bị xóa hoặc không còn hoạt động. Vui lòng liên hệ quản trị viên nếu bạn cho rằng đây là nhầm lẫn.',
+  'error.accountInactive':
+    'Tài khoản của bạn hiện không hoạt động (bị tạm khóa hoặc vô hiệu hóa). Vui lòng liên hệ quản trị viên để được hỗ trợ.',
   'error.tokenExpired': 'Phiên đăng nhập đã hết hạn.',
   'error.tokenInvalid': 'Phiên đăng nhập không hợp lệ.',
   'error.onboardingIncomplete':
@@ -742,6 +747,10 @@ export const vi = {
   'profile.error.load': 'Không thể tải hồ sơ.',
   'profile.error.save': 'Không thể lưu hồ sơ.',
   'profile.saveSuccessTitle': 'Đã lưu hồ sơ',
+  'profile.statusActive': 'Tài khoản đang hoạt động',
+  'profile.statusInactive': 'Tài khoản không hoạt động',
+  'profile.lastUpdated': 'Cập nhật hồ sơ lần cuối: {{date}}',
+  'profile.neverUpdated': 'Hồ sơ chưa được cập nhật',
   'profile.saveSuccessMessage': 'Thông tin hồ sơ của bạn đã được cập nhật.',
   'profile.error.usernameTaken':
     'Tên người dùng này đã có người sử dụng. Vui lòng chọn tên khác.',
@@ -1479,9 +1488,14 @@ export const en: Record<TranslationKey, string> = {
   'auth.google.firebaseKeyMissing': 'EXPO_PUBLIC_FIREBASE_API_KEY is missing.',
   'auth.google.firebaseNotConfigured': 'Firebase is not configured.',
   'auth.google.openFailed': 'Unable to open Google sign-in.',
-  'error.accountDisabled': 'This account has been disabled.',
-  'error.accountSuspended': 'This account is suspended.',
-  'error.accountDeleted': 'This account is no longer active.',
+  'error.accountDisabled':
+    'Your account has been disabled, so you cannot sign in. Please contact an administrator for the reason and support.',
+  'error.accountSuspended':
+    'Your account is suspended, so you cannot keep using the app. Please contact an administrator for the reason and support.',
+  'error.accountDeleted':
+    'This account has been deleted or is no longer active. Please contact an administrator if you think this is a mistake.',
+  'error.accountInactive':
+    'Your account is not active (suspended or disabled). Please contact an administrator for support.',
   'error.tokenExpired': 'Your session has expired.',
   'error.tokenInvalid': 'Your session is invalid.',
   'error.onboardingIncomplete':
@@ -2135,6 +2149,10 @@ export const en: Record<TranslationKey, string> = {
   'profile.error.load': 'Unable to load profile.',
   'profile.error.save': 'Unable to save profile.',
   'profile.saveSuccessTitle': 'Profile saved',
+  'profile.statusActive': 'Account active',
+  'profile.statusInactive': 'Account inactive',
+  'profile.lastUpdated': 'Profile last updated: {{date}}',
+  'profile.neverUpdated': 'Profile not updated yet',
   'profile.saveSuccessMessage': 'Your profile has been updated.',
   'profile.error.usernameTaken':
     'This username is already taken. Please choose another one.',

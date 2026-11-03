@@ -48,6 +48,9 @@ export function PublicProfileScreen() {
             <AppText selectable>{profile.data.bio}</AppText>
           ) : null}
           {profile.data.dietType ? (
+            /* FR-PROFILE-05: tạm tắt – hiển thị chế độ ăn tiếng Việt bằng
+               optionLabel(getDietOptions(t), profile.data.dietType)
+               (import từ @/features/onboarding/constants). */
             <AppText color={colors.text.secondary}>{profile.data.dietType}</AppText>
           ) : null}
           {profile.data.preferredCuisines?.length ? (

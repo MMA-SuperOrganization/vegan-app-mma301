@@ -13,6 +13,7 @@ import { useUnreadNotificationCount } from '@/features/settings';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing, webLayout } from '@/theme';
 import { useProfileStore } from '../profileStore';
+import { ProfileUpdateStatus } from '../components/ProfileUpdateStatus';
 
 export function ProfileScreen() {
   const router = useRouter();
@@ -64,6 +65,10 @@ export function ProfileScreen() {
             >
               {data.user.email || t('profile.noEmail')}
             </AppText>
+            <ProfileUpdateStatus
+              status={data.user.status}
+              updatedAt={data.profile?.updatedAt}
+            />
           </View>
         </View>
         <View style={styles.identityActions}>

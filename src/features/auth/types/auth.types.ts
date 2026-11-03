@@ -23,6 +23,7 @@ export interface AuthState {
   register: (name: string, email: string, password: string) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  handleBlockedAccount: (code: string) => Promise<void>;
   restoreSession: () => Promise<void>;
   markOnboardingCompleted: () => void;
   syncUser: (user: User) => void;

@@ -6,6 +6,7 @@ const publicMessageKeys: Partial<Record<string, TranslationKey>> = {
   USER_DISABLED: 'error.accountDisabled',
   ACCOUNT_SUSPENDED: 'error.accountSuspended',
   ACCOUNT_DELETED: 'error.accountDeleted',
+  ACCOUNT_INACTIVE: 'error.accountInactive',
   TOKEN_EXPIRED: 'error.tokenExpired',
   TOKEN_INVALID: 'error.tokenInvalid',
   INVALID_REFRESH_TOKEN: 'error.tokenInvalid',

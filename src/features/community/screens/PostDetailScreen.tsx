@@ -114,6 +114,14 @@ export function PostDetailScreen() {
                         visibility={post.visibility}
                         vi={vi}
                         trailing={<View style={styles.authorAvatar} />}
+                        // FR-PROFILE-05: tạm tắt, chờ nhóm thống nhất việc mở hồ sơ tác giả
+                        // từ màn bài viết (tests/action-icons.test.mjs đang cấm). Bật lại bằng
+                        // cách bỏ comment và import openAuthorProfile từ @/features/profile/authorProfile.
+                        // onAuthorPress={
+                        //   post.authorId
+                        //     ? () => openAuthorProfile(router, post.authorId)
+                        //     : undefined
+                        // }
                       />
                       <View style={styles.moreWrap}>
                         <Pressable

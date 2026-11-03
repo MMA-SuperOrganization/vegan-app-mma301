@@ -4,6 +4,7 @@ import {
   logAppError,
   toAppErrorDetails,
 } from '@/services/errors';
+import { onAccountBlocked } from '@/services/api';
 import { authApi } from '../services/authApi';
 import type { AuthState, User } from '../types/auth.types';
 import { translate } from '@/i18n';
@@ -142,6 +143,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  handleBlockedAccount: async (code) => {
+    if (!get().isAuthenticated) return;
+    // Sign out locally so the login screen explains why access stopped.
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: captureError(
+        { code, status: 403 },
+        'auth.account_blocked',
+        translate('error.accountInactive'),
+        code
+      ),
+    });
+    await authApi.clearLocalSession().catch(() => undefined);
+  },
+
   restoreSession: async () => {
     set({ isRestoringSession: true, error: null });
     try {
@@ -184,3 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }),
   clearError: () => set({ error: null }),
 }));
+
+onAccountBlocked((code) => {
+  void useAuthStore.getState().handleBlockedAccount(code);
+});

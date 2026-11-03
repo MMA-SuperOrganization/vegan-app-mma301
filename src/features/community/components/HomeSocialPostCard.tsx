@@ -56,8 +56,13 @@ export function HomeSocialPostCard({
     media.data[0]?.downloadUrl;
   return (
     <View style={styles.card}>
-      <Pressable accessibilityRole="button" onPress={onPress} style={styles.header}>
-        <View style={styles.author}>
+      <View style={styles.header}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Mở bài viết' : 'Open post'}
+          onPress={onPress}
+          style={styles.author}
+        >
           <PostAuthorHeader
             author={author}
             createdAt={post.createdAt}
@@ -66,9 +71,9 @@ export function HomeSocialPostCard({
             visibility={post.visibility}
             vi={locale === 'vi'}
           />
-        </View>
+        </Pressable>
         <AppText style={styles.more}>•••</AppText>
-      </Pressable>
+      </View>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
         {copy.title || copy.content ? (
           <View style={styles.copy}>

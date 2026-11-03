@@ -6,7 +6,7 @@ import { getGoalOptions } from '@/features/onboarding/constants';
 import type { NutritionGoal } from '@/features/onboarding/types';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
-import { useTranslation } from '@/i18n';
+import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 import { parseNutritionTarget } from '../validation';
@@ -95,7 +95,9 @@ export function NutritionProfileScreen() {
             : t('profile.bmiUnavailable')}
         </AppText>
         <AppText color={colors.text.secondary}>
-          {nutrition?.bmiCategory ?? t('profile.bmiEstimate')}
+          {nutrition?.bmiCategory
+            ? bmiCategoryLabel(nutrition.bmiCategory, t)
+            : t('profile.bmiEstimate')}
         </AppText>
       </View>
       <View style={styles.fields}>
@@ -191,3 +193,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
 });
+
+const BMI_CATEGORY_KEYS: Record<string, TranslationKey> = {
+  underweight: 'profile.bmiCategory.underweight',
+  normal: 'profile.bmiCategory.normal',
+  overweight: 'profile.bmiCategory.overweight',
+  obese: 'profile.bmiCategory.obese',
+};
+
+/** The API returns English BMI classes; unknown values are shown as received. */
+function bmiCategoryLabel(category: string, t: (key: TranslationKey) => string) {
+  const key = BMI_CATEGORY_KEYS[category];
+  return key ? t(key) : category;
+}

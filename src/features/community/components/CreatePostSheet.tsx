@@ -6,6 +6,7 @@ import { AppButton, AppIcon, AppInput, AppText, BottomSheet } from '@/components
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useContentCategories } from '@/features/recipes/hooks';
 import { useTranslation } from '@/i18n';
+import { categoryFilterLabel } from '@/features/recipes/filterLabels';
 import { colors, radius, spacing } from '@/theme';
 import { useCommunityPost } from '../hooks';
 import { PostFoodRelationshipFields } from './PostFoodRelationshipFields';
@@ -21,7 +22,7 @@ export function CreatePostSheet({
   visible: boolean;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const actions = useCommunityPost();
   const categories = useContentCategories('post');
   const [content, setContent] = useState('');
@@ -194,7 +195,7 @@ export function CreatePostSheet({
               {categories.data?.data.map((category) => (
                 <OptionChip
                   key={category._id}
-                  label={category.name}
+                  label={categoryFilterLabel(category, locale)}
                   selected={categoryId === category._id}
                   onPress={() => setCategoryId(category._id)}
                 />

@@ -11,6 +11,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { allergenLabel } from '@/features/recipes/filterLabels';
 import { colors, spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
 import { isStep1Complete, isStep2Complete } from '../validation';
@@ -20,7 +21,7 @@ import { OnboardingScreen } from '../components/OnboardingScreen';
 export function AllergiesScreen() {
   const router = useRouter();
   const goBack = useSafeBack('/(onboarding)/nutrition-profile');
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const draft = useOnboardingStore((state) => state.draft);
   const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const allergens = useOnboardingStore((state) => state.allergens);
@@ -71,7 +72,7 @@ export function AllergiesScreen() {
           ? allergens.map((allergen) => (
               <Toggle
                 key={allergen._id}
-                label={allergen.name}
+                label={allergenLabel(allergen.name, locale)}
                 value={draft.allergenIds.includes(allergen._id)}
                 onValueChange={() => {
                   toggleAllergen(allergen._id);

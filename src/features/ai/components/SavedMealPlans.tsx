@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { AppButton, AppText } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
+import { mealPlanTitle } from '@/features/meal-plan/mealPlanState';
 import { spacing } from '@/theme';
 import { AI_ROUTES, AI_TRANSLATION_KEYS } from '../aiConstants';
 import { useSavedMealPlans } from '../hooks';
@@ -28,7 +29,11 @@ export function SavedMealPlans() {
         <AppButton
           key={plan._id}
           variant="outline"
-          title={plan.title + ' · ' + plan.weekStartDate.slice(0, 10)}
+          title={
+            mealPlanTitle(plan.title, t('mealPlan.title')) +
+            ' · ' +
+            plan.weekStartDate.slice(0, 10)
+          }
           onPress={() =>
             router.push({
               pathname: AI_ROUTES.MEAL_PLAN_TAB,

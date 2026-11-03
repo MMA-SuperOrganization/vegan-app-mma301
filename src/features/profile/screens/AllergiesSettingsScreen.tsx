@@ -11,11 +11,12 @@ import {
 import { toggleAllergenSelection } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { allergenLabel } from '@/features/recipes/filterLabels';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 
 export function AllergiesSettingsScreen() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const goBack = useSafeBack('/(tabs)/profile');
   const data = useProfileStore((state) => state.data);
   const update = useProfileStore((state) => state.updateAllergens);
@@ -92,7 +93,7 @@ export function AllergiesSettingsScreen() {
           data?.allergens.map((allergen) => (
             <Toggle
               key={allergen._id}
-              label={allergen.name}
+              label={allergenLabel(allergen.name, locale)}
               value={selected.includes(allergen._id)}
               disabled={isSaving}
               onValueChange={() => {

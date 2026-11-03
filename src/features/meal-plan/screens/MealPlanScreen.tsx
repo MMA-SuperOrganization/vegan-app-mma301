@@ -15,6 +15,7 @@ import {
 import { TrackingQueryState } from '@/features/tracking/components/TrackingQueryState';
 import { useRecipeOptions } from '@/features/tracking/hooks/usePickerOptions';
 import { matchingAllergenNames } from '@/features/profile/allergenMatching';
+import { allergenLabel } from '@/features/recipes/filterLabels';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTrackingFormat } from '@/features/tracking/hooks/useTrackingFormat';
 import { useTrackingTargets } from '@/features/tracking/hooks/useTrackingApi';
@@ -37,6 +38,7 @@ import {
   shiftWeekSelection,
   startOfWeek,
   toIsoDate,
+  mealPlanTitle,
 } from '../mealPlanState';
 import type { PlannedMeal } from '../types';
 
@@ -144,7 +146,8 @@ export function MealPlanScreen() {
         recipe.allergenIds,
         profileAllergenIds,
         allergenCatalog,
-        t('recipe.unknownAllergen')
+        t('recipe.unknownAllergen'),
+        (name) => allergenLabel(name, locale)
       ),
     ])
   );
@@ -335,7 +338,9 @@ export function MealPlanScreen() {
         <View style={styles.content}>
           {params.planId && plan ? (
             <View style={{ gap: spacing.sm }}>
-              <AppText variant="heading3">{plan.title}</AppText>
+              <AppText variant="heading3">
+                {mealPlanTitle(plan.title, t('mealPlan.title'))}
+              </AppText>
               <AppText>
                 {plan.status === 'active'
                   ? locale === 'vi'

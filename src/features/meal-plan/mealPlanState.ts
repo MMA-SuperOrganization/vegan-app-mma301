@@ -207,3 +207,9 @@ export function addPlannedMeal(
         ),
   };
 }
+
+/** The API names new plans "Weekly meal plan"; show that default in the app language. */
+export const DEFAULT_MEAL_PLAN_TITLE = 'Weekly meal plan';
+export function mealPlanTitle(title: string, defaultLabel: string) {
+  return title.trim() === DEFAULT_MEAL_PLAN_TITLE ? defaultLabel : title;
+}

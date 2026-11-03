@@ -19,6 +19,7 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { matchingAllergenNames } from '@/features/profile/allergenMatching';
+import { allergenLabel } from '@/features/recipes/filterLabels';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, spacing, webLayout } from '@/theme';
 
@@ -101,16 +102,22 @@ export function RecipeDetailScreen() {
         ? t('recipe.noDeclaredAllergens')
         : data.allergenIds
             .map(
-              (allergenId) =>
-                allergenCatalog.find((allergen) => allergen._id === allergenId)
-                  ?.name ?? t('recipe.unknownAllergen')
+              (allergenId) => {
+                const name = allergenCatalog.find(
+                  (allergen) => allergen._id === allergenId
+                )?.name;
+                return name
+                  ? allergenLabel(name, locale)
+                  : t('recipe.unknownAllergen');
+              }
             )
             .join(', ');
   const matchingAllergens = matchingAllergenNames(
     data.allergenIds,
     profileAllergenIds,
     allergenCatalog,
-    t('recipe.unknownAllergen')
+    t('recipe.unknownAllergen'),
+    (name) => allergenLabel(name, locale)
   );
   const difficulty = data.difficulty
     ? t(`filters.difficulty.${data.difficulty}` as TranslationKey)

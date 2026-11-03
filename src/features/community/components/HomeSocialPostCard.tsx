@@ -19,6 +19,7 @@ import { PostLikeIcon } from './PostLikeIcon';
 
 type HomePost = PostCardData & {
   content?: string;
+  visibility?: 'public' | 'private' | 'unlisted';
   media?: Array<{ url?: string; downloadUrl?: string }>;
 };
 

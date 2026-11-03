@@ -257,7 +257,7 @@ export function PostDetailScreen() {
                 ) : null}
                 {false &&
                 ['draft', 'rejected', 'published', 'archived'].includes(
-                  post.status
+                  post?.status
                 ) ? (
                   <>
                     <AppButton

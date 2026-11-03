@@ -12,6 +12,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { categoryNameLabel } from '@/features/recipes/filterLabels';
 import { colors, radius, spacing } from '@/theme';
 import { GroceryItemRow } from '../components/GroceryItemRow';
 import { GroceryQueryState } from '../components/GroceryQueryState';
@@ -27,7 +28,7 @@ export function GroceryDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
   const goBack = useSafeBack('/(tabs)/grocery');
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [transferOpen, setTransferOpen] = useState(false);
   const query = useGroceryList(id);
   const actions = useGroceryActions(id);
@@ -214,7 +215,9 @@ export function GroceryDetailScreen() {
             ) : (
               groups.map((group) => (
                 <View key={group.category} style={styles.group}>
-                  <AppText variant="heading4">{group.category}</AppText>
+                  <AppText variant="heading4">
+                    {categoryNameLabel(group.category, locale)}
+                  </AppText>
                   <View style={styles.groupItems}>
                     {group.items.map((item, index) => (
                       <View key={item.itemId}>

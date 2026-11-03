@@ -21,6 +21,7 @@ import { FeatureState } from '@/components/feedback/FeatureState';
 import { mediaApi } from '@/features/media/mediaApi';
 import { usePantryFoodOptions } from '@/features/pantry/hooks';
 import { useTranslation } from '@/i18n';
+import { categoryNameLabel } from '../filterLabels';
 import { colors, radius, spacing } from '@/theme';
 import { recipeApi } from '../recipeApi';
 import { useRecipeCategories } from '../hooks';
@@ -414,7 +415,7 @@ function RecipeDetailsStep({
   onChooseCover: () => void;
   onRemoveCover: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   return (
     <View style={styles.stepContent}>
       <View style={styles.stepHeading}>
@@ -538,7 +539,7 @@ function RecipeDetailsStep({
             {categories.map((category) => (
               <ChoiceChip
                 key={category._id}
-                label={category.name}
+                label={categoryNameLabel(category.name, locale)}
                 selected={categoryId === category._id}
                 onPress={() => onCategoryChange(category._id)}
               />

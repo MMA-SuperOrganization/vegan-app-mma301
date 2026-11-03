@@ -23,6 +23,7 @@ import {
   toIsoDate,
 } from '@/features/meal-plan/mealPlanState';
 import { useTranslation } from '@/i18n';
+import { mealPlanTitle } from '@/features/meal-plan/mealPlanState';
 import { colors, radius, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { GroceryGenerationScopeSelector } from '../components/GroceryGenerationScopeSelector';
@@ -153,7 +154,7 @@ export function GroceryGenerateScreen() {
               options={plans.map((candidate) => ({
                 value: candidate._id,
                 label:
-                  candidate.title +
+                  mealPlanTitle(candidate.title, t('mealPlan.title')) +
                   ' · ' +
                   (locale === 'vi'
                     ? {
@@ -178,7 +179,9 @@ export function GroceryGenerateScreen() {
           ) : null}
           {plan ? (
             <View style={styles.planCard}>
-              <AppText variant="heading4">{plan.title}</AppText>
+              <AppText variant="heading4">
+                {mealPlanTitle(plan.title, t('mealPlan.title'))}
+              </AppText>
               {scope === 'day' ? (
                 <>
                   <AppText variant="bodyStrong">

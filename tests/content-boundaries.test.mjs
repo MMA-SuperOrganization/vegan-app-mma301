@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -148,6 +148,25 @@ test('community uses an infinite newsfeed and publishes posts without admin revi
   assert.match(postCard, /Có công thức/);
   assert.match(postCard, /PostFoodSummary/);
   assert.match(postCard, /!tag\.startsWith\('community-demo-'\)/);
+});
+
+test('profile menu avoids home feed duplication and retired AI video summary', () => {
+  const profile = read('../src/features/profile/screens/ProfileScreen.tsx');
+
+  assert.doesNotMatch(profile, /router\.push\('\/community'\)/);
+  assert.doesNotMatch(profile, /router\.push\('\/ai\/video-summary'\)/);
+  assert.doesNotMatch(profile, /Bài viết cộng đồng|Community posts/);
+  assert.doesNotMatch(profile, /Tóm tắt video bằng AI|AI video summary/);
+  assert.match(profile, /pathname: '\/community', params: \{ scope: 'mine' \}/);
+  assert.equal(
+    existsSync(new URL('../src/app/ai/video-summary.tsx', import.meta.url)),
+    false
+  );
+
+  const videoDetail = read(
+    '../src/features/community/screens/VideoDetailScreen.tsx'
+  );
+  assert.doesNotMatch(videoDetail, /generateVideoSummary|Tạo tóm tắt AI/);
 });
 
 test('admin review queues are explicit content types while reports still handle posts', () => {

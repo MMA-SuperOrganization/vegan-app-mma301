@@ -64,13 +64,6 @@ export interface ConfirmedProposal {
   status: 'confirmed';
   resource: { _id: string };
 }
-export interface VideoSummary {
-  summary: string;
-  keyPoints: string[];
-  chapters?: Array<{ title: string; startSeconds: number; endSeconds: number }>;
-  runId: string;
-  disclaimer?: string;
-}
 export interface AiRun {
   _id: string;
   feature: `${AiFeatureType}`;

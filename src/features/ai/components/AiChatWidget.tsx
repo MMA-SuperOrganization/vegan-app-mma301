@@ -775,12 +775,6 @@ export function AiChatWidget() {
               </View>
             ) : null}
 
-            <View style={styles.composerToolbar}>
-              <AppText variant="caption" color={colors.text.secondary}>
-                {t(widgetKeys.SWIPE_HINT)}
-              </AppText>
-            </View>
-
             <FeatureState
               error={attachment.choose.error}
               retry={() => attachment.choose.mutate()}
@@ -1053,14 +1047,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
   },
-  composerToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-  },
-  toggleWrap: { flexShrink: 1 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   input: { flex: 1 },
   inputText: { maxHeight: 88 },

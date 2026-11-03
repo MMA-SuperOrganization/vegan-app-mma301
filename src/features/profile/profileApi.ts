@@ -3,6 +3,7 @@ import type { Allergen } from '@/features/onboarding/types';
 import type {
   DietaryPreferencesUpdate,
   NutritionTargetsUpdate,
+  NutritionProfile,
   ProfileUpdate,
   UserProfile,
   PublicProfile,
@@ -121,7 +122,9 @@ export const profileApi = {
     ]),
 
   updateAllergens: (allergenIds: string[]) =>
-    unwrapApiRequest(() => apiClient.put('/nutrition-profiles/me', { allergenIds })),
+    unwrapApiRequest<NutritionProfile>(() =>
+      apiClient.put('/nutrition-profiles/me', { allergenIds })
+    ),
 
   updateNutritionTargets: (values: NutritionTargetsUpdate) =>
     unwrapApiRequest(() => apiClient.put('/nutrition-profiles/me', values)),

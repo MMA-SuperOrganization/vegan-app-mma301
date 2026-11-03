@@ -183,13 +183,6 @@ export function useIngredientRecognition() {
   };
 }
 
-export function useVideoSummary() {
-  return useMutation({
-    mutationFn: ({ mediaId, transcript }: { mediaId: string; transcript: string }) =>
-      aiApi.summarizeVideo(mediaId, transcript),
-  });
-}
-
 export function useAiMonitoring() {
   const userId = useAuthStore((state) => state.user?.id);
   return {

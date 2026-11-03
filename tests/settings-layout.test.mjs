@@ -35,6 +35,25 @@ test('the shared settings header background extends through the top safe area', 
   assert.match(source, /header \? colors\.background\.surface : undefined/);
 });
 
+test('allergen settings synchronize loaded values and save the response locally', () => {
+  const screen = readFileSync(
+    new URL(
+      '../src/features/profile/screens/AllergiesSettingsScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const store = readFileSync(
+    new URL('../src/features/profile/profileStore.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(screen, /useEffect\(\(\) => \{/);
+  assert.match(screen, /hasLocalChanges\.current/);
+  assert.match(store, /const savedNutrition = await profileApi\.updateAllergens/);
+  assert.match(store, /allergenSelectionCompleted: true/);
+});
+
 const customHeaderHosts = [
   'src/components/layout/SettingsScreenLayout.tsx',
   'src/components/navigation/PlaceholderTabScreen.tsx',

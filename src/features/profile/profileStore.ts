@@ -94,8 +94,40 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   updateDietaryPreferences: async (values) =>
     saveAndReload(set, get, () => profileApi.updateDietaryPreferences(values)),
 
-  updateAllergens: async (allergenIds) =>
-    saveAndReload(set, get, () => profileApi.updateAllergens(allergenIds)),
+  updateAllergens: async (allergenIds) => {
+    const userId = get().userId;
+    if (!userId || get().isSaving) return false;
+    set({ isSaving: true, error: null });
+    try {
+      const savedNutrition = await profileApi.updateAllergens(allergenIds);
+      if (get().userId !== userId) {
+        set({ isSaving: false });
+        return false;
+      }
+      set((state) => ({
+        data: state.data
+          ? {
+              ...state.data,
+              nutritionProfile: {
+                ...(state.data.nutritionProfile ?? {}),
+                ...savedNutrition,
+                allergenIds: savedNutrition.allergenIds ?? allergenIds,
+                allergenSelectionCompleted: true,
+              },
+            }
+          : state.data,
+        isSaving: false,
+        error: null,
+      }));
+      return true;
+    } catch (error) {
+      set({
+        isSaving: false,
+        error: getUserErrorMessage(error, translate('profile.error.save')),
+      });
+      return false;
+    }
+  },
 
   updateNutritionTargets: async (values) =>
     saveAndReload(set, get, () => profileApi.updateNutritionTargets(values)),

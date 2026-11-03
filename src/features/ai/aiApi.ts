@@ -10,7 +10,6 @@ import type {
   PantryProposal,
   RecognizedIngredient,
   ConfirmedProposal,
-  VideoSummary,
   AiRun,
   AiMetrics,
 } from './types';
@@ -92,14 +91,6 @@ export const aiApi = {
     ),
   feedback: (runId: string, rating: `${AiFeedbackRating}`) =>
     unwrapApiRequest(() => apiClient.put(`/ai/runs/${runId}/feedback`, { rating })),
-  summarizeVideo: (mediaId: string, transcript: string) =>
-    unwrapApiRequest<VideoSummary>(() =>
-      apiClient.post(
-        '/ai/video-summaries',
-        { mediaId, transcript },
-        aiGenerationRequest
-      )
-    ),
   adminRuns: () =>
     collectPages((page) =>
       unwrapApiPageRequest<AiRun>(() =>

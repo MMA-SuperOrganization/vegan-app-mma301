@@ -69,10 +69,6 @@ export function VideoDetailScreen() {
     queryFn: () => communityApi.relatedVideos(id),
     enabled: video.data?.status === 'published',
   });
-  const summary = useMutation({
-    mutationFn: () => communityApi.generateVideoSummary(id),
-    onSuccess: () => video.refetch(),
-  });
   const remove = useMutation({
     mutationFn: () => communityApi.removeVideo(id),
     onSuccess: () => router.replace('/community'),
@@ -113,15 +109,6 @@ export function VideoDetailScreen() {
               {vi ? 'Video chưa sẵn sàng.' : 'Video is unavailable.'}
             </AppText>
           )}
-          {mine ? (
-            <AppButton
-              title={vi ? 'Tạo tóm tắt AI' : 'Generate AI summary'}
-              variant="outline"
-              loading={summary.isPending}
-              disabled={summary.isPending}
-              onPress={() => summary.mutate()}
-            />
-          ) : null}
           <ContentSaveButton
             content={{ ...video.data, type: 'video' }}
             initialSaved={video.data.saved}
@@ -205,7 +192,7 @@ export function VideoDetailScreen() {
           />
         </>
       ) : null}
-      <FeatureState error={progress.error || summary.error || remove.error} />
+      <FeatureState error={progress.error || remove.error} />
     </ScreenWrapper>
   );
 }

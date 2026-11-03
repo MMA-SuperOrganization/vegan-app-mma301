@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { AppText, EmptyState, LoadingSpinner, ScreenWrapper } from '@/components';
 import { CreatePostSheet } from '@/features/community/components/CreatePostSheet';
@@ -16,6 +17,7 @@ import { HomeSocialHeader } from '@/features/community/components/HomeSocialHead
 import { HomeSocialPostCard } from '@/features/community/components/HomeSocialPostCard';
 import { PostCommentsSheet } from '@/features/community/components/PostComments';
 import { useCommunityPosts, usePostReaction } from '@/features/community/hooks';
+import { useAuthStore } from '@/features/auth';
 import type { CommunityPost } from '@/features/community/types';
 import { useDebouncedValue } from '@/hooks';
 import { useTranslation } from '@/i18n';
@@ -42,6 +44,8 @@ type HomeListItem =
 export function DiscoveryHomeScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
   const { t } = useTranslation();
   const [postComposerOpen, setPostComposerOpen] = useState(false);
   const [recipeComposerOpen, setRecipeComposerOpen] = useState(false);
@@ -107,6 +111,14 @@ export function DiscoveryHomeScreen() {
       pathname: '/(discover)/recipe/[id]',
       params: { id: recipe.slug ?? recipe._id },
     });
+
+  const openPost = (post: CommunityPost) => {
+    queryClient.setQueryData(['account', userId, 'community', 'post', post._id], post);
+    router.navigate({
+      pathname: '/community/post',
+      params: { id: post._id },
+    });
+  };
 
   const closeSearch = () => {
     homeContentReveal.stopAnimation();
@@ -313,12 +325,7 @@ export function DiscoveryHomeScreen() {
                   })
                 }
                 onComment={() => setCommentPostId(item.post._id)}
-                onPress={() =>
-                  router.navigate({
-                    pathname: '/community/post',
-                    params: { id: item.post._id },
-                  })
-                }
+                onPress={() => openPost(item.post)}
               />
             </Animated.View>
           )

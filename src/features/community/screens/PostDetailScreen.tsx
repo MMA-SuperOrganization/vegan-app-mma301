@@ -95,10 +95,15 @@ export function PostDetailScreen() {
             />
             {post ? (
               <>
-                <BackButton onPress={goBack} />
                 <View style={styles.articleCard}>
                   <View style={styles.articleContent}>
                     <View style={styles.articleHeader}>
+                      <BackButton
+                        onPress={goBack}
+                        size={28}
+                        iconSize={20}
+                        style={styles.inlineBackButton}
+                      />
                       <PostAuthorHeader
                         author={presentedAuthor}
                         createdAt={post.createdAt}
@@ -347,6 +352,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  inlineBackButton: {
+    flexShrink: 0,
+    borderRadius: 0,
+    backgroundColor: 'transparent',
   },
   moreButton: {
     width: 36,

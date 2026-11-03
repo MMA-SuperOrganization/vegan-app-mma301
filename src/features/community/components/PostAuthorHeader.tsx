@@ -66,7 +66,15 @@ export function PostAuthorHeader({
             name={visibility === 'private' ? 'eye-off' : 'eye'}
             size={13}
             color={colors.text.secondary}
-            decorative
+            accessibilityLabel={
+              visibility === 'private'
+                ? vi
+                  ? 'Bài viết riêng tư'
+                  : 'Private post'
+                : vi
+                  ? 'Bài viết công khai'
+                  : 'Public post'
+            }
           />
         </View>
       </View>

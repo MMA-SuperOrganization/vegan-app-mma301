@@ -106,6 +106,7 @@ export function PostDetailScreen() {
                         author={presentedAuthor}
                         createdAt={post.createdAt}
                         publishedAt={post.publishedAt}
+                        status={post.status}
                         visibility={post.visibility}
                         vi={vi}
                       />

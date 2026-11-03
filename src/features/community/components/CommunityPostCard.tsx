@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
+import { useSavedMutation, useSavedState } from '@/features/recipes/hooks';
 
 import { postCopy } from '../postPresentation';
 import { postStatusLabel } from '../status';
@@ -40,6 +41,24 @@ export function CommunityPostCard({
   const liked = post.reacted === 'like';
   const copy = postCopy(post.title, post.content);
   const media = usePostMediaAssets(post.mediaIds);
+  const savedState = useSavedState('post', post._id);
+  const savedMutation = useSavedMutation();
+  const isSaved = savedState.isSaved;
+
+  const toggleSave = () => {
+    savedMutation.mutate({
+      type: 'post',
+      id: post._id,
+      saved: isSaved,
+      target: {
+        _id: post._id,
+        type: 'post',
+        title: post.title || post.content?.slice(0, 50),
+        excerpt: post.content?.slice(0, 100),
+        imageUrl: media.data?.[0]?.downloadUrl,
+      },
+    });
+  };
 
   return (
     <Surface bordered radius="xl" style={styles.card}>
@@ -145,6 +164,34 @@ export function CommunityPostCard({
           <AppIcon name="comment" size={20} color={colors.text.secondary} decorative />
           <AppText variant="caption" color={colors.text.secondary}>
             {post.commentCount ?? 0}
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            vi
+              ? isSaved
+                ? 'Bỏ lưu bài viết'
+                : 'Lưu bài viết'
+              : isSaved
+                ? 'Unsave post'
+                : 'Save post'
+          }
+          accessibilityState={{ selected: isSaved }}
+          onPress={toggleSave}
+          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+        >
+          <AppIcon
+            name={isSaved ? 'bookmark-filled' : 'bookmark'}
+            size={20}
+            color={isSaved ? colors.primary[700] : colors.text.secondary}
+            decorative
+          />
+          <AppText
+            variant="caption"
+            color={isSaved ? colors.primary[700] : colors.text.secondary}
+          >
+            {vi ? (isSaved ? 'Đã lưu' : 'Lưu') : isSaved ? 'Saved' : 'Save'}
           </AppText>
         </Pressable>
       </View>

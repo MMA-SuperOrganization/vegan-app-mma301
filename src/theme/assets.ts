@@ -108,6 +108,14 @@ export const assetRegistry = {
     id: 'core:save', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4H17L20 7V20H4V4Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/><path d="M8 4V9H16V4M8 20V14H16V20" stroke="#16583D" stroke-width="2"/></svg>',
   },
+  bookmark: {
+    id: 'core:bookmark', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21L12 16L5 21V5C5 3.9 5.9 3 7 3H17C18.1 3 19 3.9 19 5V21Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  'bookmark-filled': {
+    id: 'core:bookmark-filled', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21L12 16L5 21V5C5 3.9 5.9 3 7 3H17C18.1 3 19 3.9 19 5V21Z" fill="#16583D" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
   user: {
     id: 'core:user', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="#16583D" stroke-width="2"/><path d="M4 21C4 16.6 7.6 13 12 13C16.4 13 20 16.6 20 21" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',

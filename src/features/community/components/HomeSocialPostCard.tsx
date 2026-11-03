@@ -1,7 +1,10 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
+import { useAuthStore } from '@/features/auth';
 import { usePublicProfile } from '@/features/profile/hooks';
 import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
@@ -29,7 +32,11 @@ export function HomeSocialPostCard({
   onComment: () => void;
 }) {
   const { t, locale } = useTranslation();
+  const router = useRouter();
+  const userId = useAuthStore((state) => state.user?.id);
+  const [menuOpen, setMenuOpen] = useState(false);
   const liked = post.reacted === 'like';
+  const mine = post.authorId === userId;
   const profile = usePublicProfile(
     post.author?.displayName ? undefined : post.authorId
   );
@@ -73,7 +80,45 @@ export function HomeSocialPostCard({
           />
         </Pressable>
         <AppText style={styles.more}>•••</AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Tùy chọn bài viết' : 'Post options'}
+          accessibilityState={{ expanded: menuOpen }}
+          onPress={() => setMenuOpen((open) => !open)}
+          style={styles.moreHit}
+        />
       </View>
+      {menuOpen ? (
+        <View style={styles.postMenu}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setMenuOpen(false);
+              router.push({
+                pathname: '/community/report',
+                params: { targetType: 'post', targetId: post._id, targetPreview: post.title ?? '' },
+              });
+            }}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+          >
+            <AppIcon name="flag" size={17} color={colors.text.secondary} decorative />
+            <AppText variant="bodySmall">{locale === 'vi' ? 'Báo cáo' : 'Report'}</AppText>
+          </Pressable>
+          {mine ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setMenuOpen(false);
+                router.push({ pathname: '/community/editor', params: { id: post._id } });
+              }}
+              style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+            >
+              <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
+              <AppText variant="bodySmall">{locale === 'vi' ? 'Chỉnh sửa' : 'Edit post'}</AppText>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
         {copy.title || copy.content ? (
           <View style={styles.copy}>
@@ -142,6 +187,40 @@ const styles = StyleSheet.create({
   },
   author: { flex: 1, gap: 2 },
   more: { color: colors.text.secondary, fontWeight: '800', letterSpacing: 2 },
+  moreHit: {
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.sm,
+    width: 34,
+    height: 34,
+    zIndex: 2,
+  },
+  postMenu: {
+    position: 'absolute',
+    top: spacing.xl + spacing.sm,
+    right: spacing.md,
+    zIndex: 10,
+    width: 150,
+    padding: spacing.xs,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    borderRadius: radius.md,
+    backgroundColor: colors.background.surface,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  menuItem: {
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+  },
   body: { gap: spacing.sm },
   copy: { paddingHorizontal: spacing.md, gap: spacing.xs },
   postImage: { width: '100%', height: 250, borderRadius: 0 },

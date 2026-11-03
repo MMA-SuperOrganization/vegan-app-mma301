@@ -46,7 +46,9 @@ export function HomeSocialPostCard({
     post.title,
     post.excerpt ?? post.description ?? post.content
   );
-  const media = usePostMediaAssets(post.mediaIds);
+  // The posts feed now includes resolved media assets. Keep the per-asset
+  // lookup as a fallback for older/cached responses that only have mediaIds.
+  const media = usePostMediaAssets(post.media?.length ? [] : post.mediaIds);
   const imageUrl =
     post.coverImageUrl ??
     post.media?.[0]?.downloadUrl ??

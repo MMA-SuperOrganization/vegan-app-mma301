@@ -1,5 +1,6 @@
 import { Image, StyleSheet, View } from 'react-native';
 import type { ReactNode } from 'react';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { AppIcon, AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
@@ -55,8 +56,9 @@ export function PostAuthorHeader({
             </AppText>
           ) : null}
           {status === 'published' || visibility === 'private' ? (
-            <AppText
-              style={styles.visibilityIcon}
+            <View
+              accessible
+              accessibilityRole="image"
               accessibilityLabel={
                 visibility === 'private'
                   ? vi
@@ -67,13 +69,31 @@ export function PostAuthorHeader({
                     : 'Published public post'
               }
             >
-              {visibility === 'private' ? '🔒' : '🌐'}
-            </AppText>
+              <VisibilityIcon privatePost={visibility === 'private'} />
+            </View>
           ) : null}
         </View>
       </View>
       {trailing}
     </View>
+  );
+}
+
+function VisibilityIcon({ privatePost }: { privatePost: boolean }) {
+  const color = colors.text.secondary;
+  if (privatePost) {
+    return (
+      <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+        <Rect x="2.5" y="6.5" width="10" height="7" rx="1.5" stroke={color} strokeWidth="1.2" />
+        <Path d="M4.5 6.5V4.75a3 3 0 0 1 6 0V6.5" stroke={color} strokeWidth="1.2" strokeLinecap="round" />
+      </Svg>
+    );
+  }
+  return (
+    <Svg width={15} height={15} viewBox="0 0 15 15" fill="none">
+      <Circle cx="7.5" cy="7.5" r="5.9" stroke={color} strokeWidth="1.1" />
+      <Path d="M1.8 7.5h11.4M7.5 1.7c1.7 1.6 2.5 3.5 2.5 5.8s-.8 4.2-2.5 5.8c-1.7-1.6-2.5-3.5-2.5-5.8s.8-4.2 2.5-5.8Z" stroke={color} strokeWidth="1.1" strokeLinecap="round" />
+    </Svg>
   );
 }
 
@@ -101,5 +121,4 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, gap: 2 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  visibilityIcon: { fontSize: 14, lineHeight: 16 },
 });

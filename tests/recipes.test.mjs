@@ -252,11 +252,11 @@ test('toggling a filter value adds it once and removes it on the second tap', ()
 
 test('category chips use Vietnamese names for known meals and fall back to the API name', () => {
   const lunch = { _id: 'c1', slug: 'lunch', name: 'Lunch' };
-  const vegetables = { _id: 'c2', slug: 'vegetables', name: 'Vegetables' };
+  const mushrooms = { _id: 'c2', slug: 'mushrooms', name: 'Mushrooms' };
 
   assert.equal(categoryFilterLabel(lunch, 'vi'), 'Bữa trưa');
   assert.equal(categoryFilterLabel(lunch, 'en'), 'Lunch');
-  assert.equal(categoryFilterLabel(vegetables, 'vi'), 'Vegetables');
+  assert.equal(categoryFilterLabel(mushrooms, 'vi'), 'Mushrooms');
 });
 
 test('recipe tags are translated when known and title-cased otherwise', () => {
@@ -264,5 +264,5 @@ test('recipe tags are translated when known and title-cased otherwise', () => {
   assert.equal(recipeTagLabel('quick', 'vi'), 'Nấu nhanh');
   assert.equal(recipeTagLabel('gluten-free', 'en'), 'Gluten Free');
   assert.equal(recipeTagLabel('street-food', 'en'), 'Street Food');
-  assert.equal(recipeTagLabel('street-food', 'vi'), 'Street Food');
+  assert.equal(recipeTagLabel('slow-cooked', 'vi'), 'Slow Cooked');
 });

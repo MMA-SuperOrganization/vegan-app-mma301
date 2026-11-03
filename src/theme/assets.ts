@@ -52,6 +52,10 @@ export const assetRegistry = {
     id: 'core:plus', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="#16583D" stroke-width="2.2" stroke-linecap="round"/></svg>',
   },
+  bell: {
+    id: 'core:bell', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
   filter: {
     id: 'core:filter', width: 24, height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M7 12H17M10 18H14" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',

@@ -10,7 +10,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 
+import { useRouter } from 'expo-router';
+
 import { AppIcon, AppText, BrandWordmark } from '@/components';
+import { useUnreadNotificationCount } from '@/features/settings';
 import { useTranslation } from '@/i18n';
 import { colors, inputTypography, radius, spacing } from '@/theme';
 
@@ -34,12 +37,19 @@ export function HomeSocialHeader({
   onSubmitSearch: () => void;
 }) {
   const { t, locale } = useTranslation();
+  const router = useRouter();
+  const unreadCount = useUnreadNotificationCount().data?.count ?? 0;
   const window = useWindowDimensions();
   const inputRef = useRef<TextInput>(null);
   const closingRef = useRef(false);
   const expansion = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
   const fieldReveal = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
-  const openSearchWidth = Math.max(220, window.width - spacing.md * 2);
+  // Search sits left of the bell; the field grows leftwards from the search slot.
+  const searchSlotRight = 40 + spacing.xs;
+  const openSearchWidth = Math.max(
+    220,
+    window.width - spacing.md * 2 - searchSlotRight
+  );
 
   useEffect(() => {
     if (!searchExpanded) {
@@ -118,40 +128,53 @@ export function HomeSocialHeader({
           <BrandWordmark size={26} />
         </Pressable>
 
-        {!searchExpanded ? (
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('home.createPost')}
-              onPress={onCreatePost}
-              style={styles.action}
-            >
-              <AppIcon
-                name="plus"
-                size={23}
-                color={colors.text.primary}
-                decorative
-              />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('home.search')}
-              onPress={onOpenSearch}
-              style={styles.action}
-            >
-              <AppIcon
-                name="search"
-                size={23}
-                color={colors.primary[700]}
-                decorative
-              />
-            </Pressable>
-          </View>
-        ) : (
+        <View style={styles.actions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('home.search')}
+            onPress={onOpenSearch}
+            style={styles.action}
+          >
+            <AppIcon
+              name="search"
+              size={23}
+              color={colors.primary[700]}
+              decorative
+            />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('notifications.title')}
+            onPress={() => router.push('/notifications')}
+            style={styles.action}
+          >
+            <AppIcon name="bell" size={23} color={colors.primary[700]} decorative />
+            {unreadCount > 0 ? (
+              <View style={styles.bellBadge}>
+                <AppText
+                  variant="caption"
+                  color={colors.common.white}
+                  style={styles.bellBadgeText}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
+        {searchExpanded ? (
           <Animated.View
             style={[
               styles.searchSlot,
               {
+                right: searchSlotRight,
+                // Invisible at rest so the real search button underneath shows
+                // (no squashed copy lingering after close).
+                opacity: expansion.interpolate({
+                  inputRange: [0, 0.08, 1],
+                  outputRange: [0, 1, 1],
+                  extrapolate: 'clamp',
+                }),
                 width: expansion.interpolate({
                   inputRange: [0, 1],
                   outputRange: [40, openSearchWidth],
@@ -267,7 +290,7 @@ export function HomeSocialHeader({
               ) : null}
             </Animated.View>
           </Animated.View>
-        )}
+        ) : null}
       </View>
 
       {!searchExpanded ? (
@@ -312,6 +335,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  bellBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 4,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.status.danger,
+  },
+  bellBadgeText: { fontSize: 10, lineHeight: 12 },
   searchSlot: {
     position: 'absolute',
     top: 0,

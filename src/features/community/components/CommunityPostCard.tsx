@@ -3,10 +3,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AppIcon, AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
 
+import { postCopy } from '../postPresentation';
 import { postStatusLabel } from '../status';
 import type { CommunityPost } from '../types';
+import { usePostMediaAssets } from '../usePostMediaAssets';
+import { PostAuthorHeader } from './PostAuthorHeader';
 import { PostFoodSummary } from './PostFoodSummary';
 import { PostLikeIcon } from './PostLikeIcon';
+import { PostMediaGallery } from './PostMediaGallery';
 
 const statusVariant = (status: CommunityPost['status']) => {
   if (status === 'published') return 'success' as const;
@@ -34,96 +38,84 @@ export function CommunityPostCard({
 }) {
   const visibleTags = post.tags?.filter((tag) => !tag.startsWith('community-demo-'));
   const liked = post.reacted === 'like';
+  const copy = postCopy(post.title, post.content);
+  const media = usePostMediaAssets(post.mediaIds);
+
   return (
-    <Surface bordered padding="lg" radius="xl" style={styles.card}>
+    <Surface bordered radius="xl" style={styles.card}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${vi ? 'Mở bài viết' : 'Open post'} ${post.title}`}
         onPress={onOpen}
-        style={({ pressed }) => [styles.content, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.post, pressed && styles.pressed]}
       >
-        <View style={styles.badges}>
-          <Badge label={vi ? 'Bài viết' : 'Post'} variant="primary" size="sm" />
+        <View style={styles.header}>
+          <PostAuthorHeader
+            author={post.author}
+            createdAt={post.createdAt}
+            publishedAt={post.publishedAt}
+            status={post.status}
+            visibility={post.visibility}
+            vi={vi}
+          />
           {mine ? (
-            <Badge
-              label={postStatusLabel(post.status, vi)}
-              variant={statusVariant(post.status)}
-              size="sm"
-            />
-          ) : null}
-          {mine ? (
-            <Badge
-              label={
-                post.visibility === 'private'
-                  ? vi
-                    ? 'Riêng tư'
-                    : 'Private'
-                  : vi
-                    ? 'Công khai'
-                    : 'Public'
-              }
-              variant={post.visibility === 'private' ? 'warning' : 'success'}
-              size="sm"
-            />
-          ) : null}
-          {post.recipeId ? (
-            <Badge
-              label={vi ? 'Có công thức' : 'Linked recipe'}
-              variant="secondary"
-              size="sm"
-            />
-          ) : null}
-          {post.foodItemIds?.length ? (
-            <Badge
-              label={
-                vi
-                  ? `${post.foodItemIds.length} nguyên liệu`
-                  : `${post.foodItemIds.length} ingredients`
-              }
-              variant="secondary"
-              size="sm"
-            />
+            <View style={styles.badges}>
+              <Badge
+                label={postStatusLabel(post.status, vi)}
+                variant={statusVariant(post.status)}
+                size="sm"
+              />
+              {post.visibility === 'private' ? (
+                <Badge label={vi ? 'Riêng tư' : 'Private'} variant="warning" size="sm" />
+              ) : null}
+            </View>
           ) : null}
         </View>
 
-        <AppText variant="heading3" numberOfLines={2}>
-          {post.title}
-        </AppText>
-        <AppText color={colors.text.secondary} numberOfLines={4}>
-          {post.content}
-        </AppText>
-
-        <PostFoodSummary
-          recipeId={post.recipeId}
-          foodItemIds={post.foodItemIds}
-          relatedRecipe={post.relatedRecipe}
-          relatedFoodItems={post.relatedFoodItems}
-        />
-
-        {visibleTags?.length ? (
-          <View style={styles.tags}>
-            {visibleTags.slice(0, 3).map((tag) => (
-              <View key={tag} style={styles.tag}>
-                <AppText variant="caption" color={colors.primary[700]}>
+        <View style={styles.copy}>
+          {copy.title ? (
+            <AppText variant="heading4" numberOfLines={2}>
+              {copy.title}
+            </AppText>
+          ) : null}
+          {copy.content ? (
+            <AppText color={colors.text.primary} numberOfLines={5}>
+              {copy.content}
+            </AppText>
+          ) : null}
+          {visibleTags?.length ? (
+            <View style={styles.tags}>
+              {visibleTags.slice(0, 3).map((tag) => (
+                <AppText key={tag} variant="caption" color={colors.primary[700]}>
                   #{tag}
                 </AppText>
-              </View>
-            ))}
-          </View>
-        ) : null}
+              ))}
+            </View>
+          ) : null}
+        </View>
 
-        <View style={styles.footer}>
-          <View style={styles.metrics}>
+        <PostMediaGallery assets={media.data} vi={vi} />
+
+        <View style={styles.foodPreview}>
+          {post.recipeId ? (
             <AppText variant="caption" color={colors.text.secondary}>
-              {post.reactionCount ?? 0} {vi ? 'cảm xúc' : 'reactions'}
+              {vi ? 'Có công thức' : 'Recipe attached'}
             </AppText>
-            <View style={styles.dot} />
-            <AppText variant="caption" color={colors.text.secondary}>
-              {post.commentCount ?? 0} {vi ? 'bình luận' : 'comments'}
-            </AppText>
-          </View>
-          <AppText variant="bodyStrong" color={colors.primary[700]}>
-            {vi ? 'Xem →' : 'View →'}
+          ) : null}
+          <PostFoodSummary
+            recipeId={post.recipeId}
+            foodItemIds={post.foodItemIds}
+            relatedRecipe={post.relatedRecipe}
+            relatedFoodItems={post.relatedFoodItems}
+          />
+        </View>
+
+        <View style={styles.stats}>
+          <AppText variant="caption" color={colors.text.secondary}>
+            {post.reactionCount ?? 0} {vi ? 'lượt thích' : 'likes'}
+          </AppText>
+          <AppText variant="caption" color={colors.text.secondary}>
+            {post.commentCount ?? 0} {vi ? 'bình luận' : 'comments'}
           </AppText>
         </View>
       </Pressable>
@@ -131,19 +123,17 @@ export function CommunityPostCard({
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={
-            vi ? (liked ? 'Bỏ thích' : 'Thích') : liked ? 'Unlike' : 'Like'
-          }
+          accessibilityLabel={vi ? (liked ? 'Bỏ thích' : 'Thích') : liked ? 'Unlike' : 'Like'}
           accessibilityState={{ selected: liked }}
           onPress={onReact}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
           <PostLikeIcon liked={liked} />
           <AppText
-            variant="bodyStrong"
+            variant="caption"
             color={liked ? colors.primary[700] : colors.text.secondary}
           >
-            {vi ? (liked ? 'Đã thích' : 'Thích') : liked ? 'Liked' : 'Like'}
+            {post.reactionCount ?? 0}
           </AppText>
         </Pressable>
         <Pressable
@@ -152,20 +142,20 @@ export function CommunityPostCard({
           onPress={onComment}
           style={({ pressed }) => [styles.action, pressed && styles.pressed]}
         >
-          <AppIcon
-            name="comment"
-            size={20}
-            color={colors.text.secondary}
-            decorative
-          />
-          <AppText variant="bodyStrong" color={colors.text.secondary}>
-            {vi ? 'Bình luận' : 'Comments'}
+          <AppIcon name="comment" size={20} color={colors.text.secondary} decorative />
+          <AppText variant="caption" color={colors.text.secondary}>
+            {post.commentCount ?? 0}
           </AppText>
         </Pressable>
       </View>
 
       {onArchive ? (
-        <Pressable accessibilityRole="button" onPress={onArchive} hitSlop={8}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onArchive}
+          hitSlop={8}
+          style={styles.archive}
+        >
           <AppText variant="caption" color={colors.text.secondary}>
             {vi ? 'Lưu trữ bài viết' : 'Archive post'}
           </AppText>
@@ -176,48 +166,36 @@ export function CommunityPostCard({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing.md,
-    ...shadows.sm,
-  },
-  content: { gap: spacing.md },
+  card: { overflow: 'hidden', ...shadows.sm },
+  post: { gap: spacing.md },
   pressed: { opacity: 0.74 },
+  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.sm },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  copy: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  tag: {
-    backgroundColor: colors.background.selected,
-    borderRadius: radius.full,
+  foodPreview: { paddingHorizontal: spacing.lg },
+  stats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+  },
+  actions: {
+    minHeight: 48,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.subtle,
+    flexDirection: 'row',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border.subtle,
-    paddingTop: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  metrics: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  actions: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border.subtle,
-  },
   action: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     borderRadius: radius.full,
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: radius.full,
-    backgroundColor: colors.border.strong,
-  },
+  archive: { alignItems: 'center', paddingBottom: spacing.sm },
 });

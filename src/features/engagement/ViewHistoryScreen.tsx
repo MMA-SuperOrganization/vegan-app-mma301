@@ -38,7 +38,7 @@ export function ViewHistoryScreen() {
       });
     else if (item.targetType === 'video')
       router.push({ pathname: '/community/video', params: { id: item.targetId } });
-    else router.push({ pathname: '/community/post', params: { id: item.targetId } });
+    else router.navigate({ pathname: '/community/post', params: { id: item.targetId } });
   };
   return (
     <ScreenWrapper

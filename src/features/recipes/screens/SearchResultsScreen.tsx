@@ -108,7 +108,7 @@ export function SearchResultsScreen() {
   };
 
   const openItem = (item: ContentCardData) => {
-    router.push(contentHref(item));
+    router.navigate(contentHref(item));
   };
 
   return (

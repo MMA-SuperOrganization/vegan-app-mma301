@@ -130,6 +130,7 @@ export function PostComments({
   }, [newlyCreatedCommentId, replyingTo?._id, scrollToComment]);
 
   const comments = actions.comments.data?.data ?? [];
+  const commentsLoaded = Boolean(actions.comments.data) && !actions.comments.isLoading;
   const commentsById = useMemo(
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
@@ -255,7 +256,7 @@ export function PostComments({
         setConfirmingDelete(false);
         setMenuComment(comment);
       }}
-      onReply={() => startReply(comment)}
+      onReply={comment.parentCommentId ? undefined : () => startReply(comment)}
     />
   );
 
@@ -270,9 +271,11 @@ export function PostComments({
         <View style={styles.sectionTitle}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
           <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {comments.length}
-          </AppText>
+          {commentsLoaded ? (
+            <AppText variant="caption" color={colors.text.secondary}>
+              {comments.length}
+            </AppText>
+          ) : null}
         </View>
       ) : null}
 
@@ -282,7 +285,7 @@ export function PostComments({
         retry={() => void actions.comments.refetch()}
       />
 
-      {!actions.comments.isLoading && comments.length === 0 ? (
+      {commentsLoaded && comments.length === 0 ? (
         <View style={styles.emptyComments}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
           <View style={styles.emptyCommentCopy}>
@@ -414,12 +417,14 @@ export function PostComments({
                 </>
               ) : (
                 <>
-                  <MenuItem
-                    icon="reply"
-                    label={vi ? 'Trả lời' : 'Reply'}
-                    disabled={busy}
-                    onPress={() => startReply(menuComment)}
-                  />
+                  {!menuComment.parentCommentId ? (
+                    <MenuItem
+                      icon="reply"
+                      label={vi ? 'Trả lời' : 'Reply'}
+                      disabled={busy}
+                      onPress={() => startReply(menuComment)}
+                    />
+                  ) : null}
                   {menuMine ? (
                     <>
                       <MenuItem
@@ -608,7 +613,7 @@ function CommentRow({
   isNewlyCreated?: boolean;
   onLayout?: (y: number, height: number) => void;
   onOpenMenu: () => void;
-  onReply: () => void;
+  onReply?: () => void;
 }) {
   const newHighlightProgress = useRef(new Animated.Value(0)).current;
   const author = usePublicProfile(comment.authorId);
@@ -747,6 +752,7 @@ function CommentRow({
         <AppText>{comment.content}</AppText>
 
         <View style={styles.commentFooterActions}>
+          {onReply ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
@@ -763,6 +769,7 @@ function CommentRow({
               {vi ? 'Trả lời' : 'Reply'}
             </AppText>
           </Pressable>
+          ) : null}
 
         </View>
       </Animated.View>

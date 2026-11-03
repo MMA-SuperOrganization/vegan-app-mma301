@@ -1,15 +1,25 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { AppIcon, AppText } from '@/components';
+import { AppIcon, AppText, appDialog } from '@/components';
 import { useTranslation } from '@/i18n';
+import { useAuthStore } from '@/features/auth';
+import { usePublicProfile } from '@/features/profile/hooks';
 import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
+import { postCopy } from '../postPresentation';
+import { usePostMediaAssets } from '../usePostMediaAssets';
+import { communityApi } from '../communityApi';
+import { PostAuthorHeader } from './PostAuthorHeader';
 import { PostFoodSummary } from './PostFoodSummary';
 import { PostLikeIcon } from './PostLikeIcon';
 
 type HomePost = PostCardData & {
   content?: string;
+  visibility?: 'public' | 'private' | 'unlisted';
   media?: Array<{ url?: string; downloadUrl?: string }>;
 };
 
@@ -24,29 +34,136 @@ export function HomeSocialPostCard({
   onReact: () => void;
   onComment: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((state) => state.user?.id);
+  const [menuOpen, setMenuOpen] = useState(false);
   const liked = post.reacted === 'like';
-  const copy = post.excerpt ?? post.description ?? post.content;
+  const mine = post.authorId === userId;
+  const removePost = useMutation({
+    mutationFn: communityApi.remove,
+    onSuccess: () => {
+      setMenuOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['account'] });
+    },
+  });
+  const deleting = removePost.isPending;
+  const profile = usePublicProfile(
+    post.author?.displayName ? undefined : post.authorId
+  );
+  const author =
+    profile.data
+      ? {
+          ...post.author,
+          userId: post.authorId ?? profile.data.userId ?? '',
+          displayName: profile.data.displayName ?? post.author?.displayName,
+          avatarUrl: profile.data.avatarUrl ?? post.author?.avatarUrl,
+        }
+      : post.author ?? null;
+  const copy = postCopy(
+    post.title,
+    post.excerpt ?? post.description ?? post.content
+  );
+  // The posts feed now includes resolved media assets. Keep the per-asset
+  // lookup as a fallback for older/cached responses that only have mediaIds.
+  const media = usePostMediaAssets(post.media?.length ? [] : post.mediaIds);
   const imageUrl =
-    post.coverImageUrl ?? post.media?.[0]?.downloadUrl ?? post.media?.[0]?.url;
+    post.coverImageUrl ??
+    post.media?.[0]?.downloadUrl ??
+    post.media?.[0]?.url ??
+    media.data[0]?.downloadUrl;
   return (
     <View style={styles.card}>
-      <Pressable accessibilityRole="button" onPress={onPress} style={styles.header}>
-        <View style={styles.author}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
-            {post.title ?? t('home.communityName')}
-          </AppText>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {t('home.communityTime')}
-          </AppText>
-        </View>
+      <View style={styles.header}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Mở bài viết' : 'Open post'}
+          onPress={onPress}
+          style={styles.author}
+        >
+          <PostAuthorHeader
+            author={author}
+            createdAt={post.createdAt}
+            publishedAt={post.publishedAt}
+            status={post.status}
+            visibility={post.visibility === 'private' ? 'private' : 'public'}
+            vi={locale === 'vi'}
+          />
+        </Pressable>
         <AppText style={styles.more}>•••</AppText>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={locale === 'vi' ? 'Tùy chọn bài viết' : 'Post options'}
+          accessibilityState={{ expanded: menuOpen }}
+          onPress={() => setMenuOpen((open) => !open)}
+          style={styles.moreHit}
+        />
+      </View>
+      {menuOpen ? (
+        <View style={styles.postMenu}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setMenuOpen(false);
+              router.push({
+                pathname: '/community/report',
+                params: { targetType: 'post', targetId: post._id, targetPreview: post.title ?? '' },
+              });
+            }}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+          >
+            <AppIcon name="flag" size={17} color={colors.text.secondary} decorative />
+            <AppText variant="bodySmall">{locale === 'vi' ? 'Báo cáo' : 'Report'}</AppText>
+          </Pressable>
+          {mine ? (
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setMenuOpen(false);
+                      router.push({ pathname: '/community/editor', params: { id: post._id } });
+                    }}
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+                  >
+                    <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
+                    <AppText variant="bodySmall">{locale === 'vi' ? 'Chỉnh sửa' : 'Edit post'}</AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={deleting}
+                    onPress={() =>
+                      appDialog.alert(
+                        locale === 'vi' ? 'Xóa bài viết?' : 'Delete post?',
+                        locale === 'vi'
+                          ? 'Bài viết và các tương tác liên quan sẽ bị xóa.'
+                          : 'The post and its engagement will be removed.',
+                        [
+                          { text: locale === 'vi' ? 'Hủy' : 'Cancel', style: 'cancel' },
+                          {
+                            text: locale === 'vi' ? 'Xóa' : 'Delete',
+                            style: 'destructive',
+                            onPress: () => removePost.mutate(post._id),
+                          },
+                        ],
+                      )
+                    }
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+                  >
+                    <AppIcon name="trash" size={17} color={colors.status.danger} decorative />
+                    <AppText variant="bodySmall" color={colors.status.danger}>
+                      {locale === 'vi' ? 'Xóa bài viết' : 'Delete post'}
+                    </AppText>
+                  </Pressable>
+                </>
+          ) : null}
+        </View>
+      ) : null}
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
-        {copy ? (
-          <AppText variant="bodyLarge" style={styles.copy}>
-            {copy}
-          </AppText>
+        {copy.title || copy.content ? (
+          <View style={styles.copy}>
+            <AppText>{copy.content || copy.title}</AppText>
+          </View>
         ) : null}
         <PostFoodSummary
           compact
@@ -63,27 +180,6 @@ export function HomeSocialPostCard({
           />
         ) : null}
       </Pressable>
-      <View style={styles.stats}>
-        <View style={styles.statMetric}>
-          <AppIcon
-            name="heart"
-            size={14}
-            color={liked ? colors.primary[700] : colors.text.secondary}
-            decorative
-          />
-          <AppText
-            variant="caption"
-            color={liked ? colors.primary[700] : colors.text.secondary}
-          >
-            {t('home.likeCount', { count: post.reactionCount ?? 0 })}
-          </AppText>
-        </View>
-        <Pressable accessibilityRole="button" onPress={onComment} hitSlop={8}>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {post.commentCount ?? 0} {t('home.comments')}
-          </AppText>
-        </Pressable>
-      </View>
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
@@ -93,8 +189,8 @@ export function HomeSocialPostCard({
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
           <PostLikeIcon liked={liked} />
-          <AppText variant="caption" color={liked ? colors.primary[700] : undefined}>
-            {liked ? t('home.liked') : t('home.like')}
+          <AppText variant="caption" color={liked ? colors.primary[700] : colors.text.secondary}>
+            {post.reactionCount ?? 0}
           </AppText>
         </Pressable>
         <Pressable
@@ -108,11 +204,7 @@ export function HomeSocialPostCard({
             color={colors.text.secondary}
             decorative
           />
-          <AppText variant="caption">{t('home.comment')}</AppText>
-        </Pressable>
-        <Pressable style={styles.action}>
-          <AppIcon name="share" size={20} color={colors.text.secondary} decorative />
-          <AppText variant="caption">{t('home.share')}</AppText>
+          <AppText variant="caption" color={colors.text.secondary}>{post.commentCount ?? 0}</AppText>
         </Pressable>
       </View>
     </View>
@@ -135,16 +227,43 @@ const styles = StyleSheet.create({
   },
   author: { flex: 1, gap: 2 },
   more: { color: colors.text.secondary, fontWeight: '800', letterSpacing: 2 },
-  body: { gap: spacing.sm },
-  copy: { paddingHorizontal: spacing.md, lineHeight: 24 },
-  postImage: { width: '100%', height: 250, borderRadius: 0 },
-  stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
+  moreHit: {
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.sm,
+    width: 34,
+    height: 34,
+    zIndex: 2,
   },
-  statMetric: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  postMenu: {
+    position: 'absolute',
+    top: spacing.xl + spacing.sm,
+    right: spacing.md,
+    zIndex: 10,
+    width: 150,
+    padding: spacing.xs,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    borderRadius: radius.md,
+    backgroundColor: colors.background.surface,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  menuItem: {
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+  },
+  body: { gap: spacing.sm },
+  copy: { paddingHorizontal: spacing.md, gap: spacing.xs },
+  postImage: { width: '100%', height: 250, borderRadius: 0 },
   actions: {
     borderTopWidth: 1,
     borderTopColor: colors.border.subtle,

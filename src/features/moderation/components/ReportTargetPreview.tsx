@@ -132,7 +132,7 @@ export function ReportTargetPreview({
           title={vi ? 'Xem nội dung' : 'View content'}
           variant="ghost"
           fullWidth={false}
-          onPress={() => router.push(summary.href)}
+          onPress={() => router.navigate(summary.href)}
         />
       ) : null}
     </View>

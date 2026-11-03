@@ -64,8 +64,6 @@ export function useCommunityPost(id?: string) {
     queryKey: [...root, 'post', id],
     queryFn: () => communityApi.post(id!),
     enabled: Boolean(userId && id),
-    // Editors must not hydrate from an older cached optimistic-lock version.
-    refetchOnMount: 'always',
   });
   return {
     post,

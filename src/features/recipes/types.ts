@@ -25,6 +25,16 @@ export interface ContentCardData {
 
 export interface PostCardData extends ContentCardData {
   type?: 'post';
+  authorId?: string;
+  author?: {
+    userId: string;
+    displayName?: string;
+    avatarUrl?: string;
+  } | null;
+  mediaIds?: string[];
+  createdAt?: string;
+  publishedAt?: string;
+  status?: string;
   reactionCount?: number;
   commentCount?: number;
   reacted?: string | null;

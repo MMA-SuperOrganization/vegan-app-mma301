@@ -14,6 +14,7 @@ import {
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
+import { useAuthStore } from '@/features/auth';
 import { colors, radius, spacing, webLayout } from '@/theme';
 
 import { communityApi } from '../communityApi';
@@ -29,6 +30,7 @@ export function CommunityScreen() {
   const [mine, setMine] = useState(scope === 'mine');
   const [commentPostId, setCommentPostId] = useState<string>();
   const posts = useCommunityPosts(mine);
+  const userId = useAuthStore((state) => state.user?.id);
   const postReaction = usePostReaction();
   const client = useQueryClient();
   const refresh = () => client.invalidateQueries({ queryKey: ['account'] });
@@ -36,6 +38,13 @@ export function CommunityScreen() {
     mutationFn: communityApi.archivePost,
     onSuccess: refresh,
   });
+  const openPost = (post: CommunityPost) => {
+    client.setQueryData(['account', userId, 'community', 'post', post._id], post);
+    router.navigate({
+      pathname: '/community/post',
+      params: { id: post._id },
+    });
+  };
 
   useEffect(() => {
     if (scope !== 'mine') return;
@@ -173,12 +182,7 @@ export function CommunityScreen() {
                 })
               }
               onComment={() => setCommentPostId(item._id)}
-              onOpen={() =>
-                router.push({
-                  pathname: '/community/post',
-                  params: { id: item._id },
-                })
-              }
+              onOpen={() => openPost(item)}
               onArchive={
                 mine &&
                 ['draft', 'rejected', 'published'].includes(item.status)

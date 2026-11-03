@@ -58,13 +58,14 @@ export const aiApi = {
     startDate: string,
     days: number,
     preferences: string,
-    useProfile: boolean
+    useProfile: boolean,
+    signal?: AbortSignal
   ) =>
     unwrapApiRequest<MealProposal>(() =>
       apiClient.post(
         '/ai/meal-plan-proposals',
         { startDate, days, preferences, useProfile },
-        aiGenerationRequest
+        { ...aiGenerationRequest, signal }
       )
     ),
   confirmMeals: (proposal: MealProposal) =>

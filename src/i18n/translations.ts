@@ -1367,6 +1367,15 @@ export const vi = {
   'ai.mealPlanner.preferencesLabel': 'Sở thích',
   'ai.mealPlanner.useProfileLabel': 'Sử dụng hồ sơ dinh dưỡng của tôi',
   'ai.mealPlanner.generateAction': 'Tạo đề xuất',
+  'ai.mealPlanner.progressTitle': 'AI đang lập thực đơn cho bạn',
+  'ai.mealPlanner.progressStepProfile': 'Đọc hồ sơ dinh dưỡng và sở thích',
+  'ai.mealPlanner.progressStepRecipes': 'Chọn công thức phù hợp cho từng bữa',
+  'ai.mealPlanner.progressStepSafety': 'Kiểm tra dị nguyên và cân đối dinh dưỡng',
+  'ai.mealPlanner.progressStepFinish': 'Hoàn thiện đề xuất',
+  'ai.mealPlanner.progressElapsed': 'Đã chờ {{seconds}} giây · thường mất 15–60 giây',
+  'ai.mealPlanner.progressCancel': 'Hủy tạo đề xuất',
+  'ai.mealPlanner.progressCanceled':
+    'Đã hủy tạo đề xuất. Bạn có thể chỉnh lại thông tin và thử lại.',
   'ai.mealPlanner.planTitleLabel': 'Tên thực đơn',
   'ai.mealPlanner.emptyDayError':
     'Mỗi ngày cần ít nhất một món. Tạo đề xuất mới nếu cần.',
@@ -2773,6 +2782,15 @@ export const en: Record<TranslationKey, string> = {
   'ai.mealPlanner.preferencesLabel': 'Preferences',
   'ai.mealPlanner.useProfileLabel': 'Use my nutrition profile',
   'ai.mealPlanner.generateAction': 'Generate proposal',
+  'ai.mealPlanner.progressTitle': 'AI is planning your meals',
+  'ai.mealPlanner.progressStepProfile': 'Reading your nutrition profile and preferences',
+  'ai.mealPlanner.progressStepRecipes': 'Choosing recipes for each meal',
+  'ai.mealPlanner.progressStepSafety': 'Checking allergens and nutrition balance',
+  'ai.mealPlanner.progressStepFinish': 'Finishing the proposal',
+  'ai.mealPlanner.progressElapsed': 'Waited {{seconds}}s · usually 15–60 seconds',
+  'ai.mealPlanner.progressCancel': 'Cancel proposal',
+  'ai.mealPlanner.progressCanceled':
+    'Proposal cancelled. You can adjust the details and try again.',
   'ai.mealPlanner.planTitleLabel': 'Plan title',
   'ai.mealPlanner.emptyDayError':
     'Each day requires at least one meal. Generate a new proposal if needed.',

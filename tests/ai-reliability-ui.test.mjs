@@ -285,3 +285,21 @@ test('Android workflow builds on develop with repository variables and uploads a
   assert.match(workflow, /actions\/upload-artifact@v4/);
   assert.doesNotMatch(workflow, /CLOUDFLARE_R2_SECRET|FIREBASE_PRIVATE_KEY/);
 });
+
+test('AI meal planner shows progress steps, elapsed time and can cancel', () => {
+  const screen = readFileSync(
+    new URL('../src/features/ai/screens/AiMealPlannerScreen.tsx', import.meta.url),
+    'utf8'
+  );
+  const panel = readFileSync(
+    new URL('../src/features/ai/components/AiProgressPanel.tsx', import.meta.url),
+    'utf8'
+  );
+  const api = readFileSync(new URL('../src/features/ai/aiApi.ts', import.meta.url), 'utf8');
+  assert.match(screen, /<AiProgressPanel/);
+  assert.match(screen, /new AbortController\(\)/);
+  assert.match(screen, /controller\.signal/);
+  assert.match(panel, /accessibilityRole="progressbar"/);
+  assert.match(panel, /elapsedLabel\(seconds\)/);
+  assert.match(api, /\{ \.\.\.aiGenerationRequest, signal \}/);
+});

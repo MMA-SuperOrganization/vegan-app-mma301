@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { AppIcon, AppText } from '@/components';
+import { AppIcon, AppText, appDialog } from '@/components';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/features/auth';
 import { usePublicProfile } from '@/features/profile/hooks';
@@ -11,6 +12,7 @@ import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
 import { postCopy } from '../postPresentation';
 import { usePostMediaAssets } from '../usePostMediaAssets';
+import { communityApi } from '../communityApi';
 import { PostAuthorHeader } from './PostAuthorHeader';
 import { PostFoodSummary } from './PostFoodSummary';
 import { PostLikeIcon } from './PostLikeIcon';
@@ -33,10 +35,18 @@ export function HomeSocialPostCard({
 }) {
   const { t, locale } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
   const [menuOpen, setMenuOpen] = useState(false);
   const liked = post.reacted === 'like';
   const mine = post.authorId === userId;
+  const removePost = useMutation({
+    mutationFn: communityApi.remove,
+    onSuccess: () => {
+      setMenuOpen(false);
+      void queryClient.invalidateQueries({ queryKey: ['account'] });
+    },
+  });
   const profile = usePublicProfile(
     post.author?.displayName ? undefined : post.authorId
   );
@@ -105,17 +115,45 @@ export function HomeSocialPostCard({
             <AppText variant="bodySmall">{locale === 'vi' ? 'Báo cáo' : 'Report'}</AppText>
           </Pressable>
           {mine ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setMenuOpen(false);
-                router.push({ pathname: '/community/editor', params: { id: post._id } });
-              }}
-              style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
-            >
-              <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
-              <AppText variant="bodySmall">{locale === 'vi' ? 'Chỉnh sửa' : 'Edit post'}</AppText>
-            </Pressable>
+                <>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      setMenuOpen(false);
+                      router.push({ pathname: '/community/editor', params: { id: post._id } });
+                    }}
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+                  >
+                    <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
+                    <AppText variant="bodySmall">{locale === 'vi' ? 'Chỉnh sửa' : 'Edit post'}</AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={removePost.isPending}
+                    onPress={() =>
+                      appDialog.alert(
+                        locale === 'vi' ? 'Xóa bài viết?' : 'Delete post?',
+                        locale === 'vi'
+                          ? 'Bài viết và các tương tác liên quan sẽ bị xóa.'
+                          : 'The post and its engagement will be removed.',
+                        [
+                          { text: locale === 'vi' ? 'Hủy' : 'Cancel', style: 'cancel' },
+                          {
+                            text: locale === 'vi' ? 'Xóa' : 'Delete',
+                            style: 'destructive',
+                            onPress: () => removePost.mutate(post._id),
+                          },
+                        ],
+                      )
+                    }
+                    style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+                  >
+                    <AppIcon name="trash" size={17} color={colors.status.danger} decorative />
+                    <AppText variant="bodySmall" color={colors.status.danger}>
+                      {locale === 'vi' ? 'Xóa bài viết' : 'Delete post'}
+                    </AppText>
+                  </Pressable>
+                </>
           ) : null}
         </View>
       ) : null}

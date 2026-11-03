@@ -30,7 +30,8 @@ export function DevicePushRegistration() {
     mutationFn: async () => {
       await Notifications.setNotificationChannelAsync('default', {
         name: vi ? 'Nhắc lịch' : 'Reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
       });
       const permission = await Notifications.requestPermissionsAsync();
       if (!permission.granted) throw new Error('NOTIFICATION_PERMISSION_REQUIRED');

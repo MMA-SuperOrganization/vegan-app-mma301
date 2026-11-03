@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
@@ -35,6 +35,8 @@ export function PostDetailScreen() {
   const post = actions.post.data;
   const author = usePublicProfile(post?.author ? undefined : post?.authorId);
   const copy = postCopy(post?.title, post?.content);
+  const sharePost = () =>
+    Share.share({ message: copy.content || copy.title || '' });
   const presentedAuthor =
     post?.author ??
     (author.data
@@ -97,12 +99,12 @@ export function PostDetailScreen() {
               <>
                 <View style={styles.articleCard}>
                   <View style={styles.articleContent}>
-                    <View style={styles.articleHeader}>
+                    <View style={styles.articleHeaderRow}>
                       <BackButton
                         onPress={goBack}
                         size={28}
                         iconSize={20}
-                        style={styles.inlineBackButton}
+                        style={styles.stickyBackButton}
                       />
                       <PostAuthorHeader
                         author={presentedAuthor}
@@ -111,6 +113,7 @@ export function PostDetailScreen() {
                         status={post.status}
                         visibility={post.visibility}
                         vi={vi}
+                        trailing={<View style={styles.authorAvatar} />}
                       />
                       <View style={styles.moreWrap}>
                         <Pressable
@@ -183,6 +186,8 @@ export function PostDetailScreen() {
                       </AppText>
                     ) : null}
                   </View>
+
+                  <View style={styles.hiddenBackButton} />
 
                   <PostMediaGallery assets={actions.media.data ?? []} vi={vi} />
                   <FeatureState error={actions.media.error} />
@@ -345,16 +350,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   articleContent: { gap: spacing.md },
-  articleHeader: {
+  articleHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  inlineBackButton: {
+  stickyBackButton: {
     flexShrink: 0,
     borderRadius: 0,
     backgroundColor: 'transparent',
   },
+  hiddenBackButton: { display: 'none' },
+  authorAvatar: { width: 0, height: 0 },
   moreButton: {
     width: 36,
     height: 36,

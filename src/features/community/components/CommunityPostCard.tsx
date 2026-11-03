@@ -1,4 +1,4 @@
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText, Badge, Surface } from '@/components';
 import { colors, radius, shadows, spacing } from '@/theme';
@@ -141,14 +141,6 @@ export function CommunityPostCard({
           <AppText variant="caption" color={colors.text.secondary}>
             {post.commentCount ?? 0}
           </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={vi ? 'Chia sẻ' : 'Share'}
-          onPress={() => void Share.share({ title: post.title, message: `${post.title}\n\n${post.content ?? ''}` })}
-          style={({ pressed }) => [styles.action, pressed && styles.pressed]}
-        >
-          <AppIcon name="share" size={20} color={colors.text.secondary} decorative />
         </Pressable>
       </View>
 

@@ -1,4 +1,4 @@
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
@@ -116,14 +116,6 @@ export function HomeSocialPostCard({
             decorative
           />
           <AppText variant="caption" color={colors.text.secondary}>{post.commentCount ?? 0}</AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={locale === 'vi' ? 'Chia sẻ' : 'Share'}
-          onPress={() => void Share.share({ title: post.title, message: `${post.title}\n\n${post.content ?? ''}` })}
-          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
-        >
-          <AppIcon name="share" size={20} color={colors.text.secondary} decorative />
         </Pressable>
       </View>
     </View>

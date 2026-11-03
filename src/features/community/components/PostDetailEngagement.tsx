@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText } from '@/components';
 import type { ReactionType } from '@/features/engagement/engagementApi';
@@ -11,8 +10,6 @@ import {
 
 interface PostDetailEngagementProps {
   vi: boolean;
-  title: string;
-  content: string;
   selectedReaction?: string | null;
   reactionCount: number;
   commentCount: number;
@@ -22,39 +19,14 @@ interface PostDetailEngagementProps {
 
 export function PostDetailEngagement({
   vi,
-  title,
-  content,
   selectedReaction,
   reactionCount,
   commentCount,
   onReact,
   onComment,
 }: PostDetailEngagementProps) {
-  const [shareFeedback, setShareFeedback] = useState<string>();
   const loved = selectedReaction === 'love';
   const locale = vi ? 'vi' : 'en';
-
-  useEffect(() => {
-    if (!shareFeedback) return;
-    const timer = setTimeout(() => setShareFeedback(undefined), 2600);
-    return () => clearTimeout(timer);
-  }, [shareFeedback]);
-
-  const sharePost = async () => {
-    try {
-      const excerpt = content.length > 360 ? `${content.slice(0, 357)}…` : content;
-      const result = await Share.share({ title, message: `${title}\n\n${excerpt}` });
-      if (result.action === Share.sharedAction) {
-        setShareFeedback(vi ? 'Đã mở ứng dụng chia sẻ.' : 'Share options opened.');
-      }
-    } catch {
-      setShareFeedback(
-        vi
-          ? 'Chưa thể chia sẻ bài viết. Vui lòng thử lại.'
-          : 'Unable to share. Try again.'
-      );
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -72,22 +44,7 @@ export function PostDetailEngagement({
           accessibilityLabel={`${vi ? 'Bình luận' : 'Comment'}, ${formatFullEngagementCount(commentCount, locale)}`}
           onPress={onComment}
         />
-        <EngagementAction
-          icon="share"
-          accessibilityLabel={vi ? 'Chia sẻ' : 'Share'}
-          onPress={() => void sharePost()}
-        />
       </View>
-
-      {shareFeedback ? (
-        <View style={styles.feedback} accessibilityLiveRegion="polite">
-          <AppIcon name="check" size={15} color={colors.primary[700]} decorative />
-          <AppText variant="caption" color={colors.primary[700]}>
-            {shareFeedback}
-          </AppText>
-        </View>
-      ) : null}
-
     </View>
   );
 }
@@ -129,7 +86,6 @@ function EngagementAction({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.xs,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border.subtle,
@@ -148,14 +104,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.muted,
   },
   actionSelected: { backgroundColor: colors.background.selected },
-  feedback: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    padding: spacing.xs,
-    borderRadius: radius.md,
-    backgroundColor: colors.background.selected,
-  },
   pressed: { opacity: 0.65 },
 });

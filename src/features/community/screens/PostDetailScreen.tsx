@@ -210,8 +210,6 @@ export function PostDetailScreen() {
                     <View style={styles.engagement}>
                       <PostDetailEngagement
                         vi={vi}
-                        title={post.title}
-                        content={post.content}
                         selectedReaction={post.reacted}
                         reactionCount={post.reactionCount ?? 0}
                         commentCount={

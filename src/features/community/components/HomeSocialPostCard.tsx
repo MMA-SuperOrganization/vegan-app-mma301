@@ -48,6 +48,7 @@ export function HomeSocialPostCard({
       void queryClient.invalidateQueries({ queryKey: ['account'] });
     },
   });
+  const deleting = removePost.isPending;
   const profile = usePublicProfile(
     post.author?.displayName ? undefined : post.authorId
   );
@@ -130,7 +131,7 @@ export function HomeSocialPostCard({
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
-                    disabled={removePost.isPending}
+                    disabled={deleting}
                     onPress={() =>
                       appDialog.alert(
                         locale === 'vi' ? 'Xóa bài viết?' : 'Delete post?',

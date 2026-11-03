@@ -97,6 +97,11 @@ export function CommunityPostCard({
         <PostMediaGallery assets={media.data} vi={vi} />
 
         <View style={styles.foodPreview}>
+          {post.recipeId ? (
+            <AppText variant="caption" color={colors.text.secondary}>
+              {vi ? 'Có công thức' : 'Recipe attached'}
+            </AppText>
+          ) : null}
           <PostFoodSummary
             recipeId={post.recipeId}
             foodItemIds={post.foodItemIds}

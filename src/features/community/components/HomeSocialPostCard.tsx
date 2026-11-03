@@ -47,6 +47,7 @@ export function HomeSocialPostCard({
             author={post.author}
             createdAt={post.createdAt}
             publishedAt={post.publishedAt}
+            visibility={post.visibility}
             vi={locale === 'vi'}
           />
         </View>

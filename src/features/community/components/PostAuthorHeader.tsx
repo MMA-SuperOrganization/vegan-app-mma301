@@ -11,12 +11,14 @@ export function PostAuthorHeader({
   author,
   createdAt,
   publishedAt,
+  visibility = 'public',
   vi,
   trailing,
 }: {
   author?: PostAuthorSummary | null;
   createdAt?: string;
   publishedAt?: string;
+  visibility?: 'public' | 'private';
   vi: boolean;
   trailing?: ReactNode;
 }) {
@@ -51,7 +53,7 @@ export function PostAuthorHeader({
             </AppText>
           ) : null}
           <AppIcon
-            name="eye"
+            name={visibility === 'private' ? 'eye-off' : 'eye'}
             size={13}
             color={colors.text.secondary}
             decorative
@@ -65,6 +67,7 @@ export function PostAuthorHeader({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,

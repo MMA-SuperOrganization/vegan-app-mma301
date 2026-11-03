@@ -54,6 +54,7 @@ export function CommunityPostCard({
             author={post.author}
             createdAt={post.createdAt}
             publishedAt={post.publishedAt}
+            visibility={post.visibility}
             vi={vi}
           />
           {mine ? (

@@ -6,9 +6,9 @@ import {
   BackButton,
   AppIcon,
   AppText,
-  Badge,
   ScreenWrapper,
   Surface,
+  appDialog,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
@@ -17,7 +17,6 @@ import { useSafeBack } from '@/hooks';
 import { colors, spacing, webLayout } from '@/theme';
 import { useCommunityPost, usePostReaction } from '../hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
-import { postStatusLabel } from '../status';
 import { PostComments } from '../components/PostComments';
 import { PostDetailEngagement } from '../components/PostDetailEngagement';
 import { PostFoodSummary } from '../components/PostFoodSummary';
@@ -55,6 +54,28 @@ export function PostDetailScreen() {
   const mine = post?.authorId === userId;
   const published = post?.status === 'published';
   const busy = actions.remove.isPending;
+  const openPostMenu = () => {
+    if (!post) return;
+    appDialog.alert(
+      vi ? 'Tùy chọn bài viết' : 'Post options',
+      undefined,
+      [
+        {
+          text: vi ? 'Báo cáo bài viết' : 'Report post',
+          onPress: () =>
+            router.push({
+              pathname: '/community/report',
+              params: {
+                targetType: 'post',
+                targetId: id,
+                targetPreview: post.title,
+              },
+            }),
+        },
+        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
   return (
     <ScreenWrapper webMaxWidth={webLayout.feedMaxWidth}>
       <PostComments
@@ -78,25 +99,25 @@ export function PostDetailScreen() {
             {post ? (
               <>
                 <BackButton onPress={goBack} />
-                <Surface bordered radius="xl" style={styles.articleCard}>
+                <View style={styles.articleCard}>
                   <View style={styles.articleContent}>
-                    <PostAuthorHeader
-                      author={presentedAuthor}
-                      createdAt={post.createdAt}
-                      publishedAt={post.publishedAt}
-                      vi={vi}
-                    />
-                    <View style={styles.articleBadges}>
-                      <Badge
-                        label={vi ? 'Bài viết cộng đồng' : 'Community post'}
-                        variant="primary"
-                        size="sm"
+                    <View style={styles.articleHeader}>
+                      <PostAuthorHeader
+                        author={presentedAuthor}
+                        createdAt={post.createdAt}
+                        publishedAt={post.publishedAt}
+                        visibility={post.visibility}
+                        vi={vi}
                       />
-                      <Badge
-                        label={postStatusLabel(post.status, vi)}
-                        variant={published ? 'success' : 'neutral'}
-                        size="sm"
-                      />
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={vi ? 'Mở tùy chọn bài viết' : 'Open post options'}
+                        onPress={openPostMenu}
+                        hitSlop={10}
+                        style={({ pressed }) => [styles.moreButton, pressed && styles.cardPressed]}
+                      >
+                        <AppText style={styles.moreIcon}>•••</AppText>
+                      </Pressable>
                     </View>
                     {copy.title ? (
                       <AppText variant="heading3">{copy.title}</AppText>
@@ -187,7 +208,7 @@ export function PostDetailScreen() {
                       <FeatureState error={postReaction.error} />
                     </View>
                   ) : null}
-                </Surface>
+                </View>
                 {post.rejectionReason ? (
                   <AppText>{post.rejectionReason}</AppText>
                 ) : null}
@@ -278,14 +299,25 @@ const styles = StyleSheet.create({
   },
   articleCard: {
     gap: spacing.md,
-    overflow: 'hidden',
   },
-  articleContent: { gap: spacing.md, padding: spacing.lg },
-  articleBadges: {
-    flex: 1,
+  articleContent: { gap: spacing.md },
+  articleHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: spacing.sm,
+  },
+  moreButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+  },
+  moreIcon: {
+    color: colors.text.secondary,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 2,
   },
   articleBody: {
     lineHeight: 25,

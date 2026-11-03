@@ -256,7 +256,7 @@ export function PostComments({
         setConfirmingDelete(false);
         setMenuComment(comment);
       }}
-      onReply={() => startReply(comment)}
+      onReply={comment.parentCommentId ? undefined : () => startReply(comment)}
     />
   );
 
@@ -417,12 +417,14 @@ export function PostComments({
                 </>
               ) : (
                 <>
-                  <MenuItem
-                    icon="reply"
-                    label={vi ? 'Trả lời' : 'Reply'}
-                    disabled={busy}
-                    onPress={() => startReply(menuComment)}
-                  />
+                  {!menuComment.parentCommentId ? (
+                    <MenuItem
+                      icon="reply"
+                      label={vi ? 'Trả lời' : 'Reply'}
+                      disabled={busy}
+                      onPress={() => startReply(menuComment)}
+                    />
+                  ) : null}
                   {menuMine ? (
                     <>
                       <MenuItem
@@ -611,7 +613,7 @@ function CommentRow({
   isNewlyCreated?: boolean;
   onLayout?: (y: number, height: number) => void;
   onOpenMenu: () => void;
-  onReply: () => void;
+  onReply?: () => void;
 }) {
   const newHighlightProgress = useRef(new Animated.Value(0)).current;
   const author = usePublicProfile(comment.authorId);
@@ -750,6 +752,7 @@ function CommentRow({
         <AppText>{comment.content}</AppText>
 
         <View style={styles.commentFooterActions}>
+          {onReply ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={vi ? 'Trả lời bình luận' : 'Reply to comment'}
@@ -766,6 +769,7 @@ function CommentRow({
               {vi ? 'Trả lời' : 'Reply'}
             </AppText>
           </Pressable>
+          ) : null}
 
         </View>
       </Animated.View>

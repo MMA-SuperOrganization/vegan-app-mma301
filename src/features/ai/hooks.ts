@@ -148,12 +148,14 @@ export function useMealProposal() {
         days: number;
         preferences: string;
         useProfile: boolean;
+        signal?: AbortSignal;
       }) =>
         aiApi.proposeMeals(
           input.startDate,
           input.days,
           input.preferences,
-          input.useProfile
+          input.useProfile,
+          input.signal
         ),
     }),
     confirm: useMutation({

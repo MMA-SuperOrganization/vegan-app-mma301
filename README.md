@@ -517,6 +517,8 @@ if (isRestoringSession) {
 
 ## Getting Started
 
+> Step-by-step guide for running the app, installing an APK on an emulator and testing/recording results: [docs/RUN_AND_TEST_GUIDE.md](docs/RUN_AND_TEST_GUIDE.md)
+
 ### 1. Prerequisites
 
 - **Node.js**: v18.0.0 or higher
@@ -588,6 +590,7 @@ Once the Expo interactive terminal is running:
 | **`typecheck`** | `npm run typecheck` / `yarn typecheck` | Validates TypeScript types across the entire project    |
 | **`lint`**      | `npm run lint` / `yarn lint`           | Lints JavaScript and TypeScript files using ESLint 9    |
 | **`format`**    | `npm run format` / `yarn format`       | Automatically formats all source code with Prettier     |
+| **`test:ui`**   | `npm run test:ui`                      | Runs the UI tests in `tests/` (CI runs them too)        |
 
 ---
 
@@ -652,8 +655,12 @@ We welcome contributions from all team members! Please consult [CONTRIBUTING.md]
    ```bash
    npm run lint
    ```
-4. **Format Code**:
+4. **Run UI tests** (CI runs them before building the APK):
+   ```bash
+   npm run test:ui
+   ```
+5. **Format Code**:
    ```bash
    npm run format
    ```
-5. **Adhere to Conventional Commits**: Write clear commit messages (e.g., `feat: add recipe search filters`, `fix: handle invalid login error`).
+6. **Adhere to Conventional Commits**: Write clear commit messages (e.g., `feat: add recipe search filters`, `fix: handle invalid login error`).

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -16,6 +16,7 @@ import { startOfWeek } from '@/features/meal-plan/mealPlanState';
 import { useTranslation } from '@/i18n';
 import { spacing, colors } from '@/theme';
 import { AI_ROUTES, AI_TRANSLATION_KEYS } from '../aiConstants';
+import { AiProgressPanel } from '../components/AiProgressPanel';
 import { ProposalMealEditor } from '../components/ProposalMealEditor';
 import { SavedMealPlans } from '../components/SavedMealPlans';
 import { useMealProposal } from '../hooks';
@@ -32,6 +33,30 @@ export function AiMealPlannerScreen() {
   const [useProfile, setUseProfile] = useState(false);
   const [proposal, setProposal] = useState<MealProposal | null>(null);
   const actions = useMealProposal();
+  const generation = useRef<AbortController | null>(null);
+  const [canceled, setCanceled] = useState(false);
+  const generate = () => {
+    generation.current?.abort();
+    const controller = new AbortController();
+    generation.current = controller;
+    setCanceled(false);
+    actions.generate.mutate(
+      {
+        startDate,
+        days: Number(days),
+        preferences,
+        useProfile,
+        signal: controller.signal,
+      },
+      { onSuccess: (result) => setProposal(reviewMealProposal(result)) }
+    );
+  };
+  const cancelGeneration = () => {
+    generation.current?.abort();
+    generation.current = null;
+    actions.generate.reset();
+    setCanceled(true);
+  };
   const busy = actions.generate.isPending || actions.confirm.isPending;
   const valid =
     isLocalIsoDate(startDate) &&
@@ -89,18 +114,32 @@ export function AiMealPlannerScreen() {
         onValueChange={setUseProfile}
         disabled={busy}
       />
-      {!proposal ? (
-        <AppButton
-          title={t(keys.GENERATE_ACTION)}
-          disabled={!valid || busy}
-          loading={actions.generate.isPending}
-          onPress={() =>
-            actions.generate.mutate(
-              { startDate, days: Number(days), preferences, useProfile },
-              { onSuccess: (result) => setProposal(reviewMealProposal(result)) }
-            )
-          }
+      {!proposal && actions.generate.isPending ? (
+        <AiProgressPanel
+          title={t(keys.PROGRESS_TITLE)}
+          steps={[
+            t(keys.PROGRESS_STEP_PROFILE),
+            t(keys.PROGRESS_STEP_RECIPES),
+            t(keys.PROGRESS_STEP_SAFETY),
+            t(keys.PROGRESS_STEP_FINISH),
+          ]}
+          elapsedLabel={(seconds) => t(keys.PROGRESS_ELAPSED, { seconds })}
+          cancelLabel={t(keys.PROGRESS_CANCEL)}
+          onCancel={cancelGeneration}
         />
+      ) : !proposal ? (
+        <>
+          {canceled ? (
+            <AppText color={colors.text.secondary}>
+              {t(keys.PROGRESS_CANCELED)}
+            </AppText>
+          ) : null}
+          <AppButton
+            title={t(keys.GENERATE_ACTION)}
+            disabled={!valid || busy}
+            onPress={generate}
+          />
+        </>
       ) : (
         <>
           <AppInput

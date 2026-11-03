@@ -3,11 +3,20 @@ import type {
   RelatedRecipeSummary,
 } from '@/features/recipes/types';
 
+export interface PostAuthorSummary {
+  userId: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface CommunityPost {
   _id: string;
   title: string;
   content: string;
   authorId: string;
+  author?: PostAuthorSummary | null;
+  createdAt?: string;
+  publishedAt?: string;
   mediaIds?: string[];
   categoryIds?: string[];
   tags?: string[];

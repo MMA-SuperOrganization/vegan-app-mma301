@@ -1,10 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useMutationState,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import type { ApiPage } from '@/services/api';
 import { aiApi } from './aiApi';
 import { AiFeedbackRating, AiMessageRole } from './aiConstants';
 import { appendAiMessages } from './aiMessageCache';
 import type { AiMessage } from './types';
+
+interface SendAiMessageVariables {
+  content: string;
+  mediaId?: string;
+  targetConversationId: string;
+}
 
 export function useSavedMealPlans() {
   const userId = useAuthStore((state) => state.user?.id);
@@ -20,6 +31,8 @@ export function useAiChat(conversationId?: string) {
   const client = useQueryClient();
   const root = ['account', userId, 'ai'] as const;
   const conversationsKey = [...root, 'conversations'] as const;
+  const createMutationKey = [...root, 'create-conversation'] as const;
+  const sendMutationKey = [...root, 'send-message'] as const;
   const messagesKey = (targetConversationId: string | undefined) =>
     [...root, 'messages', targetConversationId] as const;
   const conversations = useQuery({
@@ -34,29 +47,45 @@ export function useAiChat(conversationId?: string) {
   });
   const refreshConversations = () =>
     client.invalidateQueries({ queryKey: conversationsKey });
+  const pendingConversationCreations = useMutationState({
+    filters: {
+      mutationKey: createMutationKey,
+      status: 'pending',
+      exact: true,
+    },
+  });
+  const pendingSendVariables = useMutationState({
+    filters: {
+      mutationKey: sendMutationKey,
+      status: 'pending',
+      exact: true,
+    },
+    select: (mutation) =>
+      mutation.state.variables as SendAiMessageVariables | undefined,
+  });
+  const isSending = Boolean(
+    conversationId &&
+      pendingSendVariables.some(
+        (variables) => variables?.targetConversationId === conversationId
+      )
+  );
+  const isCreating = pendingConversationCreations.length > 0;
+  const hasPendingWork = isCreating || pendingSendVariables.length > 0;
   const create = useMutation({
+    mutationKey: createMutationKey,
     mutationFn: aiApi.createConversation,
     onSuccess: refreshConversations,
   });
   const send = useMutation({
+    mutationKey: sendMutationKey,
     mutationFn: ({
       content,
       mediaId,
       targetConversationId,
-    }: {
-      content: string;
-      mediaId?: string;
-      targetConversationId?: string;
-    }) =>
-      aiApi.send(
-        targetConversationId ?? conversationId!,
-        content,
-        mediaId
-      ),
+    }: SendAiMessageVariables) =>
+      aiApi.send(targetConversationId, content, mediaId),
     onMutate: async (variables) => {
-      const targetConversationId =
-        variables.targetConversationId ?? conversationId;
-      if (!targetConversationId) return undefined;
+      const { targetConversationId } = variables;
 
       const queryKey = messagesKey(targetConversationId);
       await client.cancelQueries({ queryKey, exact: true });
@@ -97,7 +126,16 @@ export function useAiChat(conversationId?: string) {
         helpful ? AiFeedbackRating.HELPFUL : AiFeedbackRating.NOT_HELPFUL
       ),
   });
-  return { conversations, messages, create, send, feedback };
+  return {
+    conversations,
+    messages,
+    create,
+    isCreating,
+    send,
+    isSending,
+    hasPendingWork,
+    feedback,
+  };
 }
 
 export function useMealProposal() {

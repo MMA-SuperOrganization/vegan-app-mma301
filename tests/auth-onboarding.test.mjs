@@ -26,6 +26,7 @@ import {
   toAppErrorDetails,
 } from '../src/services/errors/appError.ts';
 import { normalizeFirebaseSession } from '../src/services/auth/firebaseSession.ts';
+import { isUnusableSessionCredential } from '../src/features/auth/services/sessionRecovery.ts';
 
 test('native Google sign-in ships in the main bundle instead of a lazy Metro chunk', async () => {
   const hookSource = await readFile(
@@ -114,6 +115,29 @@ test('diagnostic logging does not trigger the Expo error overlay', (t) => {
   assert.equal(calls[0][0], '[VEGETA_ERROR]');
   assert.equal(calls[0][1].code, 'INVALID_LOGIN_CREDENTIALS');
   assert.equal(calls[0][1].message, 'Không thể đăng nhập.');
+});
+
+test('session restoration treats expired credentials as signed out without hiding transient failures', async () => {
+  for (const code of [
+    'INVALID_GRANT',
+    'INVALID_REFRESH_TOKEN',
+    'TOKEN_EXPIRED',
+    'USER_DISABLED',
+    'USER_NOT_FOUND',
+  ]) {
+    assert.equal(isUnusableSessionCredential({ code }), true);
+  }
+  assert.equal(isUnusableSessionCredential({ status: 401 }), true);
+  assert.equal(isUnusableSessionCredential({ code: 'NETWORK_ERROR' }), false);
+
+  const storeSource = await readFile(
+    new URL('../src/features/auth/store/authStore.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(
+    storeSource,
+    /restoreSession: async \(\) => \{[\s\S]*?catch \(error\)[\s\S]*?SESSION_RESTORE_FAILED/
+  );
 });
 
 test('auth validation rejects empty and malformed credentials', () => {

@@ -174,7 +174,7 @@ export function CommunityScreen() {
               }
               onComment={() => setCommentPostId(item._id)}
               onOpen={() =>
-                router.push({
+                router.navigate({
                   pathname: '/community/post',
                   params: { id: item._id },
                 })

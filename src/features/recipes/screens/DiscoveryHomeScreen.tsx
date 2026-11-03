@@ -300,7 +300,7 @@ export function DiscoveryHomeScreen() {
           item.kind === 'result' ? (
             <ContentResultCard
               item={item.result}
-              onPress={() => router.push(contentHref(item.result))}
+              onPress={() => router.navigate(contentHref(item.result))}
             />
           ) : (
             <Animated.View style={postsRevealStyle}>
@@ -314,7 +314,7 @@ export function DiscoveryHomeScreen() {
                 }
                 onComment={() => setCommentPostId(item.post._id)}
                 onPress={() =>
-                  router.push({
+                  router.navigate({
                     pathname: '/community/post',
                     params: { id: item.post._id },
                   })

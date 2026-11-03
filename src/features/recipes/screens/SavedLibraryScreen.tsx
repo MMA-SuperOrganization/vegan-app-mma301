@@ -23,7 +23,7 @@ export function SavedLibraryScreen() {
   const items = saved.data?.data ?? [];
 
   const openSavedItem = (item: SavedItem) => {
-    router.push(
+    router.navigate(
       contentHref({
         _id: item.targetId,
         slug: item.target?.slug,

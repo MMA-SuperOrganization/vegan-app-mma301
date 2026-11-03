@@ -198,6 +198,8 @@ export const vi = {
   'grocery.generateScope.week.title': 'Cả tuần',
   'grocery.generateScope.week.description': 'Gộp nguyên liệu của toàn bộ tuần.',
   'grocery.generateChooseDay': 'Chọn ngày cần đi chợ',
+  'grocery.generatePreviewTitle': 'Món sẽ được tính nguyên liệu',
+  'grocery.generateOpenRecipeA11y': 'Xem công thức {{name}}',
   'grocery.generateDescription':
     'Nguyên liệu trùng nhau sẽ tự động được cộng lại thành một mục duy nhất.',
   'grocery.generateEmptyTitle': 'Tuần này chưa có thực đơn',
@@ -712,6 +714,12 @@ export const vi = {
   'profile.allergyWarningDescription':
     'Thông tin dị nguyên có thể chưa đầy đủ. Không xem món ăn là an toàn chỉ vì không có cảnh báo.',
   'profile.saveAllergies': 'Lưu dị nguyên',
+  'profile.allergyMealPlanConflictTitle': 'Thực đơn hôm nay có dị nguyên',
+  'profile.allergyMealPlanConflictDescription':
+    'Món {{meals}} trong thực đơn hôm nay có chứa {{allergens}}. Bạn vẫn muốn thêm các dị nguyên này vào hồ sơ?',
+  'profile.allergyMealPlanUnknownMeal': 'món đã lên lịch',
+  'profile.allergyKeepCurrent': 'Chưa thêm',
+  'profile.allergySaveAnyway': 'Vẫn thêm',
   'profile.allergensConfigured': '{{count}} dị nguyên đã chọn',
   'profile.saved': 'Món & nội dung đã lưu',
   'profile.savedSubtitle': 'Xem lại nội dung bạn yêu thích',
@@ -1639,6 +1647,8 @@ export const en: Record<TranslationKey, string> = {
   'grocery.generateScope.week.title': 'Whole week',
   'grocery.generateScope.week.description': 'Merge ingredients for the entire week.',
   'grocery.generateChooseDay': 'Choose a shopping day',
+  'grocery.generatePreviewTitle': 'Dishes included in this list',
+  'grocery.generateOpenRecipeA11y': 'View {{name}} recipe',
   'grocery.generateDescription':
     'Matching ingredients are automatically combined into one item.',
   'grocery.generateEmptyTitle': 'No meal plan for this week',
@@ -2097,6 +2107,12 @@ export const en: Record<TranslationKey, string> = {
   'profile.allergyWarningDescription':
     'Allergen information may be incomplete. Do not assume a dish is safe because no warning is shown.',
   'profile.saveAllergies': 'Save allergens',
+  'profile.allergyMealPlanConflictTitle': "Today's meal plan contains allergens",
+  'profile.allergyMealPlanConflictDescription':
+    "{{meals}} in today's meal plan contains {{allergens}}. Do you still want to add these allergens to your profile?",
+  'profile.allergyMealPlanUnknownMeal': 'a planned meal',
+  'profile.allergyKeepCurrent': 'Not now',
+  'profile.allergySaveAnyway': 'Add anyway',
   'profile.allergensConfigured': '{{count}} allergens selected',
   'profile.saved': 'Saved items',
   'profile.savedSubtitle': 'Return to content you enjoy',

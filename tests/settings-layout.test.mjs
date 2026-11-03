@@ -52,6 +52,9 @@ test('allergen settings synchronize loaded values and save the response locally'
   assert.match(screen, /hasLocalChanges\.current/);
   assert.match(store, /const savedNutrition = await profileApi\.updateAllergens/);
   assert.match(store, /allergenSelectionCompleted: true/);
+  assert.match(screen, /allergyMealPlanConflictTitle/);
+  assert.match(screen, /onPress: \(\) => void save\(true\)/);
+  assert.match(store, /MEAL_PLAN_ALLERGEN_ACKNOWLEDGEMENT_REQUIRED/);
 });
 
 test('allergen saving keeps selected toggles visible and shows button progress', () => {

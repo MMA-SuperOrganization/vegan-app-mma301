@@ -121,9 +121,17 @@ export const profileApi = {
       ),
     ]),
 
-  updateAllergens: (allergenIds: string[]) =>
+  updateAllergens: (
+    allergenIds: string[],
+    acknowledgeMealPlanAllergenConflicts = false
+  ) =>
     unwrapApiRequest<NutritionProfile>(() =>
-      apiClient.put('/nutrition-profiles/me', { allergenIds })
+      apiClient.put('/nutrition-profiles/me', {
+        allergenIds,
+        ...(acknowledgeMealPlanAllergenConflicts
+          ? { acknowledgeMealPlanAllergenConflicts: true }
+          : {}),
+      })
     ),
 
   updateNutritionTargets: (values: NutritionTargetsUpdate) =>

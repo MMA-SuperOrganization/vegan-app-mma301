@@ -33,8 +33,39 @@ export function AllergiesSettingsScreen() {
   useEffect(() => {
     if (!hasLocalChanges.current) setSelected(persistedAllergenIds);
   }, [persistedAllergenIds]);
-  const save = async () => {
-    if (await update(selected)) goBack();
+  const save = async (acknowledgeMealPlanAllergenConflicts = false) => {
+    const result = await update(
+      selected,
+      acknowledgeMealPlanAllergenConflicts
+    );
+    if (result.status === 'saved') {
+      goBack();
+      return;
+    }
+    if (result.status !== 'confirmation-required') return;
+    const mealNames = [...new Set(result.conflicts.map((item) => item.mealName))];
+    const allergenNames = [
+      ...new Set(
+        result.conflicts.flatMap((item) =>
+          item.allergens.map((allergen) => allergen.name)
+        )
+      ),
+    ];
+    appDialog.alert(
+      t('profile.allergyMealPlanConflictTitle'),
+      t('profile.allergyMealPlanConflictDescription', {
+        meals: mealNames.join(', ') || t('profile.allergyMealPlanUnknownMeal'),
+        allergens:
+          allergenNames.join(', ') || t('recipe.unknownAllergen'),
+      }),
+      [
+        { text: t('profile.allergyKeepCurrent'), style: 'cancel' },
+        {
+          text: t('profile.allergySaveAnyway'),
+          onPress: () => void save(true),
+        },
+      ]
+    );
   };
   return (
     <SettingsScreenLayout
@@ -94,7 +125,7 @@ export function AllergiesSettingsScreen() {
         title={t('profile.saveAllergies')}
         loading={isSaving}
         disabled={!data || data.allergensLoadFailed}
-        onPress={() => void save()}
+        onPress={() => void save(false)}
       />
     </SettingsScreenLayout>
   );

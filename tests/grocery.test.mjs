@@ -166,5 +166,17 @@ test('meal-plan grocery generation offers day and week scopes', () => {
   assert.match(screen, /scope === 'day'/);
   assert.match(screen, /date: selectedDate/);
   assert.match(screen, /<WeekDaySelector/);
+  assert.match(screen, /<GroceryMealPreview/);
   assert.match(screen, /scope === 'day'[\s\S]*mealCounts\[selectedDate\]/);
+
+  const preview = readFileSync(
+    new URL(
+      '../src/features/grocery/components/GroceryMealPreview.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  assert.match(preview, /meal\.recipeSnapshot\.title/);
+  assert.match(preview, /mealLabel\(meal\.type\)/);
+  assert.match(preview, /formatNumber\(meal\.servings, 0\)/);
 });

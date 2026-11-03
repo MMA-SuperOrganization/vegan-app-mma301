@@ -6,12 +6,13 @@ export interface ApiError {
   message: string;
   status?: number;
   code?: string;
+  details?: unknown;
 }
 
 export function normalizeApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const payload = error.response?.data as
-      { error?: { code?: unknown } } | undefined;
+      { error?: { code?: unknown; details?: unknown } } | undefined;
     const code =
       typeof payload?.error?.code === 'string' ? payload.error.code : undefined;
     const status = error.response?.status;
@@ -22,6 +23,7 @@ export function normalizeApiError(error: unknown): ApiError {
       ),
       status,
       code,
+      details: payload?.error?.details,
     };
   }
   return { message: getUserErrorMessage(error) };

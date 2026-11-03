@@ -26,6 +26,7 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { GroceryGenerationScopeSelector } from '../components/GroceryGenerationScopeSelector';
+import { GroceryMealPreview } from '../components/GroceryMealPreview';
 import { useGroceryActions } from '../hooks';
 import type { GroceryGenerationInput, GroceryGenerationScope } from '../types';
 
@@ -192,6 +193,27 @@ export function GroceryGenerateScreen() {
                   />
                 </>
               ) : null}
+              <AppText color={colors.text.secondary}>
+                {t(
+                  scope === 'day'
+                    ? 'grocery.generateDayDishCount'
+                    : 'grocery.generateWeekDishCount',
+                  { count: dishCount }
+                )}
+              </AppText>
+              {dishCount > 0 ? (
+                <GroceryMealPreview
+                  days={plan.days}
+                  scope={scope}
+                  selectedDate={selectedDate}
+                  onOpenRecipe={(recipeId) =>
+                    router.push({
+                      pathname: '/(discover)/recipe/[id]',
+                      params: { id: recipeId },
+                    })
+                  }
+                />
+              ) : null}
               <Toggle
                 label={
                   locale === 'vi'
@@ -202,14 +224,6 @@ export function GroceryGenerateScreen() {
                 onValueChange={setSubtractPantry}
                 disabled={actions.generate.isPending}
               />
-              <AppText color={colors.text.secondary}>
-                {t(
-                  scope === 'day'
-                    ? 'grocery.generateDayDishCount'
-                    : 'grocery.generateWeekDishCount',
-                  { count: dishCount }
-                )}
-              </AppText>
               {dishCount > 0 ? (
                 <AppInput
                   label={t('grocery.generateName')}

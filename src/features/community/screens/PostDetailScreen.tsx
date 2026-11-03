@@ -139,6 +139,7 @@ export function PostDetailScreen() {
                               </AppText>
                             </Pressable>
                             {mine ? (
+                              <>
                               <Pressable
                                 accessibilityRole="button"
                                 onPress={editPost}
@@ -165,6 +166,7 @@ export function PostDetailScreen() {
                                   {vi ? 'Xóa bài viết' : 'Delete post'}
                                 </AppText>
                               </Pressable>
+                              </>
                             ) : null}
                           </View>
                         ) : null}

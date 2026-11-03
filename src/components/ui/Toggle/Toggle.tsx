@@ -1,6 +1,6 @@
 import { AppText } from '../AppText';
 import React from 'react';
-import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import {
   capitalize,
   child,
@@ -32,23 +32,28 @@ export function Toggle({
   accessibilityLabel,
   preview = false,
 }: ToggleProps) {
-  const current = disabled ? 'disabled' : (state ?? (value ? 'on' : 'off'));
+  const usesDisabledPreview = state === 'disabled';
+  const current = usesDisabledPreview
+    ? 'disabled'
+    : (state ?? (value ? 'on' : 'off'));
+  const blocked = disabled || usesDisabledPreview;
   const node = variantNode('Control /', `State=${capitalize(current)}`);
   const checked = current === 'on';
   const text = label ?? child(node, 'Label').text;
   return (
     <Pressable
       testID={testID}
-      disabled={current === 'disabled'}
+      disabled={blocked}
       onPress={() => onValueChange(!checked)}
       accessibilityRole="switch"
       accessibilityLabel={accessibilityLabel ?? text}
-      accessibilityState={{ checked, disabled: current === 'disabled' }}
+      accessibilityState={{ checked, disabled: blocked }}
       aria-checked={checked}
-      aria-disabled={current === 'disabled'}
+      aria-disabled={blocked}
       style={[
         containerStyle(node, preview),
         { minHeight: interactionTokens.minimumTouch, alignSelf: 'flex-start' },
+        disabled && !usesDisabledPreview && styles.disabled,
         style,
       ]}
     >
@@ -59,3 +64,7 @@ export function Toggle({
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  disabled: { opacity: 0.55 },
+});

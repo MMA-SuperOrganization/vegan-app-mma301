@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   AppButton,
@@ -44,6 +44,8 @@ export function InventoryScreen({
   const [pantryFilter, setPantryFilter] = useState<PantryFilter>('all');
   const [search, setSearch] = useState('');
   const [now, setNow] = useState(Date.now);
+  const contentOpacity = useRef(new Animated.Value(1)).current;
+  const contentTranslateX = useRef(new Animated.Value(0)).current;
   const lists = useGroceryLists(groceryStatus);
   const pantry = usePantry();
 
@@ -62,6 +64,31 @@ export function InventoryScreen({
   const openList = (list: GroceryList) =>
     router.push({ pathname: '/(grocery)/[id]', params: { id: list._id } });
 
+  const selectTab = (nextTab: InventoryTab) => {
+    if (nextTab === activeTab) return;
+
+    contentOpacity.stopAnimation();
+    contentTranslateX.stopAnimation();
+    contentOpacity.setValue(0);
+    contentTranslateX.setValue(nextTab === 'pantry' ? 12 : -12);
+    setActiveTab(nextTab);
+
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+      Animated.spring(contentTranslateX, {
+        toValue: 0,
+        stiffness: 280,
+        damping: 30,
+        mass: 0.6,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <ScreenWrapper
       scrollable
@@ -77,9 +104,18 @@ export function InventoryScreen({
       }
     >
       <View style={styles.content}>
-        <GroceryPantryTabs active={activeTab} onChange={setActiveTab} />
+        <GroceryPantryTabs active={activeTab} onChange={selectTab} />
 
-        {activeTab === 'grocery' ? (
+        <Animated.View
+          style={[
+            styles.tabContent,
+            {
+              opacity: contentOpacity,
+              transform: [{ translateX: contentTranslateX }],
+            },
+          ]}
+        >
+          {activeTab === 'grocery' ? (
           <>
             <View style={styles.filters}>
               {statuses.map((value) => (
@@ -196,7 +232,8 @@ export function InventoryScreen({
               </>
             ) : null}
           </>
-        )}
+          )}
+        </Animated.View>
       </View>
 
       <View style={styles.footer}>
@@ -246,6 +283,7 @@ export function InventoryScreen({
 const styles = StyleSheet.create({
   screen: { flexGrow: 1, paddingBottom: spacing.lg },
   content: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
+  tabContent: { gap: spacing.md },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.background.surface, borderWidth: 1, borderColor: colors.border.default },
   pressed: { backgroundColor: colors.background.selected },

@@ -54,6 +54,33 @@ test('allergen settings synchronize loaded values and save the response locally'
   assert.match(store, /allergenSelectionCompleted: true/);
 });
 
+test('allergen saving keeps selected toggles visible and shows button progress', () => {
+  const screen = readFileSync(
+    new URL(
+      '../src/features/profile/screens/AllergiesSettingsScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const button = readFileSync(
+    new URL('../src/components/ui/Button/Button.tsx', import.meta.url),
+    'utf8'
+  );
+  const toggle = readFileSync(
+    new URL('../src/components/ui/Toggle/Toggle.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(screen, /loading=\{isSaving\}/);
+  assert.match(screen, /disabled=\{!data \|\| data\.allergensLoadFailed\}/);
+  assert.ok(
+    button.indexOf("loading || state === 'loading'") <
+      button.indexOf("disabled || state === 'disabled'")
+  );
+  assert.match(toggle, /const blocked = disabled \|\| usesDisabledPreview/);
+  assert.match(toggle, /disabled && !usesDisabledPreview && styles\.disabled/);
+});
+
 const customHeaderHosts = [
   'src/components/layout/SettingsScreenLayout.tsx',
   'src/components/navigation/PlaceholderTabScreen.tsx',

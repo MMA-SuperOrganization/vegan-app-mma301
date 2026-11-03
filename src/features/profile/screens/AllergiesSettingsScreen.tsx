@@ -93,7 +93,7 @@ export function AllergiesSettingsScreen() {
       <AppButton
         title={t('profile.saveAllergies')}
         loading={isSaving}
-        disabled={!data || data.allergensLoadFailed || isSaving}
+        disabled={!data || data.allergensLoadFailed}
         onPress={() => void save()}
       />
     </SettingsScreenLayout>

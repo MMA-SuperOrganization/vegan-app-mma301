@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   groceryProgress,
   groceryTransferSummary,
@@ -134,4 +135,30 @@ test('ingredient names compare accent-insensitively before offering a personal d
     true
   );
   assert.equal(hasExactIngredientName([], 'Đậu hũ ky'), false);
+});
+
+test('inventory tabs animate one shared selection indicator between grocery and pantry', () => {
+  const tabs = readFileSync(
+    new URL(
+      '../src/features/grocery/components/GroceryPantryTabs.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+
+  assert.match(tabs, /Animated\.spring\(indicatorProgress/);
+  assert.match(tabs, /transform: \[\{ translateX: indicatorTranslateX \}\]/);
+  assert.match(tabs, /opacity: selectedLabelOpacity/);
+  assert.match(tabs, /pointerEvents="none"/);
+  assert.doesNotMatch(tabs, /selected && styles\.selectedTab/);
+
+  const inventory = readFileSync(
+    new URL(
+      '../src/features/inventory/screens/InventoryScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  assert.match(inventory, /Animated\.parallel\(\[/);
+  assert.match(inventory, /transform: \[\{ translateX: contentTranslateX \}\]/);
 });

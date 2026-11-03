@@ -65,9 +65,13 @@ export function PostDetailScreen() {
       },
     });
   };
-  const editPrivacy = () => {
+  const editPost = () => {
     setPostMenuOpen(false);
     router.push({ pathname: '/community/editor', params: { id } });
+  };
+  const requestDelete = () => {
+    setPostMenuOpen(false);
+    setDeletingPost(true);
   };
   return (
     <ScreenWrapper webMaxWidth={webLayout.feedMaxWidth}>
@@ -137,7 +141,7 @@ export function PostDetailScreen() {
                             {mine ? (
                               <Pressable
                                 accessibilityRole="button"
-                                onPress={editPrivacy}
+                                onPress={editPost}
                                 style={({ pressed }) => [
                                   styles.menuItem,
                                   pressed && styles.cardPressed,
@@ -145,7 +149,20 @@ export function PostDetailScreen() {
                               >
                                 <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
                                 <AppText variant="bodySmall">
-                                  {vi ? 'Chỉnh quyền riêng tư' : 'Edit privacy'}
+                                  {vi ? 'Chỉnh sửa bài viết' : 'Edit post'}
+                                </AppText>
+                              </Pressable>
+                              <Pressable
+                                accessibilityRole="button"
+                                onPress={requestDelete}
+                                style={({ pressed }) => [
+                                  styles.menuItem,
+                                  pressed && styles.cardPressed,
+                                ]}
+                              >
+                                <AppIcon name="trash" size={17} color={colors.status.danger} decorative />
+                                <AppText variant="bodySmall" color={colors.status.danger}>
+                                  {vi ? 'Xóa bài viết' : 'Delete post'}
                                 </AppText>
                               </Pressable>
                             ) : null}
@@ -234,7 +251,7 @@ export function PostDetailScreen() {
                 {post.rejectionReason ? (
                   <AppText>{post.rejectionReason}</AppText>
                 ) : null}
-                {mine &&
+                {false &&
                 ['draft', 'rejected', 'published', 'archived'].includes(
                   post.status
                 ) ? (
@@ -296,6 +313,7 @@ export function PostDetailScreen() {
                     <AppButton
                       title={vi ? 'Xóa bài' : 'Delete post'}
                       variant="ghost"
+                      style={{ display: 'none' }}
                       disabled={busy}
                       onPress={() => setDeletingPost(true)}
                     />

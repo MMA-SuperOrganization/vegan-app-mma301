@@ -77,8 +77,8 @@ export function HomeSocialPostCard({
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
         {copy.title || copy.content ? (
           <View style={styles.copy}>
-            {copy.title ? <AppText variant="heading3">{copy.title}</AppText> : null}
-            {copy.content ? <AppText variant="bodyLarge">{copy.content}</AppText> : null}
+            {copy.title ? <AppText variant="heading4">{copy.title}</AppText> : null}
+            {copy.content ? <AppText>{copy.content}</AppText> : null}
           </View>
         ) : null}
         <PostFoodSummary

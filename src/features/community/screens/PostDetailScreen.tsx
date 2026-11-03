@@ -178,10 +178,10 @@ export function PostDetailScreen() {
                       </View>
                     </View>
                     {copy.title ? (
-                      <AppText variant="heading3">{copy.title}</AppText>
+                      <AppText variant="heading4">{copy.title}</AppText>
                     ) : null}
                     {copy.content ? (
-                      <AppText variant="bodyLarge" selectable style={styles.articleBody}>
+                      <AppText selectable style={styles.articleBody}>
                         {copy.content}
                       </AppText>
                     ) : null}

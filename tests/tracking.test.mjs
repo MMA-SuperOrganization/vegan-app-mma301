@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createTrackingFixture } from './fixtures/trackingFixtures.ts';
 import {
+  EMPTY_NUTRITION,
+  MEAL_TYPES,
+  PRIMARY_MEAL_TYPES,
   addDays,
+  diaryEntriesForDate,
+  formatTimeOfDay,
+  sortWeightLogs,
+  sumWater,
+  toNutritionValues,
+  waterLogsForDate,
   combineDateAndTime,
   daysAgo,
   formatDayMonthYear,
@@ -323,4 +332,97 @@ test('month calendar grid starts on Monday and covers every day', () => {
   const february = monthGrid(2028, 2);
   assert.equal(february.filter(Boolean).length, 29);
   assert.equal(monthGrid(2026, 6)[0], '2026-06-01');
+});
+
+test('time of day formats with two digits from dates and ISO strings', () => {
+  assert.equal(formatTimeOfDay(new Date(2026, 9, 8, 7, 5)), '07:05');
+  assert.equal(formatTimeOfDay(new Date(2026, 9, 8, 23, 59)), '23:59');
+  const iso = new Date(2026, 9, 8, 0, 0).toISOString();
+  assert.equal(formatTimeOfDay(iso), '00:00');
+  // Round-trips with the parser used by the diary time field.
+  assert.deepEqual(parseTimeOfDay(formatTimeOfDay(new Date(2026, 9, 8, 9, 30))), {
+    hours: 9,
+    minutes: 30,
+  });
+});
+
+test('missing nutrition facts become zeros without touching known values', () => {
+  assert.deepEqual(toNutritionValues(undefined), EMPTY_NUTRITION);
+  assert.deepEqual(toNutritionValues({}), EMPTY_NUTRITION);
+  assert.deepEqual(toNutritionValues({ caloriesKcal: 120, proteinG: 0 }), {
+    caloriesKcal: 120,
+    proteinG: 0,
+    carbsG: 0,
+    fatG: 0,
+    fiberG: 0,
+  });
+  // The shared empty value must not be mutated by callers.
+  const values = toNutritionValues(undefined);
+  values.caloriesKcal = 99;
+  assert.equal(EMPTY_NUTRITION.caloriesKcal, 0);
+});
+
+test('diary entries for a day keep only that day, ordered by time eaten', () => {
+  const { diaryEntries } = createTrackingFixture(now);
+  const today = toLocalIsoDate(now);
+  const late = {
+    ...diaryEntries[0],
+    _id: 'late-snack',
+    mealType: 'snack',
+    consumedAt: new Date(2026, 9, 8, 21, 0).toISOString(),
+  };
+  const yesterday = { ...diaryEntries[1], _id: 'yesterday', date: addDays(today, -1) };
+  const result = diaryEntriesForDate([late, yesterday, ...diaryEntries], today);
+
+  assert.deepEqual(
+    result.map((entry) => entry._id),
+    ['mock-diary-1', 'mock-diary-2', 'late-snack']
+  );
+  assert.deepEqual(diaryEntriesForDate(diaryEntries, addDays(today, 1)), []);
+});
+
+test('water logs for a day use the local calendar date and stay in order', () => {
+  const { waterLogs } = createTrackingFixture(now);
+  const today = toLocalIsoDate(now);
+  const yesterdayLog = {
+    _id: 'yesterday-water',
+    amountMl: 300,
+    recordedAt: new Date(2026, 9, 7, 22, 0).toISOString(),
+  };
+  const shuffled = [waterLogs[2], yesterdayLog, waterLogs[0], waterLogs[1]];
+
+  assert.deepEqual(
+    waterLogsForDate(shuffled, today).map((log) => log._id),
+    ['mock-water-1', 'mock-water-2', 'mock-water-3']
+  );
+  assert.deepEqual(
+    waterLogsForDate(shuffled, '2026-10-07').map((log) => log._id),
+    ['yesterday-water']
+  );
+});
+
+test('daily water total adds every log and is zero for an empty day', () => {
+  const { waterLogs } = createTrackingFixture(now);
+  assert.equal(sumWater(waterLogs), 1250);
+  assert.equal(sumWater([]), 0);
+  assert.equal(sumWater(waterLogsForDate(waterLogs, '2026-10-01')), 0);
+});
+
+test('weight history lists the newest log first without mutating the input', () => {
+  const { weightLogs } = createTrackingFixture(now);
+  const input = [weightLogs[1], weightLogs[2], weightLogs[0]];
+  const sorted = sortWeightLogs(input);
+
+  assert.deepEqual(
+    sorted.map((log) => log._id),
+    ['mock-weight-3', 'mock-weight-2', 'mock-weight-1']
+  );
+  assert.equal(input[0]._id, 'mock-weight-2');
+  assert.deepEqual(sortWeightLogs([]), []);
+});
+
+test('meal type lists keep the diary order used by the screens', () => {
+  assert.deepEqual(MEAL_TYPES, ['breakfast', 'lunch', 'dinner', 'snack']);
+  assert.deepEqual(PRIMARY_MEAL_TYPES, ['breakfast', 'lunch', 'dinner']);
+  assert.ok(PRIMARY_MEAL_TYPES.every((type) => MEAL_TYPES.includes(type)));
 });

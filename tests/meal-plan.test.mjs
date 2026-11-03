@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  PLANNED_MEAL_TYPES,
   addCalendarDays,
   addPlannedMeal,
   completeNutritionSnapshot,
@@ -8,13 +9,16 @@ import {
   nextServingCount,
   plannedCalories,
   plannedNutrition,
+  mealsForDate,
   monthStart,
+  normalizeMealPlan,
   relativeWeekOffset,
   removePlannedMeal,
   selectEditablePlan,
   shiftWeekSelection,
   shiftMonth,
   startOfWeek,
+  toIsoDate,
   updatePlannedMeal,
   weekDates,
   weeksIntersectingMonth,
@@ -183,4 +187,68 @@ test('meal groups, calories and serving steps follow the UI rules', () => {
   assert.equal(nextServingCount(1, 1), 2);
   assert.equal(nextServingCount(1, -1), 1);
   assert.equal(nextServingCount(100, 1), 100);
+});
+
+test('ISO dates use the local calendar day with zero padding', () => {
+  assert.equal(toIsoDate(new Date(2026, 0, 5, 23, 59)), '2026-01-05');
+  assert.equal(toIsoDate(new Date(2026, 10, 30, 0, 0)), '2026-11-30');
+  assert.equal(toIsoDate(new Date(2024, 1, 29, 12, 0)), '2024-02-29');
+});
+
+test('planned meal types are the three main meals in screen order', () => {
+  assert.deepEqual(PLANNED_MEAL_TYPES, ['breakfast', 'lunch', 'dinner']);
+});
+
+test('normalizing an API plan trims dates and keeps servings whole and in range', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-11-02T00:00:00.000Z',
+    status: 'draft',
+    version: 0,
+    days: [
+      {
+        date: '2026-11-02T00:00:00.000Z',
+        meals: [
+          meal({ mealId: 'a', servings: 1.4 }),
+          meal({ mealId: 'b', servings: 0 }),
+          meal({ mealId: 'c', servings: 250 }),
+        ],
+      },
+    ],
+  };
+  const normalized = normalizeMealPlan(plan);
+
+  assert.equal(normalized.weekStartDate, '2026-11-02');
+  assert.equal(normalized.days[0].date, '2026-11-02');
+  assert.deepEqual(
+    normalized.days[0].meals.map((item) => item.servings),
+    [1, 1, 100]
+  );
+  // The cached API plan is left untouched.
+  assert.equal(plan.days[0].meals[0].servings, 1.4);
+  assert.equal(plan.weekStartDate, '2026-11-02T00:00:00.000Z');
+});
+
+test('meals for a date come from the matching day and default to none', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-11-02',
+    status: 'active',
+    version: 1,
+    days: [
+      { date: '2026-11-02', meals: [meal({ mealId: 'monday' })] },
+      { date: '2026-11-03', meals: [] },
+    ],
+  };
+
+  assert.deepEqual(
+    mealsForDate(plan, '2026-11-02').map((item) => item.mealId),
+    ['monday']
+  );
+  assert.deepEqual(mealsForDate(plan, '2026-11-03'), []);
+  assert.deepEqual(mealsForDate(plan, '2026-11-09'), []);
+  assert.deepEqual(mealsForDate(null, '2026-11-02'), []);
+  assert.deepEqual(mealsForDate(undefined, '2026-11-02'), []);
 });

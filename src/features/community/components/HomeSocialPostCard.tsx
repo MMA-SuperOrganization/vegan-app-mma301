@@ -1,5 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
-import { useState } from 'react';
+import { Dimensions, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -7,6 +7,7 @@ import { AppIcon, AppText, appDialog } from '@/components';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/features/auth';
 import { usePublicProfile } from '@/features/profile/hooks';
+import { useSavedMutation, useSavedState } from '@/features/recipes/hooks';
 import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
@@ -39,6 +40,25 @@ export function HomeSocialPostCard({
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
   const [menuOpen, setMenuOpen] = useState(false);
+  const moreRef = useRef<View>(null);
+  const [menuCoords, setMenuCoords] = useState<{ top: number; right: number }>({
+    top: 60,
+    right: 16,
+  });
+
+  const toggleMenu = () => {
+    if (menuOpen) {
+      setMenuOpen(false);
+      return;
+    }
+    moreRef.current?.measureInWindow((x, y, width, height) => {
+      const windowWidth = Dimensions.get('window').width;
+      const top = y && height ? y + height + 4 : 60;
+      const right = x && width ? Math.max(16, windowWidth - (x + width)) : 16;
+      setMenuCoords({ top, right });
+      setMenuOpen(true);
+    });
+  };
   const liked = post.reacted === 'like';
   const mine = post.authorId === userId;
   const removePost = useMutation({
@@ -49,6 +69,24 @@ export function HomeSocialPostCard({
     },
   });
   const deleting = removePost.isPending;
+  const savedState = useSavedState('post', post._id);
+  const savedMutation = useSavedMutation();
+  const isSaved = savedState.isSaved;
+
+  const toggleSave = () => {
+    savedMutation.mutate({
+      type: 'post',
+      id: post._id,
+      saved: isSaved,
+      target: {
+        _id: post._id,
+        type: 'post',
+        title: post.title || post.content?.slice(0, 50),
+        excerpt: post.excerpt || post.content?.slice(0, 100),
+        imageUrl,
+      },
+    });
+  };
   const profile = usePublicProfile(
     post.author?.displayName ? undefined : post.authorId
   );
@@ -91,17 +129,66 @@ export function HomeSocialPostCard({
             vi={locale === 'vi'}
           />
         </Pressable>
-        <AppText style={styles.more}>•••</AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={locale === 'vi' ? 'Tùy chọn bài viết' : 'Post options'}
-          accessibilityState={{ expanded: menuOpen }}
-          onPress={() => setMenuOpen((open) => !open)}
-          style={styles.moreHit}
-        />
+        <View ref={moreRef} collapsable={false}>
+          <AppText style={styles.more}>•••</AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={locale === 'vi' ? 'Tùy chọn bài viết' : 'Post options'}
+            accessibilityState={{ expanded: menuOpen }}
+            onPress={toggleMenu}
+            style={styles.moreHit}
+          />
+        </View>
       </View>
-      {menuOpen ? (
-        <View style={styles.postMenu}>
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}
+        statusBarTranslucent
+      >
+        <Pressable
+          accessibilityLabel={locale === 'vi' ? 'Đóng tùy chọn' : 'Close options'}
+          style={styles.menuBackdrop}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View
+            style={[
+              styles.postMenu,
+              {
+                position: 'absolute',
+                top: menuCoords.top,
+                right: menuCoords.right,
+              },
+            ]}
+          >
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setMenuOpen(false);
+              toggleSave();
+            }}
+            style={({ pressed }) => [styles.menuItem, pressed && styles.actionPressed]}
+          >
+            <AppIcon
+              name={isSaved ? 'bookmark-filled' : 'bookmark'}
+              size={17}
+              color={isSaved ? colors.primary[700] : colors.text.secondary}
+              decorative
+            />
+            <AppText
+              variant="bodySmall"
+              color={isSaved ? colors.primary[700] : colors.text.primary}
+            >
+              {locale === 'vi'
+                ? isSaved
+                  ? 'Bỏ lưu bài viết'
+                  : 'Lưu bài viết'
+                : isSaved
+                  ? 'Unsave post'
+                  : 'Save post'}
+            </AppText>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => {
@@ -157,8 +244,9 @@ export function HomeSocialPostCard({
                   </Pressable>
                 </>
           ) : null}
-        </View>
-      ) : null}
+          </View>
+        </Pressable>
+      </Modal>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
         {copy.title || copy.content ? (
           <View style={styles.copy}>
@@ -206,6 +294,34 @@ export function HomeSocialPostCard({
           />
           <AppText variant="caption" color={colors.text.secondary}>{post.commentCount ?? 0}</AppText>
         </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            locale === 'vi'
+              ? isSaved
+                ? 'Bỏ lưu bài viết'
+                : 'Lưu bài viết'
+              : isSaved
+                ? 'Unsave post'
+                : 'Save post'
+          }
+          accessibilityState={{ selected: isSaved }}
+          onPress={toggleSave}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+        >
+          <AppIcon
+            name={isSaved ? 'bookmark-filled' : 'bookmark'}
+            size={20}
+            color={isSaved ? colors.primary[700] : colors.text.secondary}
+            decorative
+          />
+          <AppText
+            variant="caption"
+            color={isSaved ? colors.primary[700] : colors.text.secondary}
+          >
+            {locale === 'vi' ? (isSaved ? 'Đã lưu' : 'Lưu') : isSaved ? 'Saved' : 'Save'}
+          </AppText>
+        </Pressable>
       </View>
     </View>
   );
@@ -227,6 +343,7 @@ const styles = StyleSheet.create({
   },
   author: { flex: 1, gap: 2 },
   more: { color: colors.text.secondary, fontWeight: '800', letterSpacing: 2 },
+  menuBackdrop: { flex: 1, backgroundColor: 'transparent' },
   moreHit: {
     position: 'absolute',
     right: spacing.md,

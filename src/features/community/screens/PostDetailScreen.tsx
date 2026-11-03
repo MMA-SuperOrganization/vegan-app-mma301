@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Dimensions, Modal, Pressable, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
@@ -15,6 +15,7 @@ import { useTranslation } from '@/i18n';
 import { useSafeBack } from '@/hooks';
 import { colors, spacing, webLayout } from '@/theme';
 import { useCommunityPost, usePostReaction } from '../hooks';
+import { useSavedMutation, useSavedState } from '@/features/recipes/hooks';
 import { engagementApi } from '@/features/engagement/engagementApi';
 import { PostComments } from '../components/PostComments';
 import { PostDetailEngagement } from '../components/PostDetailEngagement';
@@ -37,6 +38,23 @@ export function PostDetailScreen() {
   const copy = postCopy(post?.title, post?.content);
   const sharePost = () =>
     Share.share({ message: copy.content || copy.title || '' });
+  const savedState = useSavedState('post', id);
+  const savedMutation = useSavedMutation();
+  const isSaved = savedState.isSaved;
+  const toggleSave = () => {
+    savedMutation.mutate({
+      type: 'post',
+      id,
+      saved: isSaved,
+      target: {
+        _id: id,
+        type: 'post',
+        title: post?.title || post?.content?.slice(0, 50),
+        excerpt: post?.content?.slice(0, 100),
+        imageUrl: actions.media.data?.[0]?.downloadUrl,
+      },
+    });
+  };
   const presentedAuthor =
     post?.author ??
     (author.data
@@ -53,6 +71,25 @@ export function PostDetailScreen() {
   const [deletingPost, setDeletingPost] = useState(false);
   const [commentFocusRequest, setCommentFocusRequest] = useState(0);
   const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const moreButtonRef = useRef<View>(null);
+  const [menuCoords, setMenuCoords] = useState<{ top: number; right: number }>({
+    top: 60,
+    right: 16,
+  });
+
+  const toggleMenu = () => {
+    if (postMenuOpen) {
+      setPostMenuOpen(false);
+      return;
+    }
+    moreButtonRef.current?.measureInWindow((x, y, width, height) => {
+      const windowWidth = Dimensions.get('window').width;
+      const top = y && height ? y + height + 6 : 60;
+      const right = x && width ? Math.max(16, windowWidth - (x + width)) : 16;
+      setMenuCoords({ top, right });
+      setPostMenuOpen(true);
+    });
+  };
   const mine = post?.authorId === userId;
   const published = post?.status === 'published';
   const busy = actions.remove.isPending;
@@ -123,14 +160,14 @@ export function PostDetailScreen() {
                         //     : undefined
                         // }
                       />
-                      <View style={styles.moreWrap}>
+                      <View style={styles.moreWrap} ref={moreButtonRef} collapsable={false}>
                         <Pressable
                           accessibilityRole="button"
                           accessibilityLabel={
                             vi ? 'Mở tùy chọn bài viết' : 'Open post options'
                           }
                           accessibilityState={{ expanded: postMenuOpen }}
-                          onPress={() => setPostMenuOpen((open) => !open)}
+                          onPress={toggleMenu}
                           hitSlop={10}
                           style={({ pressed }) => [
                             styles.moreButton,
@@ -139,8 +176,58 @@ export function PostDetailScreen() {
                         >
                           <AppText style={styles.moreIcon}>•••</AppText>
                         </Pressable>
-                        {postMenuOpen ? (
-                          <View style={styles.postMenu}>
+                        <Modal
+                          visible={postMenuOpen}
+                          transparent
+                          animationType="fade"
+                          onRequestClose={() => setPostMenuOpen(false)}
+                          statusBarTranslucent
+                        >
+                          <Pressable
+                            accessibilityLabel={vi ? 'Đóng tùy chọn bài viết' : 'Close post options'}
+                            style={styles.menuBackdrop}
+                            onPress={() => setPostMenuOpen(false)}
+                          >
+                            <View
+                              style={[
+                                styles.postMenu,
+                                {
+                                  position: 'absolute',
+                                  top: menuCoords.top,
+                                  right: menuCoords.right,
+                                },
+                              ]}
+                            >
+                            <Pressable
+                              accessibilityRole="button"
+                              onPress={() => {
+                                setPostMenuOpen(false);
+                                toggleSave();
+                              }}
+                              style={({ pressed }) => [
+                                styles.menuItem,
+                                pressed && styles.cardPressed,
+                              ]}
+                            >
+                              <AppIcon
+                                name={isSaved ? 'bookmark-filled' : 'bookmark'}
+                                size={17}
+                                color={isSaved ? colors.primary[700] : colors.text.secondary}
+                                decorative
+                              />
+                              <AppText
+                                variant="bodySmall"
+                                color={isSaved ? colors.primary[700] : colors.text.primary}
+                              >
+                                {vi
+                                  ? isSaved
+                                    ? 'Bỏ lưu bài viết'
+                                    : 'Lưu bài viết'
+                                  : isSaved
+                                    ? 'Unsave post'
+                                    : 'Save post'}
+                              </AppText>
+                            </Pressable>
                             <Pressable
                               accessibilityRole="button"
                               onPress={reportPost}
@@ -184,8 +271,9 @@ export function PostDetailScreen() {
                               </Pressable>
                               </>
                             ) : null}
-                          </View>
-                        ) : null}
+                            </View>
+                          </Pressable>
+                        </Modal>
                       </View>
                     </View>
                     {copy.content || copy.title ? (
@@ -260,6 +348,8 @@ export function PostDetailScreen() {
                         onComment={() =>
                           setCommentFocusRequest((value) => value + 1)
                         }
+                        saved={isSaved}
+                        onSave={toggleSave}
                       />
                       <FeatureState error={postReaction.error} />
                     </View>
@@ -378,6 +468,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   moreWrap: { position: 'relative', zIndex: 20 },
+  menuBackdrop: { flex: 1, backgroundColor: 'transparent' },
   moreIcon: {
     color: colors.text.secondary,
     fontSize: 18,

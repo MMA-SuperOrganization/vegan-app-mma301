@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { AppIcon, AppText, BottomSheet } from '@/components';
+import { AppIcon, AppText, BottomSheet, useBottomSheet } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { usePublicProfile } from '@/features/profile/hooks';
@@ -72,6 +72,7 @@ export function PostComments({
   const [shownReplies, setShownReplies] = useState<Record<string, number>>({});
   const composerRef = useRef<TextInput>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const { panHandlers: sheetPanHandlers } = useBottomSheet();
   const commentLayouts = useRef<Record<string, { y: number; height: number }>>({});
   const commentSectionOffsetY = useRef(0);
   const scrollViewHeight = useRef<number>(300);
@@ -498,7 +499,11 @@ export function PostComments({
         <ScrollView
           ref={scrollRef}
           style={styles.fill}
-          contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+          contentContainerStyle={[
+            styles.scrollContent,
+            contentContainerStyle,
+            onNavigateAway && styles.sheetScrollFlex,
+          ]}
           keyboardShouldPersistTaps="always"
           keyboardDismissMode="on-drag"
           onLayout={(e) => {
@@ -507,6 +512,13 @@ export function PostComments({
         >
           {contentHeader}
           {commentList}
+          {onNavigateAway ? (
+            <View
+              style={styles.emptyScrollSpace}
+              accessibilityLabel={vi ? 'Đóng bình luận' : 'Close comments'}
+              {...(sheetPanHandlers ?? {})}
+            />
+          ) : null}
         </ScrollView>
       ) : (
         <>
@@ -1013,6 +1025,8 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: spacing.sm },
   sheetScrollContent: { paddingHorizontal: spacing.md },
+  sheetScrollFlex: { flexGrow: 1 },
+  emptyScrollSpace: { flex: 1, minHeight: 140 },
   commentSection: { gap: spacing.md },
   sectionTitle: {
     flexDirection: 'row',

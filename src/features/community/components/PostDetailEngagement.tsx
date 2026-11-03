@@ -21,6 +21,8 @@ interface PostDetailEngagementProps {
   commentCount: number;
   onReact: (type: ReactionType, remove: boolean) => void;
   onComment: () => void;
+  saved?: boolean;
+  onSave?: () => void;
 }
 
 export function PostDetailEngagement({
@@ -30,6 +32,8 @@ export function PostDetailEngagement({
   commentCount,
   onReact,
   onComment,
+  saved,
+  onSave,
 }: PostDetailEngagementProps) {
   const loved = selectedReaction === 'love';
   const locale = vi ? 'vi' : 'en';
@@ -50,6 +54,15 @@ export function PostDetailEngagement({
           accessibilityLabel={`${vi ? 'Bình luận' : 'Comment'}, ${formatFullEngagementCount(commentCount, locale)}`}
           onPress={onComment}
         />
+        {onSave ? (
+          <EngagementAction
+            icon={saved ? 'bookmark-filled' : 'bookmark'}
+            count={vi ? (saved ? 'Đã lưu' : 'Lưu') : saved ? 'Saved' : 'Save'}
+            accessibilityLabel={`${vi ? (saved ? 'Bỏ lưu bài viết' : 'Lưu bài viết') : saved ? 'Unsave post' : 'Save post'}`}
+            selected={saved}
+            onPress={onSave}
+          />
+        ) : null}
       </View>
     </View>
   );

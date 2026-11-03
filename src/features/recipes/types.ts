@@ -34,6 +34,7 @@ export interface PostCardData extends ContentCardData {
   mediaIds?: string[];
   createdAt?: string;
   publishedAt?: string;
+  status?: string;
   reactionCount?: number;
   commentCount?: number;
   reacted?: string | null;

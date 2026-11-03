@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AppIcon, AppText } from '@/components';
 import { useTranslation } from '@/i18n';
+import { usePublicProfile } from '@/features/profile/hooks';
 import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
@@ -29,6 +30,16 @@ export function HomeSocialPostCard({
 }) {
   const { t, locale } = useTranslation();
   const liked = post.reacted === 'like';
+  const profile = usePublicProfile(post.author ? undefined : post.authorId);
+  const author =
+    post.author ??
+    (profile.data
+      ? {
+          userId: post.authorId ?? '',
+          displayName: profile.data.displayName,
+          avatarUrl: profile.data.avatarUrl,
+        }
+      : null);
   const copy = postCopy(
     post.title,
     post.excerpt ?? post.description ?? post.content
@@ -44,9 +55,10 @@ export function HomeSocialPostCard({
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.header}>
         <View style={styles.author}>
           <PostAuthorHeader
-            author={post.author}
+            author={author}
             createdAt={post.createdAt}
             publishedAt={post.publishedAt}
+            status={post.status}
             visibility={post.visibility}
             vi={locale === 'vi'}
           />

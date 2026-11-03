@@ -42,6 +42,16 @@ export function HomeSocialHeader({
   const window = useWindowDimensions();
   const inputRef = useRef<TextInput>(null);
   const closingRef = useRef(false);
+  const navigatingRef = useRef(false);
+
+  const handleOpenNotifications = () => {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    router.navigate('/notifications');
+    setTimeout(() => {
+      navigatingRef.current = false;
+    }, 1000);
+  };
   const expansion = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
   const fieldReveal = useRef(new Animated.Value(searchExpanded ? 1 : 0)).current;
   // Search sits left of the bell; the field grows leftwards from the search slot.
@@ -145,7 +155,7 @@ export function HomeSocialHeader({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('notifications.title')}
-            onPress={() => router.push('/notifications')}
+            onPress={handleOpenNotifications}
             style={styles.action}
           >
             <AppIcon name="bell" size={23} color={colors.primary[700]} decorative />

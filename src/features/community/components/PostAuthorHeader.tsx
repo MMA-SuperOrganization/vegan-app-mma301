@@ -11,6 +11,7 @@ export function PostAuthorHeader({
   author,
   createdAt,
   publishedAt,
+  status,
   visibility = 'public',
   vi,
   trailing,
@@ -18,6 +19,7 @@ export function PostAuthorHeader({
   author?: PostAuthorSummary | null;
   createdAt?: string;
   publishedAt?: string;
+  status?: string;
   visibility?: 'public' | 'private';
   vi: boolean;
   trailing?: ReactNode;
@@ -51,6 +53,14 @@ export function PostAuthorHeader({
             <AppText variant="caption" color={colors.text.secondary}>
               {relativeTime}
             </AppText>
+          ) : null}
+          {status === 'published' ? (
+            <View style={styles.published}>
+              <View style={styles.publishedDot} />
+              <AppText variant="caption" color={colors.status.success}>
+                {vi ? 'Đã đăng' : 'Published'}
+              </AppText>
+            </View>
           ) : null}
           <AppIcon
             name={visibility === 'private' ? 'eye-off' : 'eye'}
@@ -89,4 +99,11 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, gap: 2 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  published: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  publishedDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.status.success,
+  },
 });

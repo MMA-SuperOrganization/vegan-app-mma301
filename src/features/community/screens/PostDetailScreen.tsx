@@ -194,16 +194,6 @@ export function PostDetailScreen() {
                         onComment={() =>
                           setCommentFocusRequest((value) => value + 1)
                         }
-                        onReport={() =>
-                          router.push({
-                            pathname: '/community/report',
-                            params: {
-                              targetType: 'post',
-                              targetId: id,
-                              targetPreview: post.title,
-                            },
-                          })
-                        }
                       />
                       <FeatureState error={postReaction.error} />
                     </View>

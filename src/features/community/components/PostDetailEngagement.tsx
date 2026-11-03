@@ -18,7 +18,6 @@ interface PostDetailEngagementProps {
   commentCount: number;
   onReact: (type: ReactionType, remove: boolean) => void;
   onComment: () => void;
-  onReport: () => void;
 }
 
 export function PostDetailEngagement({
@@ -30,7 +29,6 @@ export function PostDetailEngagement({
   commentCount,
   onReact,
   onComment,
-  onReport,
 }: PostDetailEngagementProps) {
   const [shareFeedback, setShareFeedback] = useState<string>();
   const loved = selectedReaction === 'love';
@@ -93,17 +91,6 @@ export function PostDetailEngagement({
         </View>
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={vi ? 'Báo cáo bài viết' : 'Report post'}
-        onPress={onReport}
-        style={({ pressed }) => [styles.reportAction, pressed && styles.pressed]}
-      >
-        <AppIcon name="flag" size={14} color={colors.text.secondary} decorative />
-        <AppText variant="caption" color={colors.text.secondary}>
-          {vi ? 'Báo cáo' : 'Report'}
-        </AppText>
-      </Pressable>
     </View>
   );
 }
@@ -184,14 +171,6 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
     borderRadius: radius.md,
     backgroundColor: colors.background.selected,
-  },
-  reportAction: {
-    minHeight: 30,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
   },
   pressed: { opacity: 0.65 },
 });

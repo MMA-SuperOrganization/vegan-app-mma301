@@ -8,7 +8,6 @@ import {
   AppText,
   ScreenWrapper,
   Surface,
-  appDialog,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
@@ -51,30 +50,24 @@ export function PostDetailScreen() {
   }, [post?._id, post?.status]);
   const [deletingPost, setDeletingPost] = useState(false);
   const [commentFocusRequest, setCommentFocusRequest] = useState(0);
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
   const mine = post?.authorId === userId;
   const published = post?.status === 'published';
   const busy = actions.remove.isPending;
-  const openPostMenu = () => {
-    if (!post) return;
-    appDialog.alert(
-      vi ? 'Tùy chọn bài viết' : 'Post options',
-      undefined,
-      [
-        {
-          text: vi ? 'Báo cáo bài viết' : 'Report post',
-          onPress: () =>
-            router.push({
-              pathname: '/community/report',
-              params: {
-                targetType: 'post',
-                targetId: id,
-                targetPreview: post.title,
-              },
-            }),
-        },
-        { text: vi ? 'Hủy' : 'Cancel', style: 'cancel' },
-      ],
-    );
+  const reportPost = () => {
+    setPostMenuOpen(false);
+    router.push({
+      pathname: '/community/report',
+      params: {
+        targetType: 'post',
+        targetId: id,
+        targetPreview: post?.title ?? '',
+      },
+    });
+  };
+  const editPrivacy = () => {
+    setPostMenuOpen(false);
+    router.push({ pathname: '/community/editor', params: { id } });
   };
   return (
     <ScreenWrapper webMaxWidth={webLayout.feedMaxWidth}>
@@ -110,15 +103,55 @@ export function PostDetailScreen() {
                         visibility={post.visibility}
                         vi={vi}
                       />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={vi ? 'Mở tùy chọn bài viết' : 'Open post options'}
-                        onPress={openPostMenu}
-                        hitSlop={10}
-                        style={({ pressed }) => [styles.moreButton, pressed && styles.cardPressed]}
-                      >
-                        <AppText style={styles.moreIcon}>•••</AppText>
-                      </Pressable>
+                      <View style={styles.moreWrap}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            vi ? 'Mở tùy chọn bài viết' : 'Open post options'
+                          }
+                          accessibilityState={{ expanded: postMenuOpen }}
+                          onPress={() => setPostMenuOpen((open) => !open)}
+                          hitSlop={10}
+                          style={({ pressed }) => [
+                            styles.moreButton,
+                            pressed && styles.cardPressed,
+                          ]}
+                        >
+                          <AppText style={styles.moreIcon}>•••</AppText>
+                        </Pressable>
+                        {postMenuOpen ? (
+                          <View style={styles.postMenu}>
+                            <Pressable
+                              accessibilityRole="button"
+                              onPress={reportPost}
+                              style={({ pressed }) => [
+                                styles.menuItem,
+                                pressed && styles.cardPressed,
+                              ]}
+                            >
+                              <AppIcon name="flag" size={17} color={colors.text.secondary} decorative />
+                              <AppText variant="bodySmall">
+                                {vi ? 'Báo cáo' : 'Report'}
+                              </AppText>
+                            </Pressable>
+                            {mine ? (
+                              <Pressable
+                                accessibilityRole="button"
+                                onPress={editPrivacy}
+                                style={({ pressed }) => [
+                                  styles.menuItem,
+                                  pressed && styles.cardPressed,
+                                ]}
+                              >
+                                <AppIcon name="edit" size={17} color={colors.text.secondary} decorative />
+                                <AppText variant="bodySmall">
+                                  {vi ? 'Chỉnh quyền riêng tư' : 'Edit privacy'}
+                                </AppText>
+                              </Pressable>
+                            ) : null}
+                          </View>
+                        ) : null}
+                      </View>
                     </View>
                     {copy.title ? (
                       <AppText variant="heading3">{copy.title}</AppText>
@@ -304,11 +337,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 18,
   },
+  moreWrap: { position: 'relative', zIndex: 20 },
   moreIcon: {
     color: colors.text.secondary,
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 2,
+  },
+  postMenu: {
+    position: 'absolute',
+    top: 40,
+    right: 0,
+    width: 178,
+    padding: spacing.xs,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border.subtle,
+    borderRadius: 10,
+    backgroundColor: colors.background.surface,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  menuItem: {
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 7,
   },
   articleBody: {
     lineHeight: 25,

@@ -54,28 +54,22 @@ export function PostAuthorHeader({
               {relativeTime}
             </AppText>
           ) : null}
-          {status === 'published' ? (
-            <View style={styles.published}>
-              <View style={styles.publishedDot} />
-              <AppText variant="caption" color={colors.status.success}>
-                {vi ? 'Đã đăng' : 'Published'}
-              </AppText>
-            </View>
+          {status === 'published' || visibility === 'private' ? (
+            <AppText
+              style={styles.visibilityIcon}
+              accessibilityLabel={
+                visibility === 'private'
+                  ? vi
+                    ? 'Bài viết riêng tư'
+                    : 'Private post'
+                  : vi
+                    ? 'Bài viết công khai đã đăng'
+                    : 'Published public post'
+              }
+            >
+              {visibility === 'private' ? '🔒' : '🌐'}
+            </AppText>
           ) : null}
-          <AppIcon
-            name={visibility === 'private' ? 'eye-off' : 'eye'}
-            size={13}
-            color={colors.text.secondary}
-            accessibilityLabel={
-              visibility === 'private'
-                ? vi
-                  ? 'Bài viết riêng tư'
-                  : 'Private post'
-                : vi
-                  ? 'Bài viết công khai'
-                  : 'Public post'
-            }
-          />
         </View>
       </View>
       {trailing}
@@ -107,11 +101,5 @@ const styles = StyleSheet.create({
   },
   copy: { flex: 1, gap: 2 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  published: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  publishedDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.status.success,
-  },
+  visibilityIcon: { fontSize: 14, lineHeight: 16 },
 });

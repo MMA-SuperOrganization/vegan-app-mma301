@@ -5,6 +5,9 @@ import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import type { PostCardData } from '@/features/recipes/types';
 import { RecipeImage } from '@/features/recipes/components/RecipeImage';
+import { postCopy } from '../postPresentation';
+import { usePostMediaAssets } from '../usePostMediaAssets';
+import { PostAuthorHeader } from './PostAuthorHeader';
 import { PostFoodSummary } from './PostFoodSummary';
 import { PostLikeIcon } from './PostLikeIcon';
 
@@ -24,29 +27,37 @@ export function HomeSocialPostCard({
   onReact: () => void;
   onComment: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const liked = post.reacted === 'like';
-  const copy = post.excerpt ?? post.description ?? post.content;
+  const copy = postCopy(
+    post.title,
+    post.excerpt ?? post.description ?? post.content
+  );
+  const media = usePostMediaAssets(post.mediaIds);
   const imageUrl =
-    post.coverImageUrl ?? post.media?.[0]?.downloadUrl ?? post.media?.[0]?.url;
+    post.coverImageUrl ??
+    post.media?.[0]?.downloadUrl ??
+    post.media?.[0]?.url ??
+    media.data[0]?.downloadUrl;
   return (
     <View style={styles.card}>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.header}>
         <View style={styles.author}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
-            {post.title ?? t('home.communityName')}
-          </AppText>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {t('home.communityTime')}
-          </AppText>
+          <PostAuthorHeader
+            author={post.author}
+            createdAt={post.createdAt}
+            publishedAt={post.publishedAt}
+            vi={locale === 'vi'}
+          />
         </View>
         <AppText style={styles.more}>•••</AppText>
       </Pressable>
       <Pressable accessibilityRole="button" onPress={onPress} style={styles.body}>
-        {copy ? (
-          <AppText variant="bodyLarge" style={styles.copy}>
-            {copy}
-          </AppText>
+        {copy.title || copy.content ? (
+          <View style={styles.copy}>
+            {copy.title ? <AppText variant="bodyStrong">{copy.title}</AppText> : null}
+            {copy.content ? <AppText variant="bodyLarge">{copy.content}</AppText> : null}
+          </View>
         ) : null}
         <PostFoodSummary
           compact
@@ -136,7 +147,7 @@ const styles = StyleSheet.create({
   author: { flex: 1, gap: 2 },
   more: { color: colors.text.secondary, fontWeight: '800', letterSpacing: 2 },
   body: { gap: spacing.sm },
-  copy: { paddingHorizontal: spacing.md, lineHeight: 24 },
+  copy: { paddingHorizontal: spacing.md, gap: spacing.xs },
   postImage: { width: '100%', height: 250, borderRadius: 0 },
   stats: {
     flexDirection: 'row',

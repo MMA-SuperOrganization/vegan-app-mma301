@@ -2,9 +2,9 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native';
+import { useState } from 'react';
 
 import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
@@ -21,13 +21,16 @@ export function PostMediaGallery({
   assets: PostMediaAsset[];
   vi: boolean;
 }) {
-  const { width } = useWindowDimensions();
+  const [containerWidth, setContainerWidth] = useState(0);
   const visibleAssets = assets.filter((asset) => Boolean(asset.downloadUrl));
   if (!visibleAssets.length) return null;
-  const mediaWidth = Math.max(280, width - spacing.xl * 2);
+  const mediaWidth = containerWidth || 320;
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(event) => setContainerWidth(event.nativeEvent.layout.width)}
+    >
       <ScrollView
         horizontal
         pagingEnabled

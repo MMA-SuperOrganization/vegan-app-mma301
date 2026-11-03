@@ -130,6 +130,7 @@ export function PostComments({
   }, [newlyCreatedCommentId, replyingTo?._id, scrollToComment]);
 
   const comments = actions.comments.data?.data ?? [];
+  const commentsLoaded = Boolean(actions.comments.data) && !actions.comments.isLoading;
   const commentsById = useMemo(
     () => new Map(comments.map((comment) => [comment._id, comment])),
     [comments]
@@ -270,9 +271,11 @@ export function PostComments({
         <View style={styles.sectionTitle}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
           <AppText variant="heading3">{vi ? 'Bình luận' : 'Comments'}</AppText>
-          <AppText variant="caption" color={colors.text.secondary}>
-            {comments.length}
-          </AppText>
+          {commentsLoaded ? (
+            <AppText variant="caption" color={colors.text.secondary}>
+              {comments.length}
+            </AppText>
+          ) : null}
         </View>
       ) : null}
 
@@ -282,7 +285,7 @@ export function PostComments({
         retry={() => void actions.comments.refetch()}
       />
 
-      {!actions.comments.isLoading && comments.length === 0 ? (
+      {commentsLoaded && comments.length === 0 ? (
         <View style={styles.emptyComments}>
           <AppIcon name="comment" size={22} color={colors.primary[700]} decorative />
           <View style={styles.emptyCommentCopy}>

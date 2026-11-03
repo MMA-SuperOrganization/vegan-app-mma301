@@ -42,7 +42,7 @@ export const colors = {
     danger: s['status/danger'],
     info: s['status/info'],
   },
-  overlay: { modal: 'rgba(24,60,43,0.4)', image: 'rgba(0,0,0,0.24)' },
+  overlay: { modal: 'rgba(0,0,0,0.24)', image: 'rgba(0,0,0,0.24)' },
   rating: { active: s['status/warning'], inactive: s['border/default'] },
   common: { white: s['bg/white'], black: '#000000', transparent: 'transparent' },
 } as const;

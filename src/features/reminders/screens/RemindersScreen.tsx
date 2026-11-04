@@ -4,6 +4,7 @@ import {
   AppButton,
   AppInput,
   AppText,
+  CalendarInputField,
   CustomHeader,
   ScreenWrapper,
   Toggle,
@@ -152,11 +153,13 @@ export function RemindersScreen() {
         ]}
       />
       {mode === 'once' ? (
-        <AppInput
+        <CalendarInputField
           label={vi ? 'Ngày (YYYY-MM-DD)' : 'Date (YYYY-MM-DD)'}
           value={onceDate}
           onChangeText={setOnceDate}
-          editable={!busy}
+          disabled={busy}
+          minimumDate={new Date()}
+          defaultDate={new Date(Date.now() + 86_400_000)}
         />
       ) : null}
       <AppInput

@@ -10,12 +10,14 @@ export default function TabsLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const user = useAuthStore((state) => state.user);
+  const role = useAuthStore((state) => state.user?.role);
 
   if (isRestoringSession) {
     return <LoadingScreen message={t('bootstrap.restoringSession')} />;
   }
 
   if (!isAuthenticated) return <Redirect href="/(auth)/login" />;
+  if (role === 'admin') return <Redirect href="/admin" />;
   if (!user?.onboardingCompleted) {
     return <Redirect href="/(onboarding)/diet-goals" />;
   }

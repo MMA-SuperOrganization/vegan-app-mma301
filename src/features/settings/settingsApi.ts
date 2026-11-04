@@ -26,8 +26,27 @@ export const settingsApi = {
     unwrapApiRequest<NotificationPreferences>(() =>
       apiClient.get('/notification-preferences')
     ),
-  saveNotificationPreferences: (preferences: NotificationPreferences) =>
+  // GET also returns server fields (userId, timestamps) that the strict PUT schema rejects.
+  saveNotificationPreferences: ({
+    pushEnabled,
+    mealReminderEnabled,
+    waterReminderEnabled,
+    contentEnabled,
+    quietHours,
+    timezone,
+  }: NotificationPreferences) =>
     unwrapApiRequest<NotificationPreferences>(() =>
-      apiClient.put('/notification-preferences', preferences)
+      apiClient.put('/notification-preferences', {
+        pushEnabled,
+        mealReminderEnabled,
+        waterReminderEnabled,
+        contentEnabled,
+        quietHours: {
+          enabled: quietHours.enabled,
+          start: quietHours.start,
+          end: quietHours.end,
+        },
+        timezone,
+      })
     ),
 };

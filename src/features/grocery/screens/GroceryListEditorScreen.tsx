@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { AppButton, AppInput, AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { GroceryQueryState } from '../components/GroceryQueryState';
 import { useGroceryActions, useGroceryList } from '../hooks';
 
@@ -47,6 +47,7 @@ export function GroceryListEditorScreen() {
   return (
     <ScreenWrapper
       scrollable
+      webMaxWidth={webLayout.formMaxWidth}
       contentContainerStyle={styles.screen}
       header={
         <CustomHeader

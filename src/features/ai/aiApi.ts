@@ -1,6 +1,7 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
 import type { MealPlan } from '@/features/meal-plan/types';
+import { AiFeedbackRating } from './aiConstants';
 import { mealConfirmationInput } from './proposalState';
 import type {
   AiMessage,
@@ -9,7 +10,6 @@ import type {
   PantryProposal,
   RecognizedIngredient,
   ConfirmedProposal,
-  VideoSummary,
   AiRun,
   AiMetrics,
 } from './types';
@@ -46,11 +46,11 @@ export const aiApi = {
         })
       )
     ),
-  send: (id: string, content: string, useProfile: boolean) =>
+  send: (id: string, content: string, mediaId?: string) =>
     unwrapApiRequest<AiMessage>(() =>
       apiClient.post(
         `/ai/conversations/${id}/messages`,
-        { content, useProfile },
+        { content, useProfile: true, ...(mediaId ? { mediaId } : {}) },
         aiGenerationRequest
       )
     ),
@@ -58,13 +58,14 @@ export const aiApi = {
     startDate: string,
     days: number,
     preferences: string,
-    useProfile: boolean
+    useProfile: boolean,
+    signal?: AbortSignal
   ) =>
     unwrapApiRequest<MealProposal>(() =>
       apiClient.post(
         '/ai/meal-plan-proposals',
         { startDate, days, preferences, useProfile },
-        aiGenerationRequest
+        { ...aiGenerationRequest, signal }
       )
     ),
   confirmMeals: (proposal: MealProposal) =>
@@ -89,16 +90,8 @@ export const aiApi = {
         })),
       })
     ),
-  feedback: (runId: string, rating: 'helpful' | 'not_helpful') =>
+  feedback: (runId: string, rating: `${AiFeedbackRating}`) =>
     unwrapApiRequest(() => apiClient.put(`/ai/runs/${runId}/feedback`, { rating })),
-  summarizeVideo: (mediaId: string, transcript: string) =>
-    unwrapApiRequest<VideoSummary>(() =>
-      apiClient.post(
-        '/ai/video-summaries',
-        { mediaId, transcript },
-        aiGenerationRequest
-      )
-    ),
   adminRuns: () =>
     collectPages((page) =>
       unwrapApiPageRequest<AiRun>(() =>

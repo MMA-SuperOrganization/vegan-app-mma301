@@ -1,6 +1,7 @@
 import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { AppIcon } from '../AppIcon';
 import { AppText } from '../AppText';
 import { BottomSheet } from '../BottomSheet';
 import { Button } from '../Button';
@@ -12,6 +13,7 @@ export interface PickerItem {
   title: string;
   subtitle?: string;
   imageUrl?: string;
+  warning?: string;
 }
 
 export interface SearchPickerSheetProps {
@@ -97,7 +99,11 @@ export function SearchPickerSheet({
               .filter(Boolean)
               .join(', ')}
             onPress={() => onSelect(item.id)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.row,
+              item.warning && styles.warningRow,
+              pressed && styles.pressed,
+            ]}
           >
             {item.imageUrl ? (
               <Image source={{ uri: item.imageUrl }} style={styles.image} />
@@ -112,6 +118,19 @@ export function SearchPickerSheet({
                 <AppText variant="bodySmall" color={colors.text.secondary}>
                   {item.subtitle}
                 </AppText>
+              ) : null}
+              {item.warning ? (
+                <View style={styles.warningLine}>
+                  <AppIcon
+                    name="flag"
+                    size={16}
+                    color={colors.status.danger}
+                    decorative
+                  />
+                  <AppText variant="caption" color={colors.status.danger}>
+                    {item.warning}
+                  </AppText>
+                </View>
               ) : null}
             </View>
           </Pressable>
@@ -156,4 +175,10 @@ const styles = StyleSheet.create({
   image: { width: 52, height: 52, borderRadius: radius.md },
   imageFallback: { backgroundColor: colors.background.muted },
   rowText: { flex: 1, gap: spacing.xs },
+  warningRow: {
+    borderWidth: 1,
+    borderColor: colors.status.danger,
+    backgroundColor: colors.accent.soft,
+  },
+  warningLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 });

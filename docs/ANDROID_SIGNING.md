@@ -34,10 +34,10 @@ data. Do not remove other developers' registered fingerprints.
 
 ## Store releases
 
-This public key is only for local development. The existing release Gradle
-configuration still references debug signing and must be replaced with private
-release/upload credentials before store publication. Do not use this workflow
-to produce a store release.
+This public key is only for local development and the standalone `internal`
+APK produced by GitHub Actions. The `release` Gradle build requires the private
+upload keystore values documented by its validation error and never falls back
+to debug signing. Do not upload the internal APK to a store.
 
 For Google Play, register the **Play App Signing certificate** for the Android
 package in Google OAuth/Firebase. All users installing that release receive the

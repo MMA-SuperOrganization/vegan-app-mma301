@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppButton, AppIcon, AppInput, AppText, ScreenWrapper } from '@/components';
+import { AppButton, AppIcon, AppInput, AppText, BrandWordmark, ScreenWrapper } from '@/components';
 import { colors, spacing } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { AuthHeader } from '../components/AuthHeader';
@@ -50,7 +50,11 @@ export function RegisterScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+    <ScreenWrapper
+      scrollable
+      webMaxWidth={560}
+      contentContainerStyle={styles.screen}
+    >
       <View>
         <View style={styles.brand}>
           <AppIcon
@@ -59,9 +63,7 @@ export function RegisterScreen() {
             accessibilityLabel={t('auth.mascotLabel')}
           />
           <View>
-            <AppText variant="heading3" color={colors.primary[700]}>
-              VEGETA
-            </AppText>
+            <BrandWordmark size={24} />
             <AppText variant="bodySmall" color={colors.text.secondary}>
               {t('auth.brandSubtitle')}
             </AppText>

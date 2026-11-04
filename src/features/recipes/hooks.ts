@@ -39,6 +39,7 @@ export const recipeKeys = {
   recent: (userId?: string | null) =>
     ['account', accountKey(userId), 'search', 'recent'] as const,
   suggestions: (query: string) => ['search', 'suggestions', query] as const,
+  tags: ['search', 'recipe-tags'] as const,
   saved: (userId?: string | null) =>
     ['account', accountKey(userId), 'saved-items'] as const,
   categories: (type?: string) => ['content-categories', type ?? 'all'] as const,
@@ -76,21 +77,28 @@ export function useSearchResults(
   filters: RecipeQuery = {}
 ) {
   const userId = useAuthStore((state) => state.user?.id);
+  const hasFilters = Object.values(filters).some(
+    (value) =>
+      value !== undefined &&
+      value !== false &&
+      (!Array.isArray(value) || value.length > 0)
+  );
   return useInfiniteQuery({
     queryKey: recipeKeys.search(userId, query, type, filters),
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       recipeApi.search(query, type, { ...filters, page: pageParam }),
     getNextPageParam: nextPage,
-    enabled: query.trim().length > 0,
+    enabled: query.trim().length > 0 || hasFilters,
   });
 }
 
-export function useRecentSearches() {
+export function useRecentSearches(enabled = true) {
   const userId = useAuthStore((state) => state.user?.id);
   return useQuery({
     queryKey: recipeKeys.recent(userId),
     queryFn: recipeApi.recent,
+    enabled,
   });
 }
 
@@ -119,10 +127,23 @@ export function useRecipeCategories() {
   });
 }
 
-export function useContentCategories(type?: 'food' | 'recipe' | 'post') {
+export function useRecipeTags(enabled = true) {
+  return useQuery({
+    queryKey: recipeKeys.tags,
+    queryFn: recipeApi.tags,
+    enabled,
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+export function useContentCategories(
+  type?: 'food' | 'recipe' | 'post',
+  enabled = true
+) {
   return useQuery({
     queryKey: recipeKeys.categories(type),
     queryFn: () => recipeApi.categories(type),
+    enabled,
     staleTime: 1000 * 60 * 30,
   });
 }

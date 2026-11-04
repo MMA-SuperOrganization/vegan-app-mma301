@@ -6,7 +6,12 @@ import {
   hasActiveRecipeFilters,
   parseRecipeFilters,
   serializeRecipeFilters,
+  toggleFilterValue,
 } from '../src/features/recipes/filterState.ts';
+import {
+  categoryFilterLabel,
+  recipeTagLabel,
+} from '../src/features/recipes/filterLabels.ts';
 import { updateSavedPage } from '../src/features/recipes/savedState.ts';
 import { formatTimer, remainingSeconds } from '../src/features/recipes/timer.ts';
 import { buildFoodQuery } from '../src/features/recipes/foodState.ts';
@@ -45,7 +50,8 @@ test('search terms are trimmed and compacted before fuzzy lookup', () => {
 
 test('recipe filters parse, serialize and map profile allergens to the API query', () => {
   const filters = parseRecipeFilters({
-    category: ['category-1'],
+    categoryIds: 'category-1,category-2',
+    tags: ['quick,gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: '30',
     dietType: 'vegan',
@@ -54,7 +60,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
   });
 
   assert.deepEqual(filters, {
-    category: 'category-1',
+    categoryIds: ['category-1', 'category-2'],
+    tags: ['quick', 'gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: 30,
     dietType: 'vegan',
@@ -63,7 +70,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
   });
   assert.equal(hasActiveRecipeFilters(filters), true);
   assert.deepEqual(buildRecipeQuery(filters, ['allergen-1']), {
-    category: 'category-1',
+    categoryIds: ['category-1', 'category-2'],
+    tags: ['quick', 'gluten-free'],
     difficulty: 'easy',
     maxTotalMinutes: 30,
     dietType: 'vegan',
@@ -71,7 +79,8 @@ test('recipe filters parse, serialize and map profile allergens to the API query
     excludeAllergenIds: ['allergen-1'],
   });
   assert.deepEqual(serializeRecipeFilters(filters), {
-    category: 'category-1',
+    categoryIds: 'category-1,category-2',
+    tags: 'quick,gluten-free',
     difficulty: 'easy',
     maxTotalMinutes: '30',
     dietType: 'vegan',
@@ -84,7 +93,8 @@ test('food search drops recipe-only filters', () => {
   assert.deepEqual(
     filtersForContentType(
       {
-        category: 'food-category',
+        categoryIds: ['food-category'],
+        tags: ['quick'],
         difficulty: 'hard',
         maxTotalMinutes: 30,
         dietType: 'vegan',
@@ -94,7 +104,7 @@ test('food search drops recipe-only filters', () => {
       'food-item'
     ),
     {
-      category: 'food-category',
+      categoryIds: ['food-category'],
       dietType: 'vegan',
       avoidProfileAllergens: true,
     }
@@ -110,7 +120,8 @@ test('invalid filter route values are ignored and clearing filters is inactive',
       sort: 'random',
     }),
     {
-      category: undefined,
+      categoryIds: undefined,
+      tags: undefined,
       difficulty: undefined,
       maxTotalMinutes: undefined,
       dietType: undefined,
@@ -226,4 +237,32 @@ test('timer derives remaining time from an absolute deadline after background ga
   assert.equal(remainingSeconds(9_000, 10_000), 0);
   assert.equal(formatTimer(366), '06:06');
   assert.equal(formatTimer(-1), '00:00');
+});
+
+test('toggling a filter value adds it once and removes it on the second tap', () => {
+  assert.deepEqual(toggleFilterValue(undefined, 'breakfast'), ['breakfast']);
+  assert.deepEqual(toggleFilterValue(['breakfast'], 'lunch'), ['breakfast', 'lunch']);
+  assert.deepEqual(toggleFilterValue(['breakfast', 'lunch'], 'breakfast'), ['lunch']);
+  assert.deepEqual(toggleFilterValue(['lunch'], 'lunch'), []);
+
+  const selected = ['quick'];
+  toggleFilterValue(selected, 'gluten-free');
+  assert.deepEqual(selected, ['quick'], 'the current selection must not be mutated');
+});
+
+test('category chips use Vietnamese names for known meals and fall back to the API name', () => {
+  const lunch = { _id: 'c1', slug: 'lunch', name: 'Lunch' };
+  const mushrooms = { _id: 'c2', slug: 'mushrooms', name: 'Mushrooms' };
+
+  assert.equal(categoryFilterLabel(lunch, 'vi'), 'Bữa trưa');
+  assert.equal(categoryFilterLabel(lunch, 'en'), 'Lunch');
+  assert.equal(categoryFilterLabel(mushrooms, 'vi'), 'Mushrooms');
+});
+
+test('recipe tags are translated when known and title-cased otherwise', () => {
+  assert.equal(recipeTagLabel('gluten-free', 'vi'), 'Không gluten');
+  assert.equal(recipeTagLabel('quick', 'vi'), 'Nấu nhanh');
+  assert.equal(recipeTagLabel('gluten-free', 'en'), 'Gluten Free');
+  assert.equal(recipeTagLabel('street-food', 'en'), 'Street Food');
+  assert.equal(recipeTagLabel('slow-cooked', 'vi'), 'Slow Cooked');
 });

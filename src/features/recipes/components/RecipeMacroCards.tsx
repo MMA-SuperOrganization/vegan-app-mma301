@@ -14,6 +14,20 @@ export function RecipeMacroCards({
   fatG,
 }: RecipeMacroCardsProps) {
   const { locale, t } = useTranslation();
+  const hasNutrition = [caloriesKcal, proteinG, carbsG, fatG].some(
+    (value) => value != null
+  );
+
+  if (!hasNutrition) {
+    return (
+      <Surface bordered padding="lg" radius="lg" style={styles.unavailable}>
+        <AppText variant="bodyStrong">{t('recipe.noNutrition')}</AppText>
+        <AppText variant="bodySmall" color={colors.text.secondary}>
+          {t('recipe.noNutritionDescription')}
+        </AppText>
+      </Surface>
+    );
+  }
 
   const nutritionItems = [
     {
@@ -67,4 +81,5 @@ const styles = StyleSheet.create({
     flexBasis: '46%',
     gap: spacing.xs,
   },
+  unavailable: { gap: spacing.xs },
 });

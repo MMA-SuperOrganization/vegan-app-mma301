@@ -4,13 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
   AppText,
+  CalendarDatePicker,
   CustomHeader,
   ProgressBar,
   ScreenWrapper,
 } from '@/components';
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
-import { CalendarSheet } from '../components/CalendarSheet';
 import { DiaryMealCard } from '../components/DiaryMealCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WeekStrip } from '../components/WeekStrip';
@@ -25,8 +25,10 @@ import {
   diaryEntriesForDate,
   groupDiaryByMeal,
   isLocalIsoDate,
+  localIsoDateToDate,
   sumNutrition,
   toLocalIsoDate,
+  TRACKING_MINIMUM_DATE,
 } from '../trackingState';
 import type { DiaryEntry } from '../types';
 
@@ -173,10 +175,16 @@ export function FoodDiaryScreen() {
           ) : null}
         </View>
       </ScreenWrapper>
-      <CalendarSheet
+      <CalendarDatePicker
         visible={pickerVisible}
-        selectedDate={date}
-        onSelect={setDate}
+        title={t('tracking.day.chooseDate')}
+        value={localIsoDateToDate(date)}
+        minimumDate={TRACKING_MINIMUM_DATE}
+        maximumDate={localIsoDateToDate(today)}
+        onConfirm={(selected) => {
+          setDate(toLocalIsoDate(selected));
+          setPickerVisible(false);
+        }}
         onClose={() => setPickerVisible(false)}
       />
     </>

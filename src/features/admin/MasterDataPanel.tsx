@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppButton, AppInput, AppText } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
@@ -7,57 +7,104 @@ import { SelectionField } from '@/features/onboarding/components/SelectionField'
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { adminApi, type MasterRecord } from './adminApi';
+import {
+  AdminEmptyState,
+  AdminFilterChips,
+  AdminPageIntro,
+  AdminSectionHeader,
+  AdminSegmentedTabs,
+  AdminStatusBadge,
+  AdminSurface,
+} from './AdminUi';
+import {
+  ADMIN_QUERY_KEYS,
+  ADMIN_TRANSLATION_KEYS,
+  MASTER_CATEGORY_TYPE_LABEL_KEYS,
+  MASTER_CATEGORY_TYPES,
+  MASTER_FOOD_DEFAULTS,
+  MASTER_RECORD_STATUS_LABEL_KEYS,
+  MasterCategoryType,
+  MasterRecordStatus,
+  MasterResourceType,
+} from './adminConstants';
 
-const number = (value: string) => Number(value.replace(',', '.')) || 0;
+const parseNumericInput = (value: string) => Number(value.replace(',', '.')) || 0;
+type MasterSection = 'categories' | 'allergens' | 'foods';
+type RecordFilter = 'all' | 'active' | 'inactive';
 
 export function MasterDataPanel() {
-  const vi = useTranslation().locale === 'vi';
+  const { t } = useTranslation();
+  const keys = ADMIN_TRANSLATION_KEYS.MASTER;
+  const [activeSection, setActiveSection] = useState<MasterSection>('categories');
+  const [filter, setFilter] = useState<RecordFilter>('active');
+  const [search, setSearch] = useState('');
+  const [formOpen, setFormOpen] = useState(false);
   const client = useQueryClient();
+
   const categories = useQuery({
-    queryKey: ['admin', 'master', 'categories'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_CATEGORIES,
     queryFn: adminApi.categories,
   });
   const allergens = useQuery({
-    queryKey: ['admin', 'master', 'allergens'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_ALLERGENS,
     queryFn: adminApi.allergens,
   });
   const foods = useQuery({
-    queryKey: ['admin', 'master', 'foods'],
+    queryKey: ADMIN_QUERY_KEYS.MASTER_FOODS,
     queryFn: adminApi.foods,
   });
+
   const [category, setCategory] = useState<Partial<MasterRecord>>({
-    type: 'recipe',
+    type: MasterCategoryType.RECIPE,
   });
   const [allergen, setAllergen] = useState<Partial<MasterRecord>>({});
   const [food, setFood] = useState<Partial<MasterRecord>>({
-    isVegan: true,
-    isVegetarian: true,
+    isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+    isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
   });
-  const [serving, setServing] = useState('100');
-  const [calories, setCalories] = useState('0');
-  const [protein, setProtein] = useState('0');
-  const [carbs, setCarbs] = useState('0');
-  const [fat, setFat] = useState('0');
-  const [fiber, setFiber] = useState('0');
-  const refresh = () => client.invalidateQueries({ queryKey: ['admin', 'master'] });
+  const [serving, setServing] = useState<string>(MASTER_FOOD_DEFAULTS.SERVING_G);
+  const [calories, setCalories] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [protein, setProtein] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [carbs, setCarbs] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fat, setFat] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+  const [fiber, setFiber] = useState<string>(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+
+  const refresh = () =>
+    client.invalidateQueries({ queryKey: ADMIN_QUERY_KEYS.MASTER_ROOT });
+  const closeForm = () => {
+    setCategory({ type: MasterCategoryType.RECIPE });
+    setAllergen({});
+    setFood({
+      isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+      isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
+    });
+    setServing(MASTER_FOOD_DEFAULTS.SERVING_G);
+    setCalories(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+    setProtein(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+    setCarbs(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+    setFat(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+    setFiber(MASTER_FOOD_DEFAULTS.ZERO_MACRO);
+    setFormOpen(false);
+  };
+
   const categorySave = useMutation({
     mutationFn: adminApi.saveCategory,
     onSuccess: async () => {
-      setCategory({ type: 'recipe' });
+      closeForm();
       await refresh();
     },
   });
   const allergenSave = useMutation({
     mutationFn: adminApi.saveAllergen,
     onSuccess: async () => {
-      setAllergen({});
+      closeForm();
       await refresh();
     },
   });
   const foodSave = useMutation({
     mutationFn: adminApi.saveFood,
     onSuccess: async () => {
-      setFood({ isVegan: true, isVegetarian: true });
+      closeForm();
       await refresh();
     },
   });
@@ -68,224 +115,407 @@ export function MasterDataPanel() {
       status,
       record,
     }: {
-      type: Parameters<typeof adminApi.setMasterStatus>[0];
+      type: `${MasterResourceType}`;
       id: string;
-      status: 'active' | 'inactive';
+      status: `${MasterRecordStatus}`;
       record: MasterRecord;
     }) => adminApi.setMasterStatus(type, { ...record, _id: id }, status),
     onSuccess: refresh,
   });
-  const card = {
-    padding: spacing.md,
-    gap: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.background.surface,
-  } as const;
-  const list = (
-    records: MasterRecord[],
-    type: 'categories' | 'allergens' | 'food-items',
-    edit: (record: MasterRecord) => void
-  ) =>
-    records.map((record) => (
-      <View key={record._id} style={card}>
-        <AppText variant="bodyStrong">{record.name}</AppText>
-        <AppText>{[record.type, record.status].filter(Boolean).join(' · ')}</AppText>
-        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-          <AppButton
-            title={vi ? 'Sửa' : 'Edit'}
-            variant="outline"
-            fullWidth={false}
-            disabled={record.status === 'inactive'}
-            onPress={() => edit(record)}
-          />
-          <AppButton
-            title={
-              record.status === 'inactive'
-                ? vi
-                  ? 'Khôi phục'
-                  : 'Restore'
-                : vi
-                  ? 'Ngưng dùng'
-                  : 'Deactivate'
-            }
-            variant="ghost"
-            fullWidth={false}
-            disabled={masterStatus.isPending}
-            onPress={() =>
-              masterStatus.mutate({
-                type,
-                id: record._id,
-                record,
-                status: record.status === 'inactive' ? 'active' : 'inactive',
-              })
-            }
-          />
-        </View>
-      </View>
-    ));
+
+  const activeQuery =
+    activeSection === 'categories'
+      ? categories
+      : activeSection === 'allergens'
+        ? allergens
+        : foods;
+  const activeMutationError =
+    activeSection === 'categories'
+      ? categorySave.error
+      : activeSection === 'allergens'
+        ? allergenSave.error
+        : foodSave.error;
+  const records = activeQuery.data?.data ?? [];
+  const counts = {
+    all: records.length,
+    active: records.filter((record) => record.status !== 'inactive').length,
+    inactive: records.filter((record) => record.status === 'inactive').length,
+  };
+  const needle = search.trim().toLocaleLowerCase();
+  const visibleRecords = records.filter((record) => {
+    const matchesStatus =
+      filter === 'all' ||
+      (filter === 'active'
+        ? record.status !== MasterRecordStatus.INACTIVE
+        : record.status === MasterRecordStatus.INACTIVE);
+    return matchesStatus && (!needle || record.name.toLocaleLowerCase().includes(needle));
+  });
+
+  const sectionLabel =
+    activeSection === 'categories'
+      ? t('admin.master.categories')
+      : activeSection === 'allergens'
+        ? t('admin.master.allergens')
+        : t('admin.master.foods');
+
+  const selectSection = (section: MasterSection) => {
+    closeForm();
+    setActiveSection(section);
+    setFilter('active');
+    setSearch('');
+  };
+
+  const editRecord = (record: MasterRecord) => {
+    if (activeSection === 'categories') setCategory(record);
+    else if (activeSection === 'allergens') setAllergen(record);
+    else {
+      setFood(record);
+      setServing(String(record.defaultServing?.amount || 100));
+      setCalories(String(record.nutritionPer100g?.caloriesKcal || 0));
+      setProtein(String(record.nutritionPer100g?.proteinG || 0));
+      setCarbs(String(record.nutritionPer100g?.carbsG || 0));
+      setFat(String(record.nutritionPer100g?.fatG || 0));
+      setFiber(String(record.nutritionPer100g?.fiberG || 0));
+    }
+    setFormOpen(true);
+  };
+
   return (
-    <View style={{ gap: spacing.lg }}>
-      <AppText variant="heading2">{vi ? 'Dữ liệu nền' : 'Master data'}</AppText>
+    <View style={styles.root}>
+      <AdminPageIntro
+        eyebrow={t('admin.master.catalogEyebrow')}
+        title={t('admin.master.title')}
+        description={t('admin.master.catalogDescription')}
+      />
+      <AdminSegmentedTabs
+        value={activeSection}
+        onChange={selectSection}
+        options={[
+          {
+            value: 'categories',
+            label: t('admin.master.categories'),
+            count: categories.data?.data.length,
+          },
+          {
+            value: 'allergens',
+            label: t('admin.master.allergens'),
+            count: allergens.data?.data.length,
+          },
+          {
+            value: 'foods',
+            label: t('admin.master.foods'),
+            count: foods.data?.data.length,
+          },
+        ]}
+      />
       <FeatureState
-        loading={categories.isLoading || allergens.isLoading || foods.isLoading}
-        error={
-          categories.error ||
-          allergens.error ||
-          foods.error ||
-          categorySave.error ||
-          allergenSave.error ||
-          foodSave.error ||
-          masterStatus.error
-        }
+        loading={activeQuery.isLoading}
+        error={activeQuery.error || activeMutationError || masterStatus.error}
+        retry={() => void activeQuery.refetch()}
       />
-      <AppText variant="heading3">{vi ? 'Danh mục' : 'Categories'}</AppText>
-      <AppInput
-        label={vi ? 'Tên danh mục' : 'Category name'}
-        value={category.name || ''}
-        onChangeText={(name) => setCategory((value) => ({ ...value, name }))}
-      />
-      <SelectionField
-        label={vi ? 'Loại' : 'Type'}
-        placeholder=""
-        value={category.type || 'recipe'}
-        options={(['food', 'recipe', 'post'] as const).map((value) => ({
-          value,
-          label: value,
-        }))}
-        onChange={(type) => setCategory((value) => ({ ...value, type }))}
-      />
-      <AppButton
-        title={
-          category._id
-            ? vi
-              ? 'Cập nhật danh mục'
-              : 'Update category'
-            : vi
-              ? 'Thêm danh mục'
-              : 'Add category'
-        }
-        disabled={!category.name?.trim() || categorySave.isPending}
-        onPress={() =>
-          categorySave.mutate(category as MasterRecord & { name: string })
-        }
-      />
-      {list(categories.data?.data || [], 'categories', setCategory)}
 
-      <AppText variant="heading3">{vi ? 'Dị nguyên' : 'Allergens'}</AppText>
-      <AppInput
-        label={vi ? 'Tên dị nguyên' : 'Allergen name'}
-        value={allergen.name || ''}
-        onChangeText={(name) => setAllergen((value) => ({ ...value, name }))}
-      />
-      <AppButton
-        title={
-          allergen._id
-            ? vi
-              ? 'Cập nhật dị nguyên'
-              : 'Update allergen'
-            : vi
-              ? 'Thêm dị nguyên'
-              : 'Add allergen'
-        }
-        disabled={!allergen.name?.trim() || allergenSave.isPending}
-        onPress={() =>
-          allergenSave.mutate(allergen as MasterRecord & { name: string })
-        }
-      />
-      {list(allergens.data?.data || [], 'allergens', setAllergen)}
+      {!activeQuery.isLoading && !activeQuery.error ? (
+        <>
+          <AdminSectionHeader
+            title={sectionLabel}
+            description={t('admin.master.matchingCount', {
+              count: visibleRecords.length,
+            })}
+            action={
+              <AppButton
+                title={
+                  formOpen
+                    ? t('admin.master.closeForm')
+                    : t('admin.master.addNew')
+                }
+                variant={formOpen ? 'ghost' : 'outline'}
+                fullWidth={false}
+                onPress={() => (formOpen ? closeForm() : setFormOpen(true))}
+              />
+            }
+          />
+          <AppInput
+            type="search"
+            label={t('admin.master.searchGroup', {
+              type: sectionLabel.toLocaleLowerCase(),
+            })}
+            value={search}
+            onChangeText={setSearch}
+          />
+          <AdminFilterChips
+            value={filter}
+            onChange={setFilter}
+            options={[
+              {
+                value: 'active',
+                label: t('admin.master.filter.active'),
+                count: counts.active,
+              },
+              {
+                value: 'inactive',
+                label: t('admin.master.filter.inactive'),
+                count: counts.inactive,
+              },
+              {
+                value: 'all',
+                label: t('admin.master.filter.all'),
+                count: counts.all,
+              },
+            ]}
+          />
+        </>
+      ) : null}
 
-      <AppText variant="heading3">{vi ? 'Thực phẩm' : 'Foods'}</AppText>
-      <AppInput
-        label={vi ? 'Tên thực phẩm' : 'Food name'}
-        value={food.name || ''}
-        onChangeText={(name) => setFood((value) => ({ ...value, name }))}
-      />
-      <SelectionField
-        label={vi ? 'Danh mục thực phẩm' : 'Food category'}
-        placeholder={vi ? 'Chọn danh mục' : 'Choose category'}
-        value={food.categoryId || null}
-        options={(categories.data?.data || [])
-          .filter((item) => item.type === 'food')
-          .map((item) => ({ value: item._id, label: item.name }))}
-        onChange={(categoryId) => setFood((value) => ({ ...value, categoryId }))}
-      />
-      <AppInput
-        label={vi ? 'Khẩu phần mặc định (g)' : 'Default serving (g)'}
-        value={serving}
-        onChangeText={setServing}
-        keyboardType="decimal-pad"
-      />
-      <AppInput
-        label="kcal / 100g"
-        value={calories}
-        onChangeText={setCalories}
-        keyboardType="decimal-pad"
-      />
-      <AppInput
-        label={vi ? 'Đạm / 100g' : 'Protein / 100g'}
-        value={protein}
-        onChangeText={setProtein}
-        keyboardType="decimal-pad"
-      />
-      <AppInput
-        label="Carbs / 100g"
-        value={carbs}
-        onChangeText={setCarbs}
-        keyboardType="decimal-pad"
-      />
-      <AppInput
-        label={vi ? 'Béo / 100g' : 'Fat / 100g'}
-        value={fat}
-        onChangeText={setFat}
-        keyboardType="decimal-pad"
-      />
-      <AppInput
-        label={vi ? 'Xơ / 100g' : 'Fiber / 100g'}
-        value={fiber}
-        onChangeText={setFiber}
-        keyboardType="decimal-pad"
-      />
-      <AppButton
-        title={
-          food._id
-            ? vi
-              ? 'Cập nhật thực phẩm'
-              : 'Update food'
-            : vi
-              ? 'Thêm thực phẩm'
-              : 'Add food'
-        }
-        disabled={!food.name?.trim() || !food.categoryId || foodSave.isPending}
-        onPress={() =>
-          foodSave.mutate({
-            ...food,
-            name: food.name!.trim(),
-            defaultServing: {
-              amount: number(serving),
-              unit: 'g',
-              gramEquivalent: number(serving),
-            },
-            nutritionPer100g: {
-              caloriesKcal: number(calories),
-              proteinG: number(protein),
-              carbsG: number(carbs),
-              fatG: number(fat),
-              fiberG: number(fiber),
-            },
-            isVegan: true,
-            isVegetarian: true,
-          })
-        }
-      />
-      {list(foods.data?.data || [], 'food-items', (record) => {
-        setFood(record);
-        setServing(String(record.defaultServing?.amount || 100));
-        setCalories(String(record.nutritionPer100g?.caloriesKcal || 0));
-        setProtein(String(record.nutritionPer100g?.proteinG || 0));
-        setCarbs(String(record.nutritionPer100g?.carbsG || 0));
-        setFat(String(record.nutritionPer100g?.fatG || 0));
-        setFiber(String(record.nutritionPer100g?.fiberG || 0));
-      })}
+      {formOpen ? (
+        <AdminSurface style={styles.form}>
+          <AdminSectionHeader
+            title={
+              activeSection === 'categories' && category._id
+                ? t('admin.master.update', { type: sectionLabel })
+                : activeSection === 'allergens' && allergen._id
+                  ? t('admin.master.update', { type: sectionLabel })
+                  : activeSection === 'foods' && food._id
+                    ? t('admin.master.update', { type: sectionLabel })
+                    : t('admin.master.add', { type: sectionLabel })
+            }
+            description={t('admin.master.formDescription')}
+          />
+          {activeSection === 'categories' ? (
+            <>
+              <AppInput
+                label={t('admin.master.categoryName')}
+                value={category.name || ''}
+                onChangeText={(name) => setCategory((value) => ({ ...value, name }))}
+              />
+              <SelectionField
+                label={t('admin.master.type')}
+                placeholder=""
+                value={category.type || MasterCategoryType.RECIPE}
+                options={MASTER_CATEGORY_TYPES.map((value) => ({
+                  value,
+                  label: t(MASTER_CATEGORY_TYPE_LABEL_KEYS[value]),
+                }))}
+                onChange={(type) => setCategory((value) => ({ ...value, type }))}
+              />
+              <AppButton
+                title={
+                  category._id
+                    ? t('admin.master.update', { type: sectionLabel })
+                    : t('admin.master.add', { type: sectionLabel })
+                }
+                loading={categorySave.isPending}
+                disabled={!category.name?.trim() || categorySave.isPending}
+                onPress={() =>
+                  categorySave.mutate(category as MasterRecord & { name: string })
+                }
+              />
+            </>
+          ) : null}
+          {activeSection === 'allergens' ? (
+            <>
+              <AppInput
+                label={t('admin.master.allergenName')}
+                value={allergen.name || ''}
+                onChangeText={(name) => setAllergen((value) => ({ ...value, name }))}
+              />
+              <AppButton
+                title={
+                  allergen._id
+                    ? t('admin.master.update', { type: sectionLabel })
+                    : t('admin.master.add', { type: sectionLabel })
+                }
+                loading={allergenSave.isPending}
+                disabled={!allergen.name?.trim() || allergenSave.isPending}
+                onPress={() =>
+                  allergenSave.mutate(allergen as MasterRecord & { name: string })
+                }
+              />
+            </>
+          ) : null}
+          {activeSection === 'foods' ? (
+            <>
+              <AppInput
+                label={t('admin.master.foodName')}
+                value={food.name || ''}
+                onChangeText={(name) => setFood((value) => ({ ...value, name }))}
+              />
+              <SelectionField
+                label={t('admin.master.foodCategory')}
+                placeholder={t('admin.master.chooseCategory')}
+                value={food.categoryId || null}
+                options={(categories.data?.data || [])
+                  .filter((item) => item.type === MasterCategoryType.FOOD)
+                  .map((item) => ({ value: item._id, label: item.name }))}
+                onChange={(categoryId) =>
+                  setFood((value) => ({ ...value, categoryId }))
+                }
+              />
+              <AppInput
+                label={t('admin.master.serving')}
+                value={serving}
+                onChangeText={setServing}
+                keyboardType="decimal-pad"
+              />
+              <View style={styles.nutritionGroup}>
+                <AppText variant="bodyStrong">
+                  {t('admin.master.nutritionTitle')}
+                </AppText>
+                <AppInput
+                  label={t(keys.KCAL_PER_100G)}
+                  value={calories}
+                  onChangeText={setCalories}
+                  keyboardType="decimal-pad"
+                />
+                <AppInput
+                  label={t('admin.master.protein')}
+                  value={protein}
+                  onChangeText={setProtein}
+                  keyboardType="decimal-pad"
+                />
+                <AppInput
+                  label={t(keys.CARBS_PER_100G)}
+                  value={carbs}
+                  onChangeText={setCarbs}
+                  keyboardType="decimal-pad"
+                />
+                <AppInput
+                  label={t('admin.master.fat')}
+                  value={fat}
+                  onChangeText={setFat}
+                  keyboardType="decimal-pad"
+                />
+                <AppInput
+                  label={t('admin.master.fiber')}
+                  value={fiber}
+                  onChangeText={setFiber}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <AppButton
+                title={
+                  food._id
+                    ? t('admin.master.update', { type: sectionLabel })
+                    : t('admin.master.add', { type: sectionLabel })
+                }
+                loading={foodSave.isPending}
+                disabled={!food.name?.trim() || !food.categoryId || foodSave.isPending}
+                onPress={() =>
+                  foodSave.mutate({
+                    ...food,
+                    name: food.name!.trim(),
+                    defaultServing: {
+                      amount: parseNumericInput(serving),
+                      unit: MASTER_FOOD_DEFAULTS.UNIT_GRAM,
+                      gramEquivalent: parseNumericInput(serving),
+                    },
+                    nutritionPer100g: {
+                      caloriesKcal: parseNumericInput(calories),
+                      proteinG: parseNumericInput(protein),
+                      carbsG: parseNumericInput(carbs),
+                      fatG: parseNumericInput(fat),
+                      fiberG: parseNumericInput(fiber),
+                    },
+                    isVegan: MASTER_FOOD_DEFAULTS.IS_VEGAN,
+                    isVegetarian: MASTER_FOOD_DEFAULTS.IS_VEGETARIAN,
+                  })
+                }
+              />
+            </>
+          ) : null}
+        </AdminSurface>
+      ) : null}
+
+      {activeQuery.data && visibleRecords.length === 0 ? (
+        <AdminEmptyState
+          icon="pantry"
+          title={t('admin.master.emptyTitle')}
+          description={t('admin.master.emptyDescription')}
+        />
+      ) : null}
+      <View style={styles.list}>
+        {visibleRecords.map((record) => (
+          <AdminSurface key={record._id}>
+            <View style={styles.recordHeader}>
+              <View style={styles.recordText}>
+                <AppText variant="bodyStrong">{record.name}</AppText>
+                {record.type ? (
+                  <AppText variant="bodySmall" color={colors.text.secondary}>
+                    {t(MASTER_CATEGORY_TYPE_LABEL_KEYS[record.type as MasterCategoryType])}
+                  </AppText>
+                ) : null}
+              </View>
+              <AdminStatusBadge
+                label={t(
+                  MASTER_RECORD_STATUS_LABEL_KEYS[
+                    record.status === MasterRecordStatus.INACTIVE
+                      ? MasterRecordStatus.INACTIVE
+                      : MasterRecordStatus.ACTIVE
+                  ]
+                )}
+                tone={record.status === MasterRecordStatus.INACTIVE ? 'neutral' : 'success'}
+              />
+            </View>
+            {activeSection === 'foods' && record.nutritionPer100g ? (
+              <AppText variant="bodySmall" color={colors.text.secondary}>
+                {t('admin.master.nutritionSummary', {
+                  calories: record.nutritionPer100g.caloriesKcal || 0,
+                  protein: record.nutritionPer100g.proteinG || 0,
+                })}
+              </AppText>
+            ) : null}
+            <View style={styles.actions}>
+              <AppButton
+                title={t('admin.master.edit')}
+                variant="outline"
+                fullWidth={false}
+                disabled={record.status === MasterRecordStatus.INACTIVE}
+                onPress={() => editRecord(record)}
+              />
+              <AppButton
+                title={
+                  record.status === MasterRecordStatus.INACTIVE
+                    ? t('admin.master.restore')
+                    : t('admin.master.deactivate')
+                }
+                variant="ghost"
+                fullWidth={false}
+                disabled={masterStatus.isPending}
+                onPress={() =>
+                  masterStatus.mutate({
+                    type:
+                      activeSection === 'foods'
+                        ? MasterResourceType.FOOD_ITEMS
+                        : activeSection === 'categories'
+                          ? MasterResourceType.CATEGORIES
+                          : MasterResourceType.ALLERGENS,
+                    id: record._id,
+                    record,
+                    status:
+                      record.status === MasterRecordStatus.INACTIVE
+                        ? MasterRecordStatus.ACTIVE
+                        : MasterRecordStatus.INACTIVE,
+                  })
+                }
+              />
+            </View>
+          </AdminSurface>
+        ))}
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { gap: spacing.lg },
+  form: { backgroundColor: colors.background.elevated },
+  nutritionGroup: {
+    padding: spacing.md,
+    gap: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.muted,
+  },
+  list: { gap: spacing.md },
+  recordHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
+  recordText: { flex: 1, minWidth: 0, gap: spacing.xs },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+});

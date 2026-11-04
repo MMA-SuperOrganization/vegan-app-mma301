@@ -12,6 +12,7 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useTranslation } from '@/i18n';
+import { categoryFilterLabel } from '../filterLabels';
 import { useDebouncedValue } from '@/hooks';
 import { colors, radius, spacing } from '@/theme';
 import { ContentResultCard } from '../components/ContentResultCard';
@@ -23,7 +24,7 @@ import { normalizeSearchQuery } from '../searchState';
 
 export function FoodCatalogScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [input, setInput] = useState('');
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(normalizeSearchQuery(input), 350);
@@ -71,7 +72,7 @@ export function FoodCatalogScreen() {
         {categories.data?.data.map((item) => (
           <CategoryChip
             key={item._id}
-            label={item.name}
+            label={categoryFilterLabel(item, locale)}
             selected={category === item._id}
             onPress={() => setCategory(item._id)}
           />

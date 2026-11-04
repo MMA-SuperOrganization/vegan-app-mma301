@@ -52,7 +52,7 @@ export function CustomHeader({
       <View style={styles.side}>
         {backVisible ? <BackButton onPress={handleBack} /> : null}
       </View>
-      <AppText numberOfLines={2} variant="titleLarge" style={styles.title}>
+      <AppText numberOfLines={1} variant="titleLarge" style={styles.title}>
         {title}
       </AppText>
       <View style={[styles.side, styles.rightSide]}>

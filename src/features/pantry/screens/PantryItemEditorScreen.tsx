@@ -6,6 +6,7 @@ import {
   AppInput,
   AppText,
   BottomSheet,
+  CalendarInputField,
   CustomHeader,
   FilterChip,
   ScreenWrapper,
@@ -13,7 +14,7 @@ import {
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation, type TranslationKey } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, spacing, webLayout } from '@/theme';
 import { PantryQueryState } from '../components/PantryQueryState';
 import { usePantry, usePantryActions, usePantryFoodOptions } from '../hooks';
 import {
@@ -32,6 +33,7 @@ export function PantryItemEditorScreen() {
   if (itemId && (!query.data || !item)) {
     return (
       <ScreenWrapper
+        webMaxWidth={webLayout.formMaxWidth}
         header={
           <CustomHeader
             title={t('pantry.edit')}
@@ -63,7 +65,12 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
   const goBack = useSafeBack('/pantry');
   const actions = usePantryActions();
   const [food, setFood] = useState(
-    item ? { id: item.foodItemId, name: item.foodNameSnapshot } : null
+    item
+      ? {
+          id: item.foodItemId ?? item.personalIngredientId ?? '',
+          name: item.foodNameSnapshot,
+        }
+      : null
   );
   const [quantity, setQuantity] = useState(item ? String(item.quantity) : '1');
   const [unit, setUnit] = useState<PantryUnit>(item?.unit ?? 'g');
@@ -125,6 +132,7 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
     <>
       <ScreenWrapper
         scrollable
+        webMaxWidth={webLayout.formMaxWidth}
         testID="pantry-item-editor"
         contentContainerStyle={styles.screen}
         header={
@@ -171,15 +179,14 @@ function PantryItemForm({ item }: { item?: PantryItem }) {
               ))}
             </View>
           </View>
-          <AppInput
+          <CalendarInputField
             label={t('pantry.expiry')}
             value={expiry}
             onChangeText={setExpiry}
-            placeholder="YYYY-MM-DD"
-            maxLength={10}
             helper={t('pantry.expiryHint')}
             disabled={pending}
             error={errors.expiry ? t(errors.expiry) : undefined}
+            defaultDate={new Date()}
           />
           <AppInput
             label={t('grocery.noteLabel')}

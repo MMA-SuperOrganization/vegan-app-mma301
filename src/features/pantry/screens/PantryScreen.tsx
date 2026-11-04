@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   AppButton,
   AppIcon,
@@ -14,6 +14,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { PantryQueryState } from '../components/PantryQueryState';
+import { GroceryPantryTabs } from '@/features/grocery/components/GroceryPantryTabs';
 import { usePantry } from '../hooks';
 import {
   pantryExpiryDay,
@@ -26,6 +27,7 @@ const filters: PantryFilter[] = ['all', 'expiring', 'expired'];
 
 export function PantryScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { t, locale } = useTranslation();
   const pantry = usePantry();
   const [filter, setFilter] = useState<PantryFilter>('all');
@@ -46,7 +48,7 @@ export function PantryScreen() {
       header={
         <CustomHeader
           title={t('pantry.title')}
-          showBack
+          showBack={from !== 'inventory'}
           backFallbackHref="/(tabs)/grocery"
         />
       }
@@ -55,6 +57,12 @@ export function PantryScreen() {
         <AppText variant="bodySmall" color={colors.text.secondary}>
           {t('pantry.subtitle')}
         </AppText>
+        <GroceryPantryTabs
+          active="pantry"
+          onChange={(tab) => {
+            if (tab === 'grocery') router.replace('/(tabs)/grocery');
+          }}
+        />
         <AppInput
           type="search"
           value={search}

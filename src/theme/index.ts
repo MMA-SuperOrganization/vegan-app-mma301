@@ -15,3 +15,4 @@ export * from './componentTheme';
 
 export * from './coreTokens';
 export * from './assets';
+export * from './webLayout';

@@ -30,7 +30,8 @@ export async function unwrapApiRequest<T>(
     throw new AppError(
       normalized.message,
       normalized.code ?? 'API_REQUEST_FAILED',
-      normalized.status
+      normalized.status,
+      normalized.details
     );
   }
 }
@@ -55,7 +56,8 @@ export async function unwrapApiPageRequest<T, TMeta = PaginationMeta>(
     throw new AppError(
       normalized.message,
       normalized.code ?? 'API_REQUEST_FAILED',
-      normalized.status
+      normalized.status,
+      normalized.details
     );
   }
 }

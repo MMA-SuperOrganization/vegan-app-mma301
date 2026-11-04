@@ -27,6 +27,8 @@ export interface DiaryEntry {
   date: string;
   mealType: MealType;
   sourceType: DiarySourceType;
+  sourceMealPlanId?: string;
+  sourceMealId?: string;
   recipeId?: string;
   foodItemId?: string;
   nameSnapshot: string;

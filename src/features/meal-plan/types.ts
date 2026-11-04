@@ -10,6 +10,8 @@ export interface PlannedMeal {
   servings: number;
   note?: string;
   completed: boolean;
+  /** Present only when this planned meal has a matching persisted Diary entry. */
+  diaryEntryId?: string;
   recipeSnapshot: {
     title: string;
     servings: number;
@@ -38,10 +40,12 @@ export interface AddMealInput {
   type: MealType;
   recipeId: string;
   servings: number;
+  acknowledgeAllergens?: boolean;
 }
 
 export interface UpdateMealInput {
   recipeId?: string;
   servings?: number;
   completed?: boolean;
+  acknowledgeAllergens?: boolean;
 }

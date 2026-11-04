@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { View } from 'react-native';
-import { AppButton, AppInput, AppText, SearchPickerSheet } from '@/components';
+import {
+  AppButton,
+  AppInput,
+  AppText,
+  CalendarInputField,
+  SearchPickerSheet,
+} from '@/components';
 import { usePantryFoodOptions } from '@/features/pantry/hooks';
 import { SelectionField } from '@/features/onboarding/components/SelectionField';
 import { parseDecimal } from '@/features/tracking/trackingState';
@@ -76,15 +82,16 @@ export function IngredientReviewEditor({
           if (!disabled) onChange({ ...ingredient, unit });
         }}
       />
-      <AppInput
+      <CalendarInputField
         label={
           vi ? 'Hạn dùng (YYYY-MM-DD, tùy chọn)' : 'Expiry (YYYY-MM-DD, optional)'
         }
         value={ingredient.expiryDate || ''}
-        editable={!disabled}
+        disabled={disabled}
         onChangeText={(expiryDate) =>
           onChange({ ...ingredient, expiryDate: expiryDate || undefined })
         }
+        defaultDate={new Date()}
       />
       <AppButton
         title={vi ? 'Bỏ nguyên liệu' : 'Remove ingredient'}

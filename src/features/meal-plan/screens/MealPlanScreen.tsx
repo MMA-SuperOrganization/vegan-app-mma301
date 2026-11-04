@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { isLocalIsoDate } from '@/features/tracking/trackingState';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppText,
   AppButton,
@@ -10,9 +10,13 @@ import {
   SearchPickerSheet,
   ScreenWrapper,
   type PickerItem,
+  appDialog,
 } from '@/components';
 import { TrackingQueryState } from '@/features/tracking/components/TrackingQueryState';
 import { useRecipeOptions } from '@/features/tracking/hooks/usePickerOptions';
+import { matchingAllergenNames } from '@/features/profile/allergenMatching';
+import { allergenLabel } from '@/features/recipes/filterLabels';
+import { useProfileStore } from '@/features/profile/profileStore';
 import { useTrackingFormat } from '@/features/tracking/hooks/useTrackingFormat';
 import { useTrackingTargets } from '@/features/tracking/hooks/useTrackingApi';
 import type { MealType } from '@/features/tracking/types';
@@ -25,6 +29,7 @@ import { WeekPickerSheet } from '../components/WeekPickerSheet';
 import { useMealPlan, useMealPlanActions } from '../hooks';
 import {
   groupMealsByType,
+  completeNutritionSnapshot,
   mealsForDate,
   nextServingCount,
   plannedNutrition,
@@ -33,8 +38,18 @@ import {
   shiftWeekSelection,
   startOfWeek,
   toIsoDate,
+  mealPlanTitle,
 } from '../mealPlanState';
 import type { PlannedMeal } from '../types';
+
+const optimisticDiaryState = (
+  meal: PlannedMeal,
+  completed: boolean
+): PlannedMeal => ({
+  ...meal,
+  completed,
+  diaryEntryId: completed ? 'optimistic-diary-entry' : undefined,
+});
 
 export function MealPlanScreen() {
   const params = useLocalSearchParams<{ planId?: string; date?: string }>();
@@ -49,7 +64,13 @@ export function MealPlanScreen() {
   );
   const [selectedDate, setSelectedDate] = useState(initialDate);
   useEffect(() => {
-    if (!params.planId || !isLocalIsoDate(params.date || '')) return;
+    if (
+      !params.planId ||
+      params.planId === 'undefined' ||
+      !isLocalIsoDate(params.date || '')
+    ) {
+      return;
+    }
     setWeekStartDate(params.date!);
     setSelectedDate(params.date!);
     setConfirmActivation(false);
@@ -59,9 +80,14 @@ export function MealPlanScreen() {
   const [replacementMeal, setReplacementMeal] = useState<PlannedMeal | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmActivation, setConfirmActivation] = useState(false);
+  const profileAllergenIds = useProfileStore(
+    (state) => state.data?.nutritionProfile?.allergenIds ?? []
+  );
+  const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
 
   const planQuery = useMealPlan(weekStartDate, params.planId);
   const actions = useMealPlanActions(weekStartDate, params.planId);
+  const legacyDiaryRepairAttempts = useRef(new Set<string>());
   const targets = useTrackingTargets();
   const recipeOptions = useRecipeOptions(
     searchQuery,
@@ -77,7 +103,6 @@ export function MealPlanScreen() {
   const nutrition = plannedNutrition(selectedMeals);
   const pending =
     actions.addMeal.isPending ||
-    actions.updateMeal.isPending ||
     actions.removeMeal.isPending ||
     actions.activate.isPending ||
     actions.setStatus.isPending ||
@@ -90,6 +115,22 @@ export function MealPlanScreen() {
     actions.setStatus.isError ||
     actions.clone.isError;
 
+  useEffect(() => {
+    if (!plan || readOnly) return;
+    for (const meal of plan.days.flatMap((day) => day.meals)) {
+      if (!meal.completed || meal.diaryEntryId) continue;
+      const repairKey = `${plan._id}:${meal.mealId}`;
+      if (legacyDiaryRepairAttempts.current.has(repairKey)) continue;
+      legacyDiaryRepairAttempts.current.add(repairKey);
+      actions.updateMeal.mutate({
+        planId: plan._id,
+        mealId: meal.mealId,
+        input: { completed: true },
+        optimisticMeal: optimisticDiaryState(meal, true),
+      });
+    }
+  }, [actions.updateMeal, plan, readOnly]);
+
   const mealCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -98,6 +139,18 @@ export function MealPlanScreen() {
     [plan?.days]
   );
 
+  const allergenNamesByRecipe = new Map(
+    (recipeOptions.data?.data ?? []).map((recipe) => [
+      recipe._id,
+      matchingAllergenNames(
+        recipe.allergenIds,
+        profileAllergenIds,
+        allergenCatalog,
+        t('recipe.unknownAllergen'),
+        (name) => allergenLabel(name, locale)
+      ),
+    ])
+  );
   const pickerItems: PickerItem[] = (recipeOptions.data?.data ?? []).map(
     (recipe) => ({
       id: recipe._id,
@@ -108,44 +161,102 @@ export function MealPlanScreen() {
           })
         : undefined,
       imageUrl: recipe.coverImageUrl,
+      warning: allergenNamesByRecipe.get(recipe._id)?.length
+        ? t('mealPlan.allergenPickerWarning', {
+            allergens: allergenNamesByRecipe.get(recipe._id)!.join(', '),
+          })
+        : undefined,
     })
   );
 
-  const addRecipe = (recipeId: string) => {
+  const commitRecipe = (recipeId: string, acknowledgeAllergens = false) => {
     if (pending || readOnly) return;
+    const recipe = recipeOptions.data?.data.find((item) => item._id === recipeId);
     if (replacementMeal && plan) {
-      actions.updateMeal.mutate(
-        {
-          planId: plan._id,
-          mealId: replacementMeal.mealId,
-          input: { recipeId },
+      const optimisticMeal = recipe
+        ? {
+            ...replacementMeal,
+            recipeId,
+            recipeSnapshot: {
+              title: recipe.title ?? t('mealPlan.unnamedRecipe'),
+              servings: 1,
+              nutritionPerServing: completeNutritionSnapshot(
+                recipe.nutritionPerServing
+              ),
+            },
+          }
+        : undefined;
+      actions.updateMeal.mutate({
+        planId: plan._id,
+        mealId: replacementMeal.mealId,
+        input: {
+          recipeId,
+          ...(acknowledgeAllergens ? { acknowledgeAllergens } : {}),
         },
-        {
-          onSuccess: () => {
-            setReplacementMeal(null);
-            setSearchQuery('');
-          },
-        }
-      );
+        optimisticMeal,
+      });
+      setReplacementMeal(null);
+      setSearchQuery('');
       return;
     }
     if (!pickerMealType) return;
-    actions.addMeal.mutate(
-      {
-        planId: plan?._id,
-        input: { date: selectedDate, type: pickerMealType, recipeId, servings: 1 },
+    const optimisticMeal = recipe
+      ? {
+          mealId: `optimistic-${Date.now()}-${recipeId}`,
+          type: pickerMealType,
+          recipeId,
+          servings: 1,
+          completed: false,
+          recipeSnapshot: {
+            title: recipe.title ?? t('mealPlan.unnamedRecipe'),
+            servings: 1,
+            nutritionPerServing: completeNutritionSnapshot(
+              recipe.nutritionPerServing
+            ),
+          },
+        }
+      : undefined;
+    actions.addMeal.mutate({
+      planId: plan?._id,
+      input: {
+        date: selectedDate,
+        type: pickerMealType,
+        recipeId,
+        servings: 1,
+        ...(acknowledgeAllergens ? { acknowledgeAllergens } : {}),
       },
-      {
-        onSuccess: () => {
-          setPickerMealType(null);
-          setSearchQuery('');
+      optimisticMeal,
+    });
+    setPickerMealType(null);
+    setSearchQuery('');
+  };
+
+  const selectRecipe = (recipeId: string) => {
+    const matchingAllergens = allergenNamesByRecipe.get(recipeId) ?? [];
+    if (!matchingAllergens.length) {
+      commitRecipe(recipeId);
+      return;
+    }
+    const recipe = recipeOptions.data?.data.find((item) => item._id === recipeId);
+    appDialog.alert(
+      t('mealPlan.allergenWarningTitle'),
+      t('mealPlan.allergenWarningBody', {
+        name: recipe?.title ?? t('mealPlan.unnamedRecipe'),
+        allergens: matchingAllergens.join(', '),
+      }),
+      [
+        { text: t('mealPlan.cancel'), style: 'cancel' },
+        {
+          text: t('mealPlan.addAnyway'),
+          style: 'destructive',
+          onPress: () => commitRecipe(recipeId, true),
         },
-      }
+      ]
     );
   };
 
   const changeServings = (meal: PlannedMeal, delta: number) => {
-    if (!plan || pending || readOnly) return;
+    if (!plan || readOnly) return;
     const servings = nextServingCount(meal.servings, delta);
     if (servings === meal.servings) return;
     actions.updateMeal.mutate({
@@ -155,9 +266,20 @@ export function MealPlanScreen() {
     });
   };
 
+  const toggleCompleted = (meal: PlannedMeal) => {
+    if (!plan || readOnly) return;
+    const completed = !meal.diaryEntryId;
+    actions.updateMeal.mutate({
+      planId: plan._id,
+      mealId: meal.mealId,
+      input: { completed },
+      optimisticMeal: optimisticDiaryState(meal, completed),
+    });
+  };
+
   const confirmRemove = (meal: PlannedMeal) => {
     if (!plan || pending || readOnly) return;
-    Alert.alert(
+    appDialog.alert(
       t('mealPlan.removeConfirmTitle'),
       t('mealPlan.removeConfirmBody', { name: meal.recipeSnapshot.title }),
       [
@@ -172,21 +294,32 @@ export function MealPlanScreen() {
     );
   };
 
+  const clearRoutePlanParams = () => {
+    if (params.planId || params.date) {
+      try {
+        router.setParams({ planId: undefined, date: undefined });
+      } catch {}
+    }
+  };
+
   const moveToWeek = (weekDelta: number) => {
-    router.setParams({ planId: undefined });
+    clearRoutePlanParams();
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
     setSelectedDate(next.selectedDate);
   };
 
   const returnToCurrentWeek = () => {
-    router.setParams({ planId: undefined });
-    setWeekStartDate(currentWeekStartDate);
-    setSelectedDate(today);
+    clearRoutePlanParams();
+    const now = new Date();
+    const actualToday = toIsoDate(now);
+    const actualCurrentWeek = startOfWeek(now);
+    setWeekStartDate(actualCurrentWeek);
+    setSelectedDate(actualToday);
   };
 
   const selectWeek = (nextWeekStartDate: string) => {
-    router.setParams({ planId: undefined });
+    clearRoutePlanParams();
     const weekDelta = relativeWeekOffset(weekStartDate, nextWeekStartDate);
     const next = shiftWeekSelection(weekStartDate, selectedDate, weekDelta);
     setWeekStartDate(next.weekStartDate);
@@ -205,7 +338,9 @@ export function MealPlanScreen() {
         <View style={styles.content}>
           {params.planId && plan ? (
             <View style={{ gap: spacing.sm }}>
-              <AppText variant="heading3">{plan.title}</AppText>
+              <AppText variant="heading3">
+                {mealPlanTitle(plan.title, t('mealPlan.title'))}
+              </AppText>
               <AppText>
                 {plan.status === 'active'
                   ? locale === 'vi'
@@ -261,7 +396,7 @@ export function MealPlanScreen() {
                   disabled={pending}
                   loading={actions.setStatus.isPending}
                   onPress={() =>
-                    Alert.alert(
+                    appDialog.alert(
                       locale === 'vi'
                         ? 'Hoàn thành thực đơn?'
                         : 'Complete this plan?',
@@ -326,6 +461,9 @@ export function MealPlanScreen() {
           <WeekNavigator
             weekStartDate={weekStartDate}
             currentWeekStartDate={currentWeekStartDate}
+            showTodayButton={
+              weekStartDate !== currentWeekStartDate || selectedDate !== today
+            }
             disabled={pending}
             onPrevious={() => moveToWeek(-1)}
             onNext={() => moveToWeek(1)}
@@ -412,6 +550,7 @@ export function MealPlanScreen() {
                   onAdd={() => setPickerMealType(mealType)}
                   onReplace={(meal) => setReplacementMeal(meal)}
                   onChangeServings={changeServings}
+                  onToggleCompleted={toggleCompleted}
                   onRemove={confirmRemove}
                 />
               ))}
@@ -438,7 +577,7 @@ export function MealPlanScreen() {
         isLoading={recipeOptions.isLoading || pending}
         isError={recipeOptions.isError}
         onRetry={() => void recipeOptions.refetch()}
-        onSelect={addRecipe}
+        onSelect={selectRecipe}
         onClose={() => {
           if (pending) return;
           setPickerMealType(null);

@@ -8,6 +8,8 @@ import { appConfig } from '@/config';
 import { AppError } from '@/services/errors';
 import { translate } from '@/i18n';
 import { useAuthStore } from '../store/authStore';
+import { getPostAuthRoute } from '../authNavigation';
+import { requestNativeGoogleIdToken } from '../services/nativeGoogleSignIn';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -24,7 +26,6 @@ export function useGoogleSignIn() {
   const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const reportError = useAuthStore((state) => state.reportError);
   const clearError = useAuthStore((state) => state.clearError);
-  const storeLoading = useAuthStore((state) => state.isLoading);
   const [isPrompting, setIsPrompting] = useState(false);
   const handledResponse = useRef<unknown>(null);
   const webClientId = appConfig.googleWebClientId;
@@ -47,9 +48,7 @@ export function useGoogleSignIn() {
   const finishLogin = async (idToken: string, requestUri: string) => {
     if (!(await loginWithGoogle(idToken, requestUri))) return;
     const user = useAuthStore.getState().user;
-    router.replace(
-      user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
-    );
+    router.replace(getPostAuthRoute(user));
   };
 
   useEffect(() => {
@@ -83,7 +82,6 @@ export function useGoogleSignIn() {
         googleDiscovery
       )
         .then(async (authentication) => {
-          setIsPrompting(false);
           if (!authentication.idToken) {
             throw new AppError(
               translate('auth.google.firebaseTokenMissing'),
@@ -91,6 +89,7 @@ export function useGoogleSignIn() {
             );
           }
           await finishLogin(authentication.idToken, redirectUri);
+          setIsPrompting(false);
         })
         .catch((error) => {
           setIsPrompting(false);
@@ -133,16 +132,9 @@ export function useGoogleSignIn() {
       );
     }
 
-    const google = await import('@react-native-google-signin/google-signin');
-    google.GoogleSignin.configure({ webClientId });
-    if (Platform.OS === 'android') {
-      await google.GoogleSignin.hasPlayServices({
-        showPlayServicesUpdateDialog: true,
-      });
-    }
-    const result = await google.GoogleSignin.signIn();
-    if (!google.isSuccessResponse(result)) return;
-    if (!result.data.idToken) {
+    const googleIdToken = await requestNativeGoogleIdToken(webClientId);
+    if (googleIdToken === null) return;
+    if (!googleIdToken) {
       throw new AppError(
         translate('auth.google.idTokenMissing'),
         'GOOGLE_ID_TOKEN_MISSING'
@@ -151,7 +143,7 @@ export function useGoogleSignIn() {
 
     // Firebase REST requires this field, but the native SDK already completed
     // the real Google callback before this request is sent.
-    await finishLogin(result.data.idToken, 'http://localhost');
+    await finishLogin(googleIdToken, 'http://localhost');
   };
 
   const startWeb = async () => {
@@ -204,6 +196,6 @@ export function useGoogleSignIn() {
 
   return {
     start,
-    isLoading: isPrompting || storeLoading,
+    isLoading: isPrompting,
   };
 }

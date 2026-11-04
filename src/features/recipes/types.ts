@@ -16,14 +16,46 @@ export interface ContentCardData {
   totalMinutes?: number;
   ratingAverage?: number;
   ratingCount?: number;
-  reactionCount?: number;
-  commentCount?: number;
-  reacted?: string | null;
   allergenIds?: string[];
   nutritionPerServing?: NutritionFacts;
   nutritionPer100g?: NutritionFacts;
   nutritionDataQuality?: 'verified' | 'estimated' | 'unavailable';
   sourceAttribution?: SourceAttribution;
+}
+
+export interface PostCardData extends ContentCardData {
+  type?: 'post';
+  authorId?: string;
+  author?: {
+    userId: string;
+    displayName?: string;
+    avatarUrl?: string;
+  } | null;
+  mediaIds?: string[];
+  createdAt?: string;
+  publishedAt?: string;
+  status?: string;
+  reactionCount?: number;
+  commentCount?: number;
+  reacted?: string | null;
+  recipeId?: string | null;
+  foodItemIds?: string[];
+  relatedRecipe?: RelatedRecipeSummary | null;
+  relatedFoodItems?: RelatedFoodItemSummary[];
+}
+
+export interface RelatedRecipeSummary {
+  _id: string;
+  title: string;
+  slug?: string;
+  coverImageUrl?: string;
+}
+
+export interface RelatedFoodItemSummary {
+  _id: string;
+  name: string;
+  slug?: string;
+  imageUrl?: string;
 }
 
 export interface SourceAttribution {
@@ -145,12 +177,18 @@ export type RecipeDietType = 'vegan' | 'vegetarian';
 export type RecipeSort = 'newest' | 'popular' | 'rating' | 'quickest';
 
 export interface RecipeFilters {
-  category?: string;
+  categoryIds?: string[];
+  tags?: string[];
   difficulty?: RecipeDifficulty;
   maxTotalMinutes?: number;
   dietType?: RecipeDietType;
   sort?: RecipeSort;
   avoidProfileAllergens?: boolean;
+}
+
+export interface RecipeTagOption {
+  value: string;
+  count: number;
 }
 
 export interface RecipeQuery extends RecipeFilters {
@@ -201,7 +239,7 @@ export interface HomeFeed {
   featured: {
     recipes: ContentCardData[];
     videos: ContentCardData[];
-    posts: ContentCardData[];
+    posts: PostCardData[];
   };
   personalized: {
     recipes: ContentCardData[];

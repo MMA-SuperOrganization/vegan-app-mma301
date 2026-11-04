@@ -1,29 +1,38 @@
 import { StyleSheet, View } from 'react-native';
 
-import { AppText } from '@/components';
+import { AppIcon, AppText } from '@/components';
+import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
+import { AI_TRANSLATION_KEYS, AiSafetyNoticeCode } from '../aiConstants';
 import type { AiSafetyNotice } from '../types';
 
 export function AiSafetyNotices({
   notices,
-  vi,
 }: {
   notices?: AiSafetyNotice[];
-  vi: boolean;
 }) {
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.SAFETY;
+
   if (!notices?.length) return null;
+
   return (
     <View style={styles.list}>
       {notices.map((notice) => (
         <View key={notice.code} accessibilityRole="alert" style={styles.notice}>
-          <AppText variant="bodyStrong" color={colors.status.warning}>
-            {vi ? 'Cảnh báo dị nguyên' : 'Allergen caution'}
-          </AppText>
-          <AppText variant="bodySmall">
-            {notice.code === 'ALLERGEN_CAUTION'
-              ? vi
-                ? 'Đã loại trừ món khớp với dị nguyên bạn lưu. Dữ liệu thành phần và lây nhiễm chéo có thể chưa đầy đủ; hãy kiểm tra nhãn và cách chế biến trước khi ăn.'
-                : 'Items matching your saved allergens were excluded. Ingredient and cross-contact data may be incomplete; verify labels and preparation before eating.'
+          <View style={styles.noticeHeader}>
+            <View style={styles.warningBadge}>
+              <AppText variant="caption" color={colors.status.warning}>
+                !
+              </AppText>
+            </View>
+            <AppText variant="bodyStrong" color={colors.status.warning}>
+              {t(keys.ALLERGEN_CAUTION_TITLE)}
+            </AppText>
+          </View>
+          <AppText variant="bodySmall" color={colors.text.secondary}>
+            {notice.code === AiSafetyNoticeCode.ALLERGEN_CAUTION
+              ? t(keys.ALLERGEN_CAUTION_MESSAGE)
               : notice.message}
           </AppText>
         </View>
@@ -32,35 +41,90 @@ export function AiSafetyNotices({
   );
 }
 
-export function AiMedicalDisclaimer({ vi }: { vi: boolean }) {
+export function AiMedicalDisclaimer({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.SAFETY;
+
+  if (compact) {
+    return (
+      <View accessibilityRole="alert" style={styles.medicalCompact}>
+        <AppIcon name="spark" size={13} color={colors.text.secondary} decorative />
+        <AppText
+          variant="caption"
+          color={colors.text.secondary}
+          style={styles.medicalCompactText}
+        >
+          {t(keys.MEDICAL_DISCLAIMER_COMPACT)}
+        </AppText>
+      </View>
+    );
+  }
+
   return (
     <View accessibilityRole="alert" style={styles.medical}>
-      <AppText variant="bodyStrong">
-        {vi ? 'Giới hạn tư vấn sức khỏe' : 'Health advice limits'}
-      </AppText>
+      <View style={styles.medicalHeader}>
+        <AppIcon name="spark" size={16} color={colors.primary[700]} decorative />
+        <AppText variant="bodyStrong" color={colors.primary[800]}>
+          {t(keys.MEDICAL_DISCLAIMER_TITLE)}
+        </AppText>
+      </View>
       <AppText variant="bodySmall" color={colors.text.secondary}>
-        {vi
-          ? 'AI không chẩn đoán bệnh, kê đơn hoặc thay thế chuyên gia y tế. Với triệu chứng khẩn cấp, hãy liên hệ cơ sở y tế hoặc dịch vụ cấp cứu.'
-          : 'AI does not diagnose illness, prescribe treatment, or replace a healthcare professional. For urgent symptoms, contact medical or emergency services.'}
+        {t(keys.MEDICAL_DISCLAIMER_BODY)}
       </AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.sm },
+  list: { gap: spacing.xs, marginTop: spacing.xs },
   notice: {
     gap: spacing.xs,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.status.warning,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     backgroundColor: colors.background.surface,
+  },
+  noticeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  warningBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accent.soft,
   },
   medical: {
     gap: spacing.xs,
     padding: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: colors.background.muted,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+  },
+  medicalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  medicalCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
+  medicalCompactText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

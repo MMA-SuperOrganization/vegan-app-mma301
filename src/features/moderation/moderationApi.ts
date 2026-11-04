@@ -1,34 +1,25 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
-import type {
-  CommunityPost,
-  ReportTarget,
-  UserReport,
-} from '@/features/community/types';
-export interface ModerationCase {
-  _id: string;
-  targetType: ReportTarget;
-  targetId: string;
-  status: UserReport['status'];
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  reportIds: string[];
-  assignedAdminId?: string;
-  resolution?: string;
-  actions?: Array<{ type: string; reason: string; at: string }>;
-}
-export interface PendingContent {
+import type { UserReport } from '@/features/community/types';
+import type { RecipeDetail } from '@/features/recipes/types';
+export interface RecipeReviewItem {
   _id: string;
   title: string;
-  type: 'recipe' | 'post' | 'video';
+  type: 'recipe';
   status: string;
-}
-export interface ReviewContent extends Omit<CommunityPost, 'content'> {
-  content?: string;
   description?: string;
-  summary?: string;
+  excerpt?: string;
+  coverImageUrl?: string;
+  coverMediaId?: string | null;
+  tags?: string[];
+  difficulty?: 'easy' | 'medium' | 'hard';
+  totalMinutes?: number;
+  totalTimeMinutes?: number;
+  createdAt?: string;
+}
+export interface ReviewContent extends RecipeDetail {
+  content?: string;
   transcript?: string;
-  ingredients?: Array<{ foodNameSnapshot: string; quantity: number; unit: string }>;
-  steps?: Array<{ order: number; instruction: string }>;
   playback?: { downloadUrl?: string; url?: string };
 }
 export const moderationApi = {
@@ -38,26 +29,20 @@ export const moderationApi = {
         apiClient.get('/admin/reports', { params: { page, limit: 100 } })
       )
     ),
-  cases: () =>
+  recipes: () =>
     collectPages((page) =>
-      unwrapApiPageRequest<ModerationCase>(() =>
-        apiClient.get('/admin/moderation-cases', { params: { page, limit: 100 } })
-      )
-    ),
-  pending: () =>
-    collectPages((page) =>
-      unwrapApiPageRequest<PendingContent>(() =>
+      unwrapApiPageRequest<RecipeReviewItem>(() =>
         apiClient.get('/admin/content/pending', {
-          params: { page, limit: 50, type: 'all' },
+          params: { page, limit: 50, type: 'recipe' },
         })
       )
     ),
-  content: (target: PendingContent) =>
+  content: (target: RecipeReviewItem) =>
     unwrapApiRequest<ReviewContent>(() =>
       apiClient.get('/' + target.type + 's/' + target._id)
     ),
   review: (
-    target: PendingContent,
+    target: RecipeReviewItem,
     version: number,
     reject: boolean,
     reason: string
@@ -78,38 +63,5 @@ export const moderationApi = {
   ) =>
     unwrapApiRequest<UserReport>(() =>
       apiClient.patch('/admin/reports/' + report._id, input)
-    ),
-  createCase: (report: UserReport, assignedAdminId: string) =>
-    unwrapApiRequest<ModerationCase>(() =>
-      apiClient.post('/admin/moderation-cases', {
-        targetType: report.targetType,
-        targetId: report.targetId,
-        reportIds: [report._id],
-        assignedAdminId,
-        priority: 'normal',
-      })
-    ),
-  updateCase: (
-    id: string,
-    input: {
-      status?: UserReport['status'];
-      resolution?: string;
-      priority?: ModerationCase['priority'];
-      assignedAdminId?: string;
-    }
-  ) =>
-    unwrapApiRequest<ModerationCase>(() =>
-      apiClient.patch('/admin/moderation-cases/' + id, input)
-    ),
-  visibility: (item: ModerationCase, hide: boolean, reason: string) =>
-    unwrapApiRequest(() =>
-      apiClient.post(
-        '/admin/moderation/' +
-          item.targetType +
-          '/' +
-          item.targetId +
-          (hide ? '/hide' : '/restore'),
-        { caseId: item._id, reason }
-      )
     ),
 };

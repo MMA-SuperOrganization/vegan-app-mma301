@@ -1,7 +1,13 @@
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import {
+  AppButton,
+  AppText,
+  CustomHeader,
+  ScreenWrapper,
+  appDialog,
+} from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
@@ -32,7 +38,7 @@ export function ViewHistoryScreen() {
       });
     else if (item.targetType === 'video')
       router.push({ pathname: '/community/video', params: { id: item.targetId } });
-    else router.push({ pathname: '/community/post', params: { id: item.targetId } });
+    else router.navigate({ pathname: '/community/post', params: { id: item.targetId } });
   };
   return (
     <ScreenWrapper
@@ -51,7 +57,7 @@ export function ViewHistoryScreen() {
         variant="outline"
         disabled={!history.data?.data.length || clear.isPending}
         onPress={() =>
-          Alert.alert(
+          appDialog.alert(
             vi ? 'Xóa lịch sử?' : 'Clear history?',
             vi ? 'Thao tác này không thể hoàn tác.' : 'This cannot be undone.',
             [

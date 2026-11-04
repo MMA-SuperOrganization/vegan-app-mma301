@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { AppInput } from '@/components';
+import { AppInput, DateInputField } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { getActivityOptions } from '../constants';
 import { useOnboardingStore } from '../onboardingStore';
-import { dateInputToIso, validateMeasurement } from '../validation';
+import {
+  dateInputToIso,
+  isStep1Complete,
+  validateMeasurement,
+} from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 import { SelectionField } from '../components/SelectionField';
@@ -18,8 +22,15 @@ export function NutritionProfileScreen() {
   const { t } = useTranslation();
   const activityOptions = getActivityOptions(t);
   const draft = useOnboardingStore((state) => state.draft);
+  const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const setDraft = useOnboardingStore((state) => state.setDraft);
   const [errors, setErrors] = useState<Record<string, string | null>>({});
+
+  useEffect(() => {
+    if (!isHydrating && !isStep1Complete(draft)) {
+      router.replace('/(onboarding)/diet-goals');
+    }
+  }, [isHydrating, draft, router]);
 
   const next = () => {
     const nextErrors = {
@@ -33,7 +44,9 @@ export function NutritionProfileScreen() {
         10,
         500
       ),
-      activityLevel: draft.activityLevel ? null : t('onboarding.validation.activity'),
+      activityLevel: draft.activityLevel
+        ? null
+        : t('onboarding.validation.activity'),
     };
     setErrors(nextErrors);
     if (!Object.values(nextErrors).some(Boolean))
@@ -55,12 +68,10 @@ export function NutritionProfileScreen() {
       onPrimary={next}
     >
       <View style={styles.fields}>
-        <AppInput
+        <DateInputField
           label={t('onboarding.birthDate')}
-          placeholder="DD/MM/YYYY"
           value={draft.dateOfBirth}
-          onChangeText={update('dateOfBirth')}
-          keyboardType="numbers-and-punctuation"
+          onChange={update('dateOfBirth')}
           error={errors.dateOfBirth}
         />
         <AppInput

@@ -10,7 +10,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { AppIcon } from '@/components';
-import { colors, fontFamily, radius, spacing } from '@/theme';
+import { colors, inputTypography, radius, spacing } from '@/theme';
 
 import type { SearchBarProps } from '../types';
 
@@ -37,13 +37,7 @@ export function SearchBar({
   const hasValue = value.length > 0;
 
   return (
-    <View
-      style={[
-        styles.container,
-        isFocused && styles.containerFocused,
-        style,
-      ]}
-    >
+    <View style={[styles.container, isFocused && styles.containerFocused, style]}>
       <TextInput
         ref={inputRef}
         value={value}
@@ -69,12 +63,7 @@ export function SearchBar({
           accessibilityLabel="Clear search input"
           style={styles.clearButton}
         >
-          <AppIcon
-            name="close"
-            size={14}
-            color={colors.text.secondary}
-            decorative
-          />
+          <AppIcon name="close" size={14} color={colors.text.secondary} decorative />
         </Pressable>
       ) : null}
 
@@ -109,13 +98,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   input: {
+    ...inputTypography,
     flex: 1,
-    fontFamily: fontFamily.regular,
     fontSize: 15,
     color: colors.text.primary,
     paddingVertical: Platform.OS === 'ios' ? 12 : 8,
     paddingHorizontal: 0,
-    includeFontPadding: false,
     textAlignVertical: 'center',
   },
   clearButton: {

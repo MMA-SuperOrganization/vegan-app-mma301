@@ -2,7 +2,13 @@ import { getUserErrorMessage } from '@/services/errors';
 import { contentHref } from '../contentNavigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { FlatList, StyleSheet, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import {
   AppButton,
@@ -14,10 +20,11 @@ import {
 } from '@/components';
 import { useProfileStore } from '@/features/profile/profileStore';
 import { useDebouncedValue } from '@/hooks';
-import { useTranslation, type TranslationKey } from '@/i18n';
-import { spacing } from '@/theme';
+import { useTranslation } from '@/i18n';
+import { spacing, webLayout } from '@/theme';
 
 import { ContentResultCard } from '../components/ContentResultCard';
+import { RecipeFilterSheet } from '../components/RecipeFilterSheet';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResultsFilterBar } from '../components/SearchResultsFilterBar';
 import {
@@ -32,23 +39,40 @@ import { useSearchResults } from '../hooks';
 import { normalizeSearchQuery } from '../searchState';
 import type { ContentCardData, ContentType } from '../types';
 
-const contentTypes: Array<{ value: ContentType | 'all'; labelKey: TranslationKey }> =
-  [
-    { value: 'all', labelKey: 'discover.filterAll' },
-    { value: 'recipe', labelKey: 'discover.typeRecipe' },
-    { value: 'food-item', labelKey: 'discover.typeFood' },
-    { value: 'post', labelKey: 'discover.typePost' },
-    { value: 'video', labelKey: 'discover.typeVideo' },
-  ];
-
 const parseType = (value?: string): ContentType | 'all' =>
   ['all', 'recipe', 'food-item', 'post', 'video'].includes(value ?? '')
     ? (value as ContentType | 'all')
     : 'all';
 
+const mixedTypeOrder: ContentType[] = ['recipe', 'post', 'food-item', 'video'];
+
+function mixContentTypes(items: ContentCardData[]) {
+  const buckets = new Map(
+    mixedTypeOrder.map((contentType) => [
+      contentType,
+      items.filter((item) => (item.type ?? 'recipe') === contentType),
+    ])
+  );
+  const mixed: ContentCardData[] = [];
+  let index = 0;
+
+  while (mixed.length < items.length) {
+    for (const contentType of mixedTypeOrder) {
+      const item = buckets.get(contentType)?.[index];
+      if (item) mixed.push(item);
+    }
+    index += 1;
+  }
+
+  return mixed;
+}
+
 export function SearchResultsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const desktop =
+    Platform.OS === 'web' && width >= webLayout.desktopBreakpoint;
   const params = useLocalSearchParams<RecipeFilterRouteParams>();
   const initialQuery = Array.isArray(params.q) ? params.q[0] : (params.q ?? '');
   const initialType = parseType(
@@ -57,6 +81,7 @@ export function SearchResultsScreen() {
   const [query, setQuery] = useState(initialQuery);
   const [submitted, setSubmitted] = useState(initialQuery);
   const [type, setType] = useState<ContentType | 'all'>(initialType);
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
   const debouncedQuery = useDebouncedValue(normalizeSearchQuery(query), 350);
   const filters = useMemo(() => parseRecipeFilters(params), [params]);
   const allergenIds =
@@ -66,7 +91,10 @@ export function SearchResultsScreen() {
     [allergenIds, filters, type]
   );
   const results = useSearchResults(submitted, type, apiFilters);
-  const content = results.data?.pages.flatMap((page) => page.data) ?? [];
+  const content =
+    results.data?.pages.flatMap((page) =>
+      type === 'all' ? mixContentTypes(page.data) : page.data
+    ) ?? [];
 
   useEffect(() => {
     setSubmitted(debouncedQuery);
@@ -79,18 +107,13 @@ export function SearchResultsScreen() {
     router.setParams({ q: next });
   };
 
-  const openFilters = () =>
-    router.push({
-      pathname: '/(discover)/filters',
-      params: { q: submitted, type, ...serializeRecipeFilters(filters) },
-    });
-
   const openItem = (item: ContentCardData) => {
-    router.push(contentHref(item));
+    router.navigate(contentHref(item));
   };
 
   return (
     <ScreenWrapper
+      webMaxWidth={webLayout.catalogMaxWidth}
       header={
         <CustomHeader
           title={t('discover.resultsTitle')}
@@ -100,7 +123,10 @@ export function SearchResultsScreen() {
       }
     >
       <FlatList
+        key={`search-results-${desktop ? 2 : 1}`}
         data={content}
+        numColumns={desktop ? 2 : 1}
+        columnWrapperStyle={desktop ? styles.resultsRow : undefined}
         keyExtractor={(item) => `${item.type ?? 'recipe'}-${item._id}`}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, !content.length && styles.growList]}
@@ -123,7 +149,7 @@ export function SearchResultsScreen() {
                 });
               }}
               hasActiveFilters={hasActiveRecipeFilters(filters)}
-              onOpenFilters={openFilters}
+              onOpenFilters={() => setFilterSheetVisible(true)}
             />
           </View>
         }
@@ -169,8 +195,27 @@ export function SearchResultsScreen() {
           ) : null
         }
         renderItem={({ item }) => (
-          <ContentResultCard item={item} onPress={() => openItem(item)} />
+          <View style={desktop ? styles.resultCell : undefined}>
+            <ContentResultCard item={item} onPress={() => openItem(item)} />
+          </View>
         )}
+      />
+      <RecipeFilterSheet
+        visible={filterSheetVisible}
+        contentType={type}
+        initialFilters={filters}
+        onClose={() => setFilterSheetVisible(false)}
+        onApply={(nextFilters) => {
+          setFilterSheetVisible(false);
+          router.replace({
+            pathname: '/(discover)/search-results',
+            params: {
+              q: submitted,
+              type,
+              ...serializeRecipeFilters(nextFilters),
+            },
+          });
+        }}
       />
     </ScreenWrapper>
   );
@@ -187,4 +232,6 @@ const styles = StyleSheet.create({
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   separator: { height: spacing.md },
   footer: { paddingTop: spacing.xl },
+  resultsRow: { gap: spacing.lg },
+  resultCell: { flex: 1, minWidth: 0 },
 });

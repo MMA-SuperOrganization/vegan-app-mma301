@@ -48,6 +48,98 @@ export const assetRegistry = {
     height: 24,
     xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<circle cx="11" cy="11" r="7" stroke="#16583D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M20 20L16.2 16.2" stroke="#16583D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n\n',
   },
+  plus: {
+    id: 'core:plus', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5V19M5 12H19" stroke="#16583D" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  },
+  bell: {
+    id: 'core:bell', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  filter: {
+    id: 'core:filter', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M7 12H17M10 18H14" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  edit: {
+    id: 'core:edit', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 20H8L19 9C20.1 7.9 20.1 6.1 19 5C17.9 3.9 16.1 3.9 15 5L4 16V20Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/><path d="M13.5 6.5L17.5 10.5" stroke="#16583D" stroke-width="2"/></svg>',
+  },
+  trash: {
+    id: 'core:trash', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7H20M9 7V4H15V7M6 7L7 20H17L18 7M10 11V16M14 11V16" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  share: {
+    id: 'core:share', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="5" r="2.5" stroke="#16583D" stroke-width="2"/><circle cx="6" cy="12" r="2.5" stroke="#16583D" stroke-width="2"/><circle cx="18" cy="19" r="2.5" stroke="#16583D" stroke-width="2"/><path d="M8.2 10.8L15.8 6.2M8.2 13.2L15.8 17.8" stroke="#16583D" stroke-width="2"/></svg>',
+  },
+  'thumb-up': {
+    id: 'core:thumb-up', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 10V21H4V10H7ZM10 21H17.5C18.4 21 19.2 20.4 19.4 19.5L21 12.5C21.3 11.2 20.3 10 19 10H14L15 5C15.2 3.8 14.3 3 13.5 3L8 10V19C8 20.1 8.9 21 10 21Z" stroke="#16583D" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  },
+  heart: {
+    id: 'core:heart', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.8 5.8C18.7 3.7 15.3 3.7 13.2 5.8L12 7L10.8 5.8C8.7 3.7 5.3 3.7 3.2 5.8C1.1 7.9 1.1 11.3 3.2 13.4L12 22L20.8 13.4C22.9 11.3 22.9 7.9 20.8 5.8Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/></svg>',
+  },
+  'heart-filled': {
+    id: 'core:heart-filled', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.8 5.8C18.7 3.7 15.3 3.7 13.2 5.8L12 7L10.8 5.8C8.7 3.7 5.3 3.7 3.2 5.8C1.1 7.9 1.1 11.3 3.2 13.4L12 22L20.8 13.4C22.9 11.3 22.9 7.9 20.8 5.8Z" fill="#16583D"/></svg>',
+  },
+  lightbulb: {
+    id: 'core:lightbulb', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18H15M9.5 21H14.5M8.5 15.5C6.9 14.4 6 12.6 6 10.5C6 7.2 8.7 4.5 12 4.5C15.3 4.5 18 7.2 18 10.5C18 12.6 17.1 14.4 15.5 15.5C15 15.9 15 16.4 15 17H9C9 16.4 9 15.9 8.5 15.5Z" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  flag: {
+    id: 'core:flag', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V4M5 5H16L14 9L16 13H5" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  comment: {
+    id: 'core:comment', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5H19C20.1 5 21 5.9 21 7V15C21 16.1 20.1 17 19 17H10L5 21V17C3.9 17 3 16.1 3 15V7C3 5.9 3.9 5 5 5Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/></svg>',
+  },
+  send: {
+    id: 'core:send', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  refresh: {
+    id: 'core:refresh', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7V3L17.5 5.5C16 4 14 3 11.5 3C6.8 3 3 6.8 3 11.5C3 16.2 6.8 20 11.5 20C15.5 20 18.8 17.3 19.7 13.5" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  save: {
+    id: 'core:save', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4H17L20 7V20H4V4Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/><path d="M8 4V9H16V4M8 20V14H16V20" stroke="#16583D" stroke-width="2"/></svg>',
+  },
+  bookmark: {
+    id: 'core:bookmark', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21L12 16L5 21V5C5 3.9 5.9 3 7 3H17C18.1 3 19 3.9 19 5V21Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  'bookmark-filled': {
+    id: 'core:bookmark-filled', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21L12 16L5 21V5C5 3.9 5.9 3 7 3H17C18.1 3 19 3.9 19 5V21Z" fill="#16583D" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  user: {
+    id: 'core:user', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" stroke="#16583D" stroke-width="2"/><path d="M4 21C4 16.6 7.6 13 12 13C16.4 13 20 16.6 20 21" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  reply: {
+    id: 'core:reply', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 8L4 12L9 16V13C15 13 18 15 20 19C19.5 12 16 9 9 9V8Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  attach: {
+    id: 'core:attach', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21.44 11.05L12.25 20.24C10.69 21.8 8.16 21.8 6.59 20.24C5.03 18.68 5.03 16.15 6.59 14.59L15.78 5.4C16.82 4.36 18.51 4.36 19.55 5.4C20.59 6.44 20.59 8.13 19.55 9.17L10.36 18.36C9.84 18.88 9 18.88 8.48 18.36C7.96 17.84 7.96 17 8.48 16.48L16.96 8" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  history: {
+    id: 'core:history', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 8V12L15 15M21 12A9 9 0 1 1 18.36 5.64L21 3V9H15" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  image: {
+    id: 'core:image', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="#16583D" stroke-width="2"/><circle cx="8.5" cy="9" r="1.5" stroke="#16583D" stroke-width="2"/><path d="M4 18L9 13L12 16L15 12L20 18" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/></svg>',
+  },
+  check: {
+    id: 'core:check', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12L10 17L20 7" stroke="#16583D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
   close: {
     id: 'core:close',
     width: 20,
@@ -59,6 +151,34 @@ export const assetRegistry = {
     width: 20,
     height: 20,
     xml: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M4.5 4H15.5C16.3 4 17 4.7 17 5.5V15.5C17 16.3 16.3 17 15.5 17H4.5C3.7 17 3 16.3 3 15.5V5.5C3 4.7 3.7 4 4.5 4Z" stroke="#16583D" stroke-width="1.8" stroke-linejoin="round"/>\n<path d="M3 8H17M7 2.5V5.5M13 2.5V5.5" stroke="#16583D" stroke-width="1.8" stroke-linecap="round"/>\n</svg>\n',
+  },
+  clock: {
+    id: 'core:clock', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#16583D" stroke-width="2"/><path d="M12 7V12L15.5 14" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  utensils: {
+    id: 'core:utensils', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 3V10M3.5 3V7.5C3.5 9 4.6 10 6 10C7.4 10 8.5 9 8.5 7.5V3M6 10V21M15 3V21M15 3C18.2 4.2 20 7.1 20 10.5H15" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  },
+  scale: {
+    id: 'core:scale', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="17" rx="4" stroke="#16583D" stroke-width="2"/><path d="M8 10C8.7 8.5 10.1 7.5 12 7.5C13.9 7.5 15.3 8.5 16 10M12 8V11" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  water: {
+    id: 'core:water', width: 24, height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C12 3 5.5 10 5.5 14.5C5.5 18.1 8.4 21 12 21C15.6 21 18.5 18.1 18.5 14.5C18.5 10 12 3 12 3Z" stroke="#16583D" stroke-width="2" stroke-linejoin="round"/><path d="M9 15.5C9.4 17 10.5 17.8 12 18" stroke="#16583D" stroke-width="2" stroke-linecap="round"/></svg>',
+  },
+  eye: {
+    id: 'core:eye',
+    width: 24,
+    height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n<circle cx="12" cy="12" r="3" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n',
+  },
+  'eye-off': {
+    id: 'core:eye-off',
+    width: 24,
+    height: 24,
+    xml: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">\n<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12A18.45 18.45 0 0 1 6.06 6.06M9.9 4.24A9.12 9.12 0 0 1 12 4C19 4 23 12 23 12A18.5 18.5 0 0 1 20.84 15.19M14.12 14.12A3 3 0 1 1 9.88 9.88" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n<path d="M1 1L23 23" stroke="#16583D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n',
   },
 } as const;
 export type AssetName = keyof typeof assetRegistry;

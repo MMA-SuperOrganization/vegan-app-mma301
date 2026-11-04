@@ -58,12 +58,12 @@ jobs:
       - run: npm run test:ui
       - name: Make Gradle wrapper executable
         run: chmod +x android/gradlew
-      - name: Build standalone release APK
+      - name: Build standalone internal APK
         working-directory: android
         shell: bash
         run: |
           for attempt in 1 2 3; do
-            if ./gradlew assembleRelease --no-daemon --stacktrace; then
+            if ./gradlew assembleInternal --no-daemon --stacktrace; then
               exit 0
             fi
             if [[ "$attempt" -eq 3 ]]; then
@@ -76,7 +76,7 @@ jobs:
           done
       - name: Prepare artifact
         shell: bash
-        run: cp android/app/build/outputs/apk/release/app-release.apk "VEGETA-develop-${GITHUB_RUN_NUMBER}.apk"
+        run: cp android/app/build/outputs/apk/internal/app-internal.apk "VEGETA-develop-${GITHUB_RUN_NUMBER}.apk"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

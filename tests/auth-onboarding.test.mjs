@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import {
   validateEmail,
   validateLogin,
@@ -7,6 +8,10 @@ import {
 } from '../src/features/auth/validations/loginValidation.ts';
 import {
   dateInputToIso,
+  formatDateInput,
+  isStep1Complete,
+  isStep2Complete,
+  isStep3Complete,
   parseDecimal,
   toggleAllergenSelection,
   validateMeasurement,
@@ -21,6 +26,48 @@ import {
   toAppErrorDetails,
 } from '../src/services/errors/appError.ts';
 import { normalizeFirebaseSession } from '../src/services/auth/firebaseSession.ts';
+import { isUnusableSessionCredential } from '../src/features/auth/services/sessionRecovery.ts';
+
+test('native Google sign-in ships in the main bundle instead of a lazy Metro chunk', async () => {
+  const hookSource = await readFile(
+    new URL('../src/features/auth/hooks/useGoogleSignIn.ts', import.meta.url),
+    'utf8'
+  );
+  const nativeAdapterSource = await readFile(
+    new URL(
+      '../src/features/auth/services/nativeGoogleSignIn.native.ts',
+      import.meta.url
+    ),
+    'utf8'
+  );
+
+  assert.doesNotMatch(hookSource, /import\(['"]@react-native-google-signin/);
+  assert.match(
+    nativeAdapterSource,
+    /from ['"]@react-native-google-signin\/google-signin['"]/
+  );
+});
+
+test('password and Google sign-in buttons keep independent loading states', async () => {
+  const [loginScreenSource, googleHookSource] = await Promise.all([
+    readFile(
+      new URL('../src/features/auth/screens/LoginScreen.tsx', import.meta.url),
+      'utf8'
+    ),
+    readFile(
+      new URL('../src/features/auth/hooks/useGoogleSignIn.ts', import.meta.url),
+      'utf8'
+    ),
+  ]);
+
+  assert.match(loginScreenSource, /loading=\{isPasswordLoginLoading\}/);
+  assert.doesNotMatch(
+    loginScreenSource,
+    /const isLoading = useAuthStore\(\(state\) => state\.isLoading\)/
+  );
+  assert.match(googleHookSource, /isLoading: isPrompting/);
+  assert.doesNotMatch(googleHookSource, /storeLoading/);
+});
 
 test('auth errors retain safe diagnostic context for mobile troubleshooting', () => {
   const details = toAppErrorDetails(
@@ -68,6 +115,29 @@ test('diagnostic logging does not trigger the Expo error overlay', (t) => {
   assert.equal(calls[0][0], '[VEGETA_ERROR]');
   assert.equal(calls[0][1].code, 'INVALID_LOGIN_CREDENTIALS');
   assert.equal(calls[0][1].message, 'Không thể đăng nhập.');
+});
+
+test('session restoration treats expired credentials as signed out without hiding transient failures', async () => {
+  for (const code of [
+    'INVALID_GRANT',
+    'INVALID_REFRESH_TOKEN',
+    'TOKEN_EXPIRED',
+    'USER_DISABLED',
+    'USER_NOT_FOUND',
+  ]) {
+    assert.equal(isUnusableSessionCredential({ code }), true);
+  }
+  assert.equal(isUnusableSessionCredential({ status: 401 }), true);
+  assert.equal(isUnusableSessionCredential({ code: 'NETWORK_ERROR' }), false);
+
+  const storeSource = await readFile(
+    new URL('../src/features/auth/store/authStore.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(
+    storeSource,
+    /restoreSession: async \(\) => \{[\s\S]*?catch \(error\)[\s\S]*?SESSION_RESTORE_FAILED/
+  );
 });
 
 test('auth validation rejects empty and malformed credentials', () => {
@@ -135,6 +205,17 @@ test('date of birth parser rejects invalid and future calendar dates', () => {
   assert.equal(dateInputToIso('01/01/2999'), null);
 });
 
+test('date of birth input blocks letters, inserts slashes and supports one-digit manual slashes', () => {
+  assert.equal(formatDateInput('2a'), '2');
+  assert.equal(formatDateInput('28'), '28/');
+  assert.equal(formatDateInput('2808'), '28/08/');
+  assert.equal(formatDateInput('28/08', '28/0'), '28/08/');
+  assert.equal(formatDateInput('28082002'), '28/08/2002');
+  assert.equal(formatDateInput('1/'), '01/');
+  assert.equal(formatDateInput('1/8/'), '01/08/');
+  assert.equal(formatDateInput('28', '28/'), '28');
+});
+
 test('allergen selection is multi-select and none is represented by an empty list', () => {
   const selected = toggleAllergenSelection([], 'allergen-a');
   assert.deepEqual(selected, ['allergen-a']);
@@ -182,3 +263,28 @@ test('release builds retain diagnostics without an error overlay', (t) => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0][1].message, 'private detail');
 });
+
+test('onboarding step completion guards enforce sequential progress', () => {
+  const empty = { ...initialOnboardingDraft };
+  assert.equal(isStep1Complete(empty), false);
+  assert.equal(isStep2Complete(empty), false);
+  assert.equal(isStep3Complete(empty), false);
+
+  const step1 = { ...empty, dietType: 'vegan', goal: 'maintain' };
+  assert.equal(isStep1Complete(step1), true);
+  assert.equal(isStep2Complete(step1), false);
+
+  const step2 = {
+    ...step1,
+    dateOfBirth: '15/08/2000',
+    heightCm: '175',
+    currentWeightKg: '68',
+    activityLevel: 'moderate',
+  };
+  assert.equal(isStep2Complete(step2), true);
+  assert.equal(isStep3Complete(step2), false);
+
+  const step3 = { ...step2, allergyAnswered: true, allergenIds: [] };
+  assert.equal(isStep3Complete(step3), true);
+});
+

@@ -1,4 +1,5 @@
 import { translate } from '../../i18n/translator.ts';
+export { formatDateInput } from '../../utils/dateInput.ts';
 
 export function parseDecimal(value: string): number | null {
   const normalized = value.trim().replace(',', '.');
@@ -15,7 +16,9 @@ export function validateMeasurement(
 ) {
   const parsed = parseDecimal(value);
   if (parsed === null)
-    return translate('onboarding.validation.required', { label: label.toLowerCase() });
+    return translate('onboarding.validation.required', {
+      label: label.toLowerCase(),
+    });
   if (parsed < min || parsed > max)
     return translate('onboarding.validation.range', { label, min, max });
   return null;
@@ -38,3 +41,26 @@ export function toggleAllergenSelection(selectedIds: string[], id: string) {
     ? selectedIds.filter((selectedId) => selectedId !== id)
     : [...selectedIds, id];
 }
+
+export function isStep1Complete(draft: { dietType: unknown; goal: unknown }): boolean {
+  return Boolean(draft.dietType && draft.goal);
+}
+
+export function isStep2Complete(draft: {
+  dateOfBirth: string;
+  heightCm: string;
+  currentWeightKg: string;
+  activityLevel: unknown;
+}): boolean {
+  return Boolean(
+    dateInputToIso(draft.dateOfBirth) &&
+      parseDecimal(draft.heightCm) !== null &&
+      parseDecimal(draft.currentWeightKg) !== null &&
+      draft.activityLevel
+  );
+}
+
+export function isStep3Complete(draft: { allergyAnswered: boolean }): boolean {
+  return draft.allergyAnswered === true;
+}
+

@@ -21,6 +21,8 @@ import {
   child,
   containerStyle,
   interactionTokens,
+  inputTypography,
+  type AssetName,
   variantNode,
 } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -39,6 +41,9 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   onSelect?: () => void;
+  trailingIcon?: AssetName;
+  onTrailingPress?: () => void;
+  trailingAccessibilityLabel?: string;
   preview?: boolean;
   preset?: ComponentPreset;
 }
@@ -59,6 +64,9 @@ export function Input({
   preview = false,
   preset = 'master',
   onSelect,
+  trailingIcon,
+  onTrailingPress,
+  trailingAccessibilityLabel,
   onFocus,
   onBlur,
   autoCapitalize = 'none',
@@ -136,6 +144,7 @@ export function Input({
           <AppText
             style={[
               valueNode.style,
+              inputTypography,
               interactionTokens.flexibleText,
               { flex: 1 },
               inputStyle,
@@ -181,31 +190,74 @@ export function Input({
               onBlur?.(e);
             }}
           />
-          {icon &&
-            (kind === 'password' ? (
+          {(trailingIcon || icon || kind === 'password') &&
+            (trailingIcon && onTrailingPress ? (
               <Pressable
+                testID={props.testID ? `${props.testID}-trailing-action` : undefined}
+                disabled={blocked}
+                onPress={onTrailingPress}
+                hitSlop={interactionTokens.iconHitSlop}
+                style={styles.trailingAction}
+                accessibilityRole="button"
+                accessibilityLabel={trailingAccessibilityLabel}
+                accessibilityState={{ disabled: blocked }}
+                aria-disabled={blocked}
+              >
+                <AppIcon
+                  name={trailingIcon}
+                  size={22}
+                  color={colors.primary[700]}
+                  decorative
+                />
+              </Pressable>
+            ) : kind === 'password' ? (
+              <Pressable
+                testID={props.testID ? `${props.testID}-toggle` : 'password-toggle'}
                 disabled={blocked}
                 onPress={visibility.toggle}
                 hitSlop={interactionTokens.iconHitSlop}
                 accessibilityRole="button"
-                accessibilityLabel={visible ? t('common.hidePassword') : t('common.showPassword')}
+                accessibilityLabel={
+                  visible ? t('common.hidePassword') : t('common.showPassword')
+                }
                 accessibilityState={{ disabled: blocked, selected: visible }}
                 aria-pressed={visible}
                 aria-disabled={blocked}
               >
-                <AppText accessible={false} style={icon.style}>
-                  {icon.text}
-                </AppText>
+                <AppIcon
+                  name={visible ? 'eye-off' : 'eye'}
+                  size={20}
+                  color={
+                    typeof icon?.style?.color === 'string'
+                      ? icon.style.color
+                      : colors.text.secondary
+                  }
+                  decorative
+                />
               </Pressable>
             ) : kind === 'search' ? (
-              <AppIcon name="search" size={22} color={colors.primary[700]} decorative />
-            ) : (
+              <AppIcon
+                name="search"
+                size={22}
+                color={colors.primary[700]}
+                decorative
+              />
+            ) : icon ? (
               <AppText accessible={false} style={icon.style}>
                 {icon.text}
               </AppText>
-            ))}
+            ) : null)}
         </View>
       )}
     </FormField>
   );
 }
+
+const styles = {
+  trailingAction: {
+    minWidth: interactionTokens.minimumTouch,
+    minHeight: interactionTokens.minimumTouch,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+};

@@ -29,7 +29,11 @@ export function ForgotPasswordScreen() {
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+    <ScreenWrapper
+      scrollable
+      webMaxWidth={560}
+      contentContainerStyle={styles.screen}
+    >
       <View>
         <AuthHeader
           title={t('auth.recoverTitle')}

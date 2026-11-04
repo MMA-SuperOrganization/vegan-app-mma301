@@ -23,7 +23,7 @@ export function AiMarkdownMessage({
       if (!href) return true;
 
       onOpenContent?.();
-      router.push(href);
+      router.navigate(href);
       return false;
     },
     [onOpenContent, router]

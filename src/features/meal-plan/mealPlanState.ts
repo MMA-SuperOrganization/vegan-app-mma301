@@ -1,6 +1,7 @@
 import type { MealType } from '@/features/tracking/types';
 import type { NutritionValues } from '@/features/tracking/types';
-import type { MealPlan, PlannedMeal } from './types';
+import type { NutritionFacts } from '@/features/recipes/types';
+import type { MealPlan, PlannedMeal, UpdateMealInput } from './types';
 
 const DAY_MS = 86_400_000;
 
@@ -80,7 +81,14 @@ export function normalizeMealPlan(plan: MealPlan): MealPlan {
   return {
     ...plan,
     weekStartDate: plan.weekStartDate.slice(0, 10),
-    days: plan.days.map((day) => ({ ...day, date: day.date.slice(0, 10) })),
+    days: plan.days.map((day) => ({
+      ...day,
+      date: day.date.slice(0, 10),
+      meals: day.meals.map((meal) => ({
+        ...meal,
+        servings: Math.min(100, Math.max(1, Math.round(meal.servings))),
+      })),
+    })),
   };
 }
 
@@ -129,6 +137,79 @@ export function plannedNutrition(meals: PlannedMeal[]): NutritionValues {
   );
 }
 
+export function completeNutritionSnapshot(
+  nutrition: NutritionFacts | undefined
+): Required<NutritionFacts> {
+  return {
+    caloriesKcal: nutrition?.caloriesKcal ?? 0,
+    proteinG: nutrition?.proteinG ?? 0,
+    carbsG: nutrition?.carbsG ?? 0,
+    fatG: nutrition?.fatG ?? 0,
+    fiberG: nutrition?.fiberG ?? 0,
+    sugarG: nutrition?.sugarG ?? 0,
+    sodiumMg: nutrition?.sodiumMg ?? 0,
+    calciumMg: nutrition?.calciumMg ?? 0,
+    ironMg: nutrition?.ironMg ?? 0,
+    vitaminB12Mcg: nutrition?.vitaminB12Mcg ?? 0,
+    vitaminDMcg: nutrition?.vitaminDMcg ?? 0,
+  };
+}
+
 export function nextServingCount(current: number, delta: number) {
-  return Math.min(100, Math.max(0.5, Math.round((current + delta) * 2) / 2));
+  return Math.min(100, Math.max(1, Math.round(current) + Math.sign(delta)));
+}
+
+export function updatePlannedMeal(
+  plan: MealPlan,
+  mealId: string,
+  input: UpdateMealInput,
+  optimisticMeal?: PlannedMeal
+): MealPlan {
+  return {
+    ...plan,
+    days: plan.days.map((day) => ({
+      ...day,
+      meals: day.meals.map((meal) =>
+        meal.mealId === mealId
+          ? optimisticMeal ?? { ...meal, ...input }
+          : meal
+      ),
+    })),
+  };
+}
+
+export function removePlannedMeal(plan: MealPlan, mealId: string): MealPlan {
+  return {
+    ...plan,
+    days: plan.days.map((day) => ({
+      ...day,
+      meals: day.meals.filter((meal) => meal.mealId !== mealId),
+    })),
+  };
+}
+
+export function addPlannedMeal(
+  plan: MealPlan,
+  date: string,
+  meal: PlannedMeal
+): MealPlan {
+  const existingDay = plan.days.some((day) => day.date === date);
+  return {
+    ...plan,
+    days: existingDay
+      ? plan.days.map((day) =>
+          day.date === date
+            ? { ...day, meals: [...day.meals, meal] }
+            : day
+        )
+      : [...plan.days, { date, meals: [meal] }].sort((left, right) =>
+          left.date.localeCompare(right.date)
+        ),
+  };
+}
+
+/** The API names new plans "Weekly meal plan"; show that default in the app language. */
+export const DEFAULT_MEAL_PLAN_TITLE = 'Weekly meal plan';
+export function mealPlanTitle(title: string, defaultLabel: string) {
+  return title.trim() === DEFAULT_MEAL_PLAN_TITLE ? defaultLabel : title;
 }

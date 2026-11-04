@@ -1,12 +1,29 @@
+import type {
+  RelatedFoodItemSummary,
+  RelatedRecipeSummary,
+} from '@/features/recipes/types';
+
+export interface PostAuthorSummary {
+  userId: string;
+  displayName?: string;
+  avatarUrl?: string;
+}
+
 export interface CommunityPost {
   _id: string;
   title: string;
   content: string;
   authorId: string;
+  author?: PostAuthorSummary | null;
+  createdAt?: string;
+  publishedAt?: string;
   mediaIds?: string[];
   categoryIds?: string[];
   tags?: string[];
+  foodItemIds?: string[];
   recipeId?: string | null;
+  relatedRecipe?: RelatedRecipeSummary | null;
+  relatedFoodItems?: RelatedFoodItemSummary[];
   visibility?: 'public' | 'private';
   media?: Array<{
     _id?: string;
@@ -33,6 +50,8 @@ export interface PostComment {
   authorId: string;
   version: number;
   parentCommentId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export interface CommunityVideo {
   _id: string;
@@ -85,4 +104,5 @@ export interface UserReport {
   resolution?: string;
   description?: string;
   assignedAdminId?: string;
+  createdAt?: string;
 }

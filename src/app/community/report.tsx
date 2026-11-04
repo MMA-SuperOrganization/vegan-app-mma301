@@ -1,1 +1,1 @@
-export { ReportsScreen as default } from '@/features/community/screens/ReportsScreen';
+export { ReportFormScreen as default } from '@/features/community/screens/ReportFormScreen';

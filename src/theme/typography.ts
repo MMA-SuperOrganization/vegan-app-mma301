@@ -11,6 +11,12 @@ export const fontFamily = {
   bold: fontNames.Bold,
 } as const;
 
+/** Shared baseline for every native TextInput so it never falls back to the system font. */
+export const inputTypography = {
+  fontFamily: fontFamily.regular,
+  includeFontPadding: false,
+} satisfies TextStyle;
+
 export const typography = {
   display: {
     fontFamily: fontFamily.bold,

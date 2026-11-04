@@ -1,5 +1,4 @@
 import type { GroceryItem, GroceryList } from './types';
-import { addDays, parseDayMonthYear } from '../tracking/trackingState.ts';
 
 export interface GroceryGroup {
   category: string;
@@ -29,6 +28,16 @@ export function groceryProgress(list: Pick<GroceryList, 'items'>) {
   };
 }
 
+export function groceryTransferSummary(items: GroceryItem[]) {
+  const checked = items.filter((item) => item.checked);
+  return {
+    eligible: checked.filter((item) => item.foodItemId || item.personalIngredientId),
+    skipped: checked.filter(
+      (item) => !item.foodItemId && !item.personalIngredientId
+    ),
+  };
+}
+
 export function parseGroceryQuantity(value: string) {
   const normalized = value.trim().replace(',', '.');
   if (!/^(?:\d+\.?\d*|\.\d+)$/.test(normalized)) return null;
@@ -50,15 +59,4 @@ export function updateItemChecked(
       item.itemId === itemId ? { ...item, checked } : item
     ),
   };
-}
-export function groceryDateRange(
-  fromText: string,
-  toText: string,
-  weekStart: string
-) {
-  const from = parseDayMonthYear(fromText);
-  const to = parseDayMonthYear(toText);
-  if (!from || !to || from > to || from < weekStart || to > addDays(weekStart, 6))
-    return null;
-  return { from, to };
 }

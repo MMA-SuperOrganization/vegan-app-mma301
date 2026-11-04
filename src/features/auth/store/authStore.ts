@@ -4,6 +4,7 @@ import {
   logAppError,
   toAppErrorDetails,
 } from '@/services/errors';
+import { onAccountBlocked } from '@/services/api';
 import { authApi } from '../services/authApi';
 import type { AuthState, User } from '../types/auth.types';
 import { translate } from '@/i18n';
@@ -142,14 +143,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  handleBlockedAccount: async (code) => {
+    if (!get().isAuthenticated) return;
+    // Sign out locally so the login screen explains why access stopped.
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: captureError(
+        { code, status: 403 },
+        'auth.account_blocked',
+        translate('error.accountInactive'),
+        code
+      ),
+    });
+    await authApi.clearLocalSession().catch(() => undefined);
+  },
+
   restoreSession: async () => {
-    set({ isRestoringSession: true });
+    set({ isRestoringSession: true, error: null });
     try {
       const result = await authApi.restoreSession();
       set({
         token: result?.token ?? null,
         user: result?.user ?? null,
         isAuthenticated: !!result,
+      });
+    } catch (error) {
+      set({
+        token: null,
+        user: null,
+        isAuthenticated: false,
+        error: captureError(
+          error,
+          'auth.restore_session',
+          translate('error.unexpected'),
+          'SESSION_RESTORE_FAILED'
+        ),
       });
     } finally {
       set({ isRestoringSession: false });
@@ -172,3 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }),
   clearError: () => set({ error: null }),
 }));
+
+onAccountBlocked((code) => {
+  void useAuthStore.getState().handleBlockedAccount(code);
+});

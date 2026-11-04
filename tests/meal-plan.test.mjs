@@ -1,17 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  PLANNED_MEAL_TYPES,
   addCalendarDays,
+  addPlannedMeal,
+  completeNutritionSnapshot,
   groupMealsByType,
   nextServingCount,
   plannedCalories,
   plannedNutrition,
+  mealsForDate,
   monthStart,
+  normalizeMealPlan,
   relativeWeekOffset,
+  removePlannedMeal,
   selectEditablePlan,
   shiftWeekSelection,
   shiftMonth,
   startOfWeek,
+  toIsoDate,
+  updatePlannedMeal,
   weekDates,
   weeksIntersectingMonth,
 } from '../src/features/meal-plan/mealPlanState.ts';
@@ -34,6 +42,51 @@ const meal = (overrides = {}) => ({
     },
   },
   ...overrides,
+});
+
+test('optimistic meal edits update nutrition inputs without mutating cached plans', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-10-26',
+    status: 'active',
+    version: 1,
+    days: [{ date: '2026-11-01', meals: [meal()] }],
+  };
+  const increased = updatePlannedMeal(plan, 'meal-1', { servings: 2 });
+  assert.equal(increased.days[0].meals[0].servings, 2);
+  assert.equal(plan.days[0].meals[0].servings, 1);
+  const logged = updatePlannedMeal(increased, 'meal-1', { completed: true });
+  assert.equal(logged.days[0].meals[0].completed, true);
+  assert.equal(increased.days[0].meals[0].completed, false);
+
+  const added = addPlannedMeal(
+    logged,
+    '2026-11-01',
+    meal({ mealId: 'meal-2', type: 'dinner' })
+  );
+  assert.equal(added.days[0].meals.length, 2);
+  const removed = removePlannedMeal(added, 'meal-1');
+  assert.deepEqual(
+    removed.days[0].meals.map((entry) => entry.mealId),
+    ['meal-2']
+  );
+});
+
+test('optimistic recipe snapshots fill absent nutrient values safely', () => {
+  assert.deepEqual(completeNutritionSnapshot({ caloriesKcal: 250, proteinG: 12 }), {
+    caloriesKcal: 250,
+    proteinG: 12,
+    carbsG: 0,
+    fatG: 0,
+    fiberG: 0,
+    sugarG: 0,
+    sodiumMg: 0,
+    calciumMg: 0,
+    ironMg: 0,
+    vitaminB12Mcg: 0,
+    vitaminDMcg: 0,
+  });
 });
 
 test('week picker lists every week intersecting a month and navigates months', () => {
@@ -101,7 +154,12 @@ test('meal-plan selection prefers the active editable plan and normalizes dates'
       title: 'Active',
       weekStartDate: '2026-10-12T00:00:00.000Z',
       status: 'active',
-      days: [{ date: '2026-10-13T00:00:00.000Z', meals: [] }],
+      days: [
+        {
+          date: '2026-10-13T00:00:00.000Z',
+          meals: [meal({ servings: 1.5 })],
+        },
+      ],
       version: 1,
     },
   ];
@@ -109,23 +167,88 @@ test('meal-plan selection prefers the active editable plan and normalizes dates'
   assert.equal(selected._id, 'active');
   assert.equal(selected.weekStartDate, '2026-10-12');
   assert.equal(selected.days[0].date, '2026-10-13');
+  assert.equal(selected.days[0].meals[0].servings, 2);
 });
 
 test('meal groups, calories and serving steps follow the UI rules', () => {
-  const meals = [meal(), meal({ mealId: 'meal-2', type: 'dinner', servings: 1.5 })];
+  const meals = [meal(), meal({ mealId: 'meal-2', type: 'dinner', servings: 2 })];
   const groups = groupMealsByType(meals);
   assert.equal(groups.breakfast.length, 1);
   assert.equal(groups.lunch.length, 0);
   assert.equal(groups.dinner.length, 1);
-  assert.equal(plannedCalories(meals), 1050);
+  assert.equal(plannedCalories(meals), 1260);
   assert.deepEqual(plannedNutrition(meals), {
-    caloriesKcal: 1050,
-    proteinG: 60,
-    carbsG: 125,
-    fatG: 30,
-    fiberG: 20,
+    caloriesKcal: 1260,
+    proteinG: 72,
+    carbsG: 150,
+    fatG: 36,
+    fiberG: 24,
   });
-  assert.equal(nextServingCount(1, 0.5), 1.5);
-  assert.equal(nextServingCount(0.5, -0.5), 0.5);
-  assert.equal(nextServingCount(100, 0.5), 100);
+  assert.equal(nextServingCount(1, 1), 2);
+  assert.equal(nextServingCount(1, -1), 1);
+  assert.equal(nextServingCount(100, 1), 100);
+});
+
+test('ISO dates use the local calendar day with zero padding', () => {
+  assert.equal(toIsoDate(new Date(2026, 0, 5, 23, 59)), '2026-01-05');
+  assert.equal(toIsoDate(new Date(2026, 10, 30, 0, 0)), '2026-11-30');
+  assert.equal(toIsoDate(new Date(2024, 1, 29, 12, 0)), '2024-02-29');
+});
+
+test('planned meal types are the three main meals in screen order', () => {
+  assert.deepEqual(PLANNED_MEAL_TYPES, ['breakfast', 'lunch', 'dinner']);
+});
+
+test('normalizing an API plan trims dates and keeps servings whole and in range', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-11-02T00:00:00.000Z',
+    status: 'draft',
+    version: 0,
+    days: [
+      {
+        date: '2026-11-02T00:00:00.000Z',
+        meals: [
+          meal({ mealId: 'a', servings: 1.4 }),
+          meal({ mealId: 'b', servings: 0 }),
+          meal({ mealId: 'c', servings: 250 }),
+        ],
+      },
+    ],
+  };
+  const normalized = normalizeMealPlan(plan);
+
+  assert.equal(normalized.weekStartDate, '2026-11-02');
+  assert.equal(normalized.days[0].date, '2026-11-02');
+  assert.deepEqual(
+    normalized.days[0].meals.map((item) => item.servings),
+    [1, 1, 100]
+  );
+  // The cached API plan is left untouched.
+  assert.equal(plan.days[0].meals[0].servings, 1.4);
+  assert.equal(plan.weekStartDate, '2026-11-02T00:00:00.000Z');
+});
+
+test('meals for a date come from the matching day and default to none', () => {
+  const plan = {
+    _id: 'plan-1',
+    title: 'Week',
+    weekStartDate: '2026-11-02',
+    status: 'active',
+    version: 1,
+    days: [
+      { date: '2026-11-02', meals: [meal({ mealId: 'monday' })] },
+      { date: '2026-11-03', meals: [] },
+    ],
+  };
+
+  assert.deepEqual(
+    mealsForDate(plan, '2026-11-02').map((item) => item.mealId),
+    ['monday']
+  );
+  assert.deepEqual(mealsForDate(plan, '2026-11-03'), []);
+  assert.deepEqual(mealsForDate(plan, '2026-11-09'), []);
+  assert.deepEqual(mealsForDate(null, '2026-11-02'), []);
+  assert.deepEqual(mealsForDate(undefined, '2026-11-02'), []);
 });

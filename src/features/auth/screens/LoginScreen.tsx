@@ -9,15 +9,16 @@ import { AuthMessage } from '../components/AuthMessage';
 import { AuthTextLink } from '../components/AuthTextLink';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { useAuthStore } from '../store/authStore';
+import { getPostAuthRoute } from '../authNavigation';
 import { validateLogin } from '../validations/loginValidation';
 
 export function LoginScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const login = useAuthStore((state) => state.login);
-  const isLoading = useAuthStore((state) => state.isLoading);
   const storeError = useAuthStore((state) => state.error);
   const clearError = useAuthStore((state) => state.clearError);
+  const [isPasswordLoginLoading, setIsPasswordLoginLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({
@@ -31,16 +32,23 @@ export function LoginScreen() {
     clearError();
     if (nextErrors.email || nextErrors.password) return;
 
-    if (await login(email.trim(), password)) {
-      const user = useAuthStore.getState().user;
-      router.replace(
-        user?.onboardingCompleted ? '/(tabs)' : '/(onboarding)/diet-goals'
-      );
+    setIsPasswordLoginLoading(true);
+    try {
+      if (await login(email.trim(), password)) {
+        const user = useAuthStore.getState().user;
+        router.replace(getPostAuthRoute(user));
+      }
+    } finally {
+      setIsPasswordLoginLoading(false);
     }
   };
 
   return (
-    <ScreenWrapper scrollable contentContainerStyle={styles.screen}>
+    <ScreenWrapper
+      scrollable
+      webMaxWidth={560}
+      contentContainerStyle={styles.screen}
+    >
       <View>
         <AuthHeader title={t('auth.login')} subtitle={t('auth.loginSubtitle')} />
         <View style={styles.fields}>
@@ -89,7 +97,7 @@ export function LoginScreen() {
       <AppButton
         title={t('auth.login')}
         preset="screen"
-        loading={isLoading}
+        loading={isPasswordLoginLoading}
         onPress={handleLogin}
         style={styles.submit}
       />

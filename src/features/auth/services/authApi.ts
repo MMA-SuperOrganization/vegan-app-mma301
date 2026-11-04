@@ -1,10 +1,10 @@
 import { apiClient, unwrapApiRequest } from '@/services/api';
 import { authSession, firebaseAuth } from '@/services/auth';
 import { storage, storageKeys } from '@/services/storage';
-import { AppError } from '@/services/errors';
 import { translate } from '@/i18n';
 import { unregisterStoredDevice } from '@/features/reminders/deviceRegistration';
 import type { User } from '../types/auth.types';
+import { isUnusableSessionCredential } from './sessionRecovery';
 
 interface AccountDto {
   _id: string;
@@ -59,6 +59,13 @@ async function readCachedUser(): Promise<User | null> {
   }
 }
 
+async function clearStoredSession() {
+  await Promise.all([
+    authSession.clear(),
+    storage.removeItem(storageKeys.authUser),
+  ]);
+}
+
 export const authApi = {
   async login(email: string, password: string): Promise<LoginResponse> {
     const session = await firebaseAuth.signIn(email, password);
@@ -105,6 +112,9 @@ export const authApi = {
     return firebaseAuth.sendPasswordReset(email);
   },
 
+  // Drops the local session only; used when the API rejects a blocked account.
+  clearLocalSession: clearStoredSession,
+
   async logout() {
     const user = await readCachedUser();
     if (user) await unregisterStoredDevice(user.id);
@@ -119,14 +129,10 @@ export const authApi = {
       const token = await authSession.getValidToken();
       return token ? await syncAccount(token) : null;
     } catch (error) {
-      if (error instanceof AppError && error.status === 401) {
-        await authSession.clear();
-        await storage.removeItem(storageKeys.authUser);
+      if (isUnusableSessionCredential(error)) {
+        await clearStoredSession();
         return null;
       }
-      const token = await authSession.getValidToken().catch(() => null);
-      const user = await readCachedUser();
-      if (token && user) return { token, user };
       throw error;
     }
   },

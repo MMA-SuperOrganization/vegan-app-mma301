@@ -1,72 +1,175 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useSegments } from 'expo-router';
+import { usePathname, useRouter, useSegments } from 'expo-router';
 
-import { AppIcon, AppInput, AppText, BottomSheet, Toggle } from '@/components';
+import { AppIcon, AppInput, AppText, BottomSheet } from '@/components';
 import {
   FeatureState,
   getFeatureErrorMessage,
 } from '@/components/feedback/FeatureState';
 import { useAuthStore } from '@/features/auth';
 import { useTranslation } from '@/i18n';
+import { useKeyboardInsets } from '@/hooks';
 import { colors, coreTokens, radius, shadows, spacing } from '@/theme';
+import {
+  deriveConversationTitle,
+  formatAiMessageTime,
+  getAiStarterPrompts,
+} from '../aiChatCopy';
+import {
+  AI_CHAT_LIMITS,
+  AI_ROUTES,
+  AI_TRANSLATION_KEYS,
+  AiErrorCode,
+  AiMessageRole,
+  AiWidgetAction,
+} from '../aiConstants';
 import { useAiChat } from '../hooks';
+import { useAiImageAttachment } from '../useAiImageAttachment';
+import {
+  clampAiWidgetPosition,
+  getAiWidgetBounds,
+  shouldHideAiWidget,
+  snapAiWidgetToNearestEdge,
+  type AiWidgetPosition,
+} from '../aiWidgetPosition';
+import { AiImageAttachmentPicker } from './AiImageAttachmentPicker';
 import { AiMarkdownMessage } from './AiMarkdownMessage';
 import { AiProcessingStatus } from './AiProcessingStatus';
 import { AiMedicalDisclaimer, AiSafetyNotices } from './AiSafetyNotices';
 
 const WIDGET_SIZE = 64;
-const SUGGESTIONS = {
-  vi: [
-    'Gợi ý bữa tối giàu đạm',
-    'Tôi nên ăn gì sau khi tập?',
-    'Lên thực đơn chay 3 ngày',
-  ],
-  en: [
-    'Suggest a high-protein dinner',
-    'What should I eat after a workout?',
-    'Plan three days of vegan meals',
-  ],
-};
+const WIDGET_EDGE_MARGIN = spacing.sm;
+const DRAG_ACTIVATION_DISTANCE = 6;
+const AUTO_SCROLL_THRESHOLD = 72;
 
 export function AiChatWidget() {
   const insets = useSafeAreaInsets();
+  const window = useWindowDimensions();
+  const router = useRouter();
+  const pathname = usePathname();
   const [rootSegment] = useSegments();
-  const vi = useTranslation().locale === 'vi';
+  const { t, locale } = useTranslation();
+  const widgetKeys = AI_TRANSLATION_KEYS.WIDGET;
+  const commonKeys = AI_TRANSLATION_KEYS.COMMON;
+  const historyKeys = AI_TRANSLATION_KEYS.HISTORY;
+  const starterPrompts = getAiStarterPrompts(locale);
+
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isRestoringSession = useAuthStore((state) => state.isRestoringSession);
   const userId = useAuthStore((state) => state.user?.id);
+  const userRole = useAuthStore((state) => state.user?.role);
   const onboardingCompleted = useAuthStore(
     (state) => state.user?.onboardingCompleted
   );
   const [visible, setVisible] = useState(false);
   const [conversationId, setConversationId] = useState<string>();
+  const [widgetTab, setWidgetTab] = useState<'chat' | 'history'>('chat');
   const [content, setContent] = useState('');
-  const [useProfile, setUseProfile] = useState(false);
-  const [lastAction, setLastAction] = useState<'submit' | 'new'>('submit');
+  const [lastAction, setLastAction] = useState<AiWidgetAction>(
+    AiWidgetAction.SUBMIT
+  );
+  const conversationIdRef = useRef(conversationId);
+  const contentRef = useRef(content);
+  conversationIdRef.current = conversationId;
+  contentRef.current = content;
   const scrollRef = useRef<ScrollView>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const keyboard = useKeyboardInsets();
   const chat = useAiChat(conversationId);
-  const busy = chat.create.isPending || chat.send.isPending;
-  const messages = chat.messages.data?.data ?? [];
+  const attachment = useAiImageAttachment();
+  const conversations = chat.conversations.data?.data ?? [];
+
   const launcherBottom =
     Math.max(insets.bottom, spacing.lg) +
     (rootSegment === '(tabs)'
       ? coreTokens.navigation.tabBarHeight + spacing.lg
       : spacing.lg);
+  const launcherBounds = getAiWidgetBounds(
+    window,
+    insets,
+    WIDGET_SIZE,
+    launcherBottom,
+    WIDGET_EDGE_MARGIN
+  );
+  const launcherBoundsRef = useRef(launcherBounds);
+  launcherBoundsRef.current = launcherBounds;
+  const launcherPositionRef = useRef<AiWidgetPosition>({
+    x: launcherBounds.maxX,
+    y: launcherBounds.maxY,
+  });
+  const launcherDragStartRef = useRef(launcherPositionRef.current);
+  const launcherPosition = useRef(
+    new Animated.ValueXY(launcherPositionRef.current)
+  ).current;
+
+  const settleLauncher = (position: AiWidgetPosition) => {
+    const snappedPosition = snapAiWidgetToNearestEdge(
+      position,
+      launcherBoundsRef.current
+    );
+    launcherPositionRef.current = snappedPosition;
+    Animated.spring(launcherPosition, {
+      toValue: snappedPosition,
+      useNativeDriver: false,
+      speed: 24,
+      bounciness: 4,
+    }).start();
+  };
+
+  const launcherDragResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.hypot(gesture.dx, gesture.dy) >= DRAG_ACTIVATION_DISTANCE,
+      onMoveShouldSetPanResponderCapture: (_, gesture) =>
+        Math.hypot(gesture.dx, gesture.dy) >= DRAG_ACTIVATION_DISTANCE,
+      onPanResponderGrant: () => {
+        launcherDragStartRef.current = launcherPositionRef.current;
+        launcherPosition.stopAnimation();
+      },
+      onPanResponderMove: (_, gesture) => {
+        const nextPosition = clampAiWidgetPosition(
+          {
+            x: launcherDragStartRef.current.x + gesture.dx,
+            y: launcherDragStartRef.current.y + gesture.dy,
+          },
+          launcherBoundsRef.current
+        );
+        launcherPositionRef.current = nextPosition;
+        launcherPosition.setValue(nextPosition);
+      },
+      onPanResponderRelease: () => settleLauncher(launcherPositionRef.current),
+      onPanResponderTerminate: () => settleLauncher(launcherPositionRef.current),
+      onPanResponderTerminationRequest: () => false,
+    })
+  ).current;
+
+  const busy =
+    chat.isCreating ||
+    chat.isSending ||
+    attachment.choose.isPending ||
+    attachment.upload.isPending;
+  const messages = chat.messages.data?.data ?? [];
+  const launcherHidden = shouldHideAiWidget(pathname);
 
   useEffect(() => {
     setVisible(false);
     setConversationId(undefined);
     setContent('');
-    setUseProfile(false);
-    setLastAction('submit');
+    setLastAction(AiWidgetAction.SUBMIT);
   }, [userId]);
 
   useEffect(() => {
@@ -75,42 +178,85 @@ export function AiChatWidget() {
   }, [chat.conversations.data?.data, conversationId]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !shouldAutoScrollRef.current) return;
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }, [messages.length, visible]);
 
-  if (!isAuthenticated || !onboardingCompleted || isRestoringSession) return null;
+  useEffect(() => {
+    if (!visible || !keyboard.visible || !shouldAutoScrollRef.current) return;
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }, [keyboard.overlap, keyboard.visible, visible]);
+
+  useEffect(() => {
+    const nextPosition = clampAiWidgetPosition(
+      launcherPositionRef.current,
+      launcherBounds
+    );
+    launcherPositionRef.current = nextPosition;
+    launcherPosition.setValue(nextPosition);
+  }, [
+    launcherBounds.maxX,
+    launcherBounds.maxY,
+    launcherBounds.minX,
+    launcherBounds.minY,
+    launcherPosition,
+  ]);
+
+  if (
+    !isAuthenticated ||
+    userRole === 'admin' ||
+    !onboardingCompleted ||
+    isRestoringSession ||
+    launcherHidden
+  )
+    return null;
 
   const submitQuestion = async () => {
-    const question = content.trim();
+    const question =
+      content.trim() ||
+      (attachment.asset ? t(commonKeys.ANALYZE_IMAGE_PROMPT) : '');
     if (!question || busy) return;
 
-    setLastAction('submit');
+    setLastAction(AiWidgetAction.SUBMIT);
+    shouldAutoScrollRef.current = true;
     try {
       let targetConversationId = conversationId;
       if (!targetConversationId) {
         const conversation = await chat.create.mutateAsync(
-          vi ? 'Hỏi trợ lý AI' : 'Ask AI assistant'
+          deriveConversationTitle(question, locale)
         );
         targetConversationId = conversation._id;
         setConversationId(targetConversationId);
+        conversationIdRef.current = targetConversationId;
       }
 
+      const mediaId = await attachment.uploadIfNeeded();
       await chat.send.mutateAsync({
         content: question,
-        useProfile,
+        mediaId,
         targetConversationId,
       });
-      setContent('');
+      if (conversationIdRef.current === targetConversationId) {
+        if (contentRef.current.trim() === question) setContent('');
+        attachment.clear();
+      }
     } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
   };
 
   const closePanel = () => {
-    chat.create.reset();
-    chat.send.reset();
     setVisible(false);
+  };
+
+  const openFullScreenChat = () => {
+    const targetId = conversationId;
+    closePanel();
+    if (targetId) {
+      router.push({ pathname: AI_ROUTES.CHAT, params: { id: targetId } });
+    } else {
+      router.push(AI_ROUTES.CHAT);
+    }
   };
 
   const retryChatQueries = () => {
@@ -119,20 +265,23 @@ export function AiChatWidget() {
   };
 
   const queryError = chat.conversations.error || chat.messages.error;
-  const actionError = chat.create.error || chat.send.error;
+  const actionError =
+    chat.create.error || attachment.upload.error || chat.send.error;
   const actionErrorCode = (actionError as { code?: string } | null)?.code;
   const loadingChat =
     chat.conversations.isLoading ||
     (Boolean(conversationId) && chat.messages.isLoading);
 
   const startNewConversation = async () => {
-    setLastAction('new');
+    setLastAction(AiWidgetAction.NEW);
+    shouldAutoScrollRef.current = true;
     try {
       const conversation = await chat.create.mutateAsync(
-        vi ? 'Trò chuyện mới' : 'New conversation'
+        t(commonKeys.NEW_CONVERSATION)
       );
       setConversationId(conversation._id);
       setContent('');
+      attachment.clear();
     } catch {
       // React Query exposes the failure through FeatureState in the panel.
     }
@@ -148,25 +297,93 @@ export function AiChatWidget() {
     setContent(suggestion);
   };
 
+  const trackMessageScrollPosition = (
+    event: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const distanceFromBottom =
+      contentSize.height - layoutMeasurement.height - contentOffset.y;
+    shouldAutoScrollRef.current = distanceFromBottom <= AUTO_SCROLL_THRESHOLD;
+  };
+
+  const canSend = !busy && (Boolean(content.trim()) || Boolean(attachment.asset));
+
   const headerActions = (
     <View style={styles.headerActions}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={vi ? 'Bắt đầu trò chuyện mới' : 'Start a new chat'}
+        accessibilityLabel={
+          widgetTab === 'chat'
+            ? t(widgetKeys.HISTORY_TAB_LABEL)
+            : t(widgetKeys.CHAT_TAB_LABEL)
+        }
+        onPress={() =>
+          setWidgetTab((current) => (current === 'chat' ? 'history' : 'chat'))
+        }
+        style={({ pressed }) => [
+          styles.secondaryHeaderButton,
+          pressed && styles.controlPressed,
+        ]}
+      >
+        <AppIcon
+          name={widgetTab === 'chat' ? 'history' : 'comment'}
+          size={15}
+          color={colors.primary[700]}
+          decorative
+        />
+        <AppText
+          variant="caption"
+          color={colors.primary[800]}
+          style={styles.semiBold}
+        >
+          {widgetTab === 'chat'
+            ? t(widgetKeys.HISTORY_TAB_LABEL)
+            : t(widgetKeys.CHAT_TAB_LABEL)}
+        </AppText>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t(widgetKeys.NEW_CHAT_A11Y)}
         disabled={busy}
-        onPress={() => void startNewConversation()}
+        onPress={() => {
+          void startNewConversation();
+          setWidgetTab('chat');
+        }}
         style={({ pressed }) => [
           styles.newChatButton,
           pressed && styles.controlPressed,
           busy && styles.controlDisabled,
         ]}
       >
-        <AppIcon name="spark" size={18} color={colors.primary[700]} decorative />
-        <AppText variant="bodyStrong">{vi ? 'Mới' : 'New'}</AppText>
+        <AppIcon name="plus" size={15} color={colors.primary[700]} decorative />
+        <AppText
+          variant="caption"
+          color={colors.primary[800]}
+          style={styles.semiBold}
+        >
+          {t(widgetKeys.NEW_CHAT_LABEL)}
+        </AppText>
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={vi ? 'Đóng trợ lý AI' : 'Close AI assistant'}
+        accessibilityLabel={t(widgetKeys.EXPAND_A11Y)}
+        onPress={openFullScreenChat}
+        hitSlop={6}
+        style={({ pressed }) => [
+          styles.iconHeaderButton,
+          pressed && styles.controlPressed,
+        ]}
+      >
+        <AppIcon
+          name="explore"
+          size={16}
+          color={colors.primary[700]}
+          decorative
+        />
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t(widgetKeys.CLOSE_A11Y)}
         onPress={closePanel}
         hitSlop={8}
         style={({ pressed }) => [
@@ -174,37 +391,46 @@ export function AiChatWidget() {
           pressed && styles.controlPressed,
         ]}
       >
-        <AppIcon name="close" size={20} color={colors.primary[700]} decorative />
+        <AppIcon name="close" size={18} color={colors.primary[700]} decorative />
       </Pressable>
     </View>
   );
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={vi ? 'Mở trợ lý AI' : 'Open AI assistant'}
-        accessibilityHint={
-          vi
-            ? 'Mở cửa sổ trò chuyện trượt lên từ phía dưới'
-            : 'Opens the chat panel from the bottom'
-        }
-        onPress={() => setVisible(true)}
-        style={({ pressed }) => [
-          styles.launcher,
-          { bottom: launcherBottom },
-          pressed && styles.launcherPressed,
-        ]}
+      <Animated.View
+        {...launcherDragResponder.panHandlers}
+        style={[styles.launcherPosition, launcherPosition.getLayout()]}
       >
-        <AppIcon name="mam-companion" size={54} decorative />
-        <View style={styles.aiBadge}>
-          <AppText style={styles.aiBadgeText}>AI</AppText>
-        </View>
-      </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(widgetKeys.OPEN_A11Y)}
+          accessibilityHint={t(widgetKeys.OPEN_HINT)}
+          accessibilityState={{ busy: chat.hasPendingWork }}
+          onPress={() => {
+            shouldAutoScrollRef.current = true;
+            setVisible(true);
+          }}
+          style={({ pressed }) => [
+            styles.launcher,
+            pressed && styles.launcherPressed,
+          ]}
+        >
+          <AppIcon name="mam-companion" size={54} decorative />
+          <View style={styles.aiBadge}>
+            <AppText style={styles.aiBadgeText}>{t(commonKeys.BADGE)}</AppText>
+          </View>
+          {chat.hasPendingWork ? (
+            <View style={styles.backgroundTaskBadge}>
+              <ActivityIndicator size="small" color={colors.text.inverse} />
+            </View>
+          ) : null}
+        </Pressable>
+      </Animated.View>
 
       <BottomSheet
         visible={visible}
-        title={vi ? 'Trợ lý AI' : 'AI assistant'}
+        title={t(commonKeys.ASSISTANT_NAME)}
         onClose={closePanel}
         tall
         height="92%"
@@ -218,46 +444,190 @@ export function AiChatWidget() {
             retry={queryError ? retryChatQueries : undefined}
           />
 
-          <ScrollView
-            ref={scrollRef}
-            style={styles.messages}
-            contentContainerStyle={styles.messagesContent}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() =>
-              scrollRef.current?.scrollToEnd({ animated: true })
-            }
-          >
+          {widgetTab === 'history' ? (
+            <View style={styles.historyContainer}>
+              <View style={styles.historyHeaderCol}>
+                <AppText variant="heading5" color={colors.primary[900]}>
+                  {t(historyKeys.TITLE)}
+                </AppText>
+                <AppText variant="caption" color={colors.text.secondary}>
+                  {t(widgetKeys.SWIPE_BACK_HINT)}
+                </AppText>
+              </View>
+
+              <ScrollView
+                style={styles.historyScroll}
+                contentContainerStyle={styles.historyScrollContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                {!conversations.length ? (
+                  <View style={styles.emptyHistory}>
+                    <AppIcon name="mam-companion" size={56} decorative />
+                    <AppText variant="bodyStrong" style={styles.centerText}>
+                      {t(widgetKeys.HISTORY_EMPTY)}
+                    </AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => {
+                        void startNewConversation();
+                        setWidgetTab('chat');
+                      }}
+                      style={styles.newChatButton}
+                    >
+                      <AppIcon
+                        name="plus"
+                        size={15}
+                        color={colors.primary[700]}
+                        decorative
+                      />
+                      <AppText
+                        variant="bodySmall"
+                        color={colors.primary[800]}
+                        style={styles.semiBold}
+                      >
+                        {t(commonKeys.NEW_CONVERSATION_ACTION)}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                ) : (
+                  conversations.map((item) => {
+                    const isActive = item._id === conversationId;
+                    const dateStr = item.lastMessageAt || item.updatedAt;
+                    return (
+                      <Pressable
+                        key={item._id}
+                        accessibilityRole="button"
+                        onPress={() => {
+                          shouldAutoScrollRef.current = true;
+                          setConversationId(item._id);
+                          setContent('');
+                          attachment.clear();
+                          setWidgetTab('chat');
+                        }}
+                        style={({ pressed }) => [
+                          styles.historyItem,
+                          isActive && styles.historyItemActive,
+                          pressed && styles.controlPressed,
+                        ]}
+                      >
+                        <View style={styles.historyItemIcon}>
+                          <AppIcon
+                            name="comment"
+                            size={18}
+                            color={
+                              isActive
+                                ? colors.primary[800]
+                                : colors.primary[700]
+                            }
+                            decorative
+                          />
+                        </View>
+                        <View style={styles.historyItemCopy}>
+                          <View style={styles.historyItemTitleRow}>
+                            <AppText
+                              variant="bodySmall"
+                              color={
+                                isActive
+                                  ? colors.primary[900]
+                                  : colors.text.primary
+                              }
+                              numberOfLines={1}
+                              style={styles.semiBold}
+                            >
+                              {item.title}
+                            </AppText>
+                            {isActive ? (
+                              <View style={styles.activePill}>
+                                <AppText
+                                  variant="caption"
+                                  color={colors.primary[800]}
+                                >
+                                  {t(widgetKeys.ACTIVE_BADGE)}
+                                </AppText>
+                              </View>
+                            ) : null}
+                          </View>
+                          {dateStr ? (
+                            <AppText
+                              variant="caption"
+                              color={colors.text.secondary}
+                            >
+                              {new Intl.DateTimeFormat(
+                                locale === 'vi' ? 'vi-VN' : 'en-US',
+                                {
+                                  dateStyle: 'medium',
+                                  timeStyle: 'short',
+                                }
+                              ).format(new Date(dateStr))}
+                            </AppText>
+                          ) : null}
+                        </View>
+                        <AppText variant="heading4" color={colors.primary[700]}>
+                          ›
+                        </AppText>
+                      </Pressable>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          ) : (
+            <>
+              <ScrollView
+                ref={scrollRef}
+                style={styles.messages}
+                contentContainerStyle={styles.messagesContent}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                directionalLockEnabled
+                showsVerticalScrollIndicator
+                scrollEventThrottle={16}
+                onScroll={trackMessageScrollPosition}
+              >
             {!loadingChat && messages.length === 0 && !actionError ? (
               <View style={styles.welcome}>
                 <View style={styles.mascotHalo}>
-                  <AppIcon name="mam-companion" size={76} decorative />
+                  <AppIcon name="mam-companion" size={68} decorative />
                 </View>
-                <AppText variant="heading3" style={styles.centerText}>
-                  {vi ? 'Bạn muốn hỏi gì hôm nay?' : 'What can I help with?'}
+                <AppText variant="heading4" style={styles.centerText}>
+                  {t(widgetKeys.WELCOME_HEADING)}
                 </AppText>
-                <AppText color={colors.text.secondary} style={styles.centerText}>
-                  {vi
-                    ? 'Hỏi về dinh dưỡng, món chay hoặc cách lên thực đơn.'
-                    : 'Ask about nutrition, vegan dishes, or meal planning.'}
+                <AppText
+                  variant="bodySmall"
+                  color={colors.text.secondary}
+                  style={styles.centerText}
+                >
+                  {t(widgetKeys.WELCOME_DESCRIPTION)}
                 </AppText>
                 <View style={styles.suggestions}>
-                  {SUGGESTIONS[vi ? 'vi' : 'en'].map((suggestion) => (
+                  {starterPrompts.map((item) => (
                     <Pressable
-                      key={suggestion}
+                      key={item.id}
                       accessibilityRole="button"
-                      onPress={() => chooseSuggestion(suggestion)}
+                      onPress={() => chooseSuggestion(item.prompt)}
                       style={({ pressed }) => [
                         styles.suggestion,
                         pressed && styles.controlPressed,
                       ]}
                     >
-                      <AppIcon
-                        name="spark"
-                        size={16}
-                        color={colors.primary[700]}
-                        decorative
-                      />
-                      <AppText style={styles.suggestionText}>{suggestion}</AppText>
+                      <View style={styles.suggestionBadge}>
+                        <AppIcon
+                          name="spark"
+                          size={14}
+                          color={colors.primary[700]}
+                          decorative
+                        />
+                        <AppText
+                          variant="caption"
+                          color={colors.primary[700]}
+                          style={styles.semiBold}
+                        >
+                          {item.tag}
+                        </AppText>
+                      </View>
+                      <AppText variant="bodySmall" style={styles.suggestionText}>
+                        {item.prompt}
+                      </AppText>
                     </Pressable>
                   ))}
                 </View>
@@ -265,7 +635,8 @@ export function AiChatWidget() {
             ) : null}
 
             {messages.map((message) => {
-              const fromUser = message.role === 'user';
+              const fromUser = message.role === AiMessageRole.USER;
+              const timeLabel = formatAiMessageTime(message.createdAt, locale);
               return (
                 <View
                   key={message._id}
@@ -273,7 +644,7 @@ export function AiChatWidget() {
                 >
                   {!fromUser ? (
                     <View style={styles.aiAvatar}>
-                      <AppIcon name="mam-companion" size={30} decorative />
+                      <AppIcon name="mam-companion" size={28} decorative />
                     </View>
                   ) : null}
                   <View
@@ -282,22 +653,45 @@ export function AiChatWidget() {
                       fromUser ? styles.userMessage : styles.aiMessage,
                     ]}
                   >
-                    {!fromUser ? (
-                      <AppText variant="heading6" color={colors.primary[700]}>
-                        Mầm AI
+                    <View style={styles.messageMetaRow}>
+                      <AppText
+                        variant="caption"
+                        color={fromUser ? colors.primary[100] : colors.primary[700]}
+                        style={styles.semiBold}
+                      >
+                        {fromUser
+                          ? t(commonKeys.YOU)
+                          : t(commonKeys.ASSISTANT_NAME)}
                       </AppText>
-                    ) : null}
+                      {timeLabel ? (
+                        <AppText
+                          variant="caption"
+                          color={
+                            fromUser ? colors.primary[100] : colors.text.secondary
+                          }
+                        >
+                          {timeLabel}
+                        </AppText>
+                      ) : null}
+                    </View>
                     {fromUser ? (
-                      <AppText selectable color={colors.text.inverse}>
-                        {message.content}
-                      </AppText>
+                      <>
+                        {message.mediaId ? (
+                          <AppText variant="caption" color={colors.primary[100]}>
+                            {t(widgetKeys.IMAGE_ATTACHED)}
+                          </AppText>
+                        ) : null}
+                        <AppText selectable color={colors.text.inverse}>
+                          {message.content}
+                        </AppText>
+                      </>
                     ) : (
                       <>
                         <AiMarkdownMessage
                           content={message.content}
                           onOpenContent={closePanel}
                         />
-                        <AiSafetyNotices notices={message.safetyNotices} vi={vi} />
+                        <AiSafetyNotices notices={message.safetyNotices} />
                       </>
                     )}
                   </View>
@@ -308,10 +702,10 @@ export function AiChatWidget() {
             {busy ? (
               <View style={styles.messageRow}>
                 <View style={styles.aiAvatar}>
-                  <AppIcon name="mam-companion" size={30} decorative />
+                  <AppIcon name="mam-companion" size={28} decorative />
                 </View>
                 <View style={styles.progressMessage}>
-                  <AiProcessingStatus vi={vi} />
+                  <AiProcessingStatus />
                 </View>
               </View>
             ) : null}
@@ -325,21 +719,17 @@ export function AiChatWidget() {
                 </View>
                 <View style={styles.errorCopy}>
                   <AppText variant="bodyStrong" color={colors.status.danger}>
-                    {actionErrorCode === 'AI_AUTHENTICATION_ERROR'
-                      ? vi
-                        ? 'AI chưa thể kết nối'
-                        : 'AI cannot connect yet'
-                      : vi
-                        ? 'Chưa gửi được câu hỏi'
-                        : 'Your question was not sent'}
+                    {actionErrorCode === AiErrorCode.AUTHENTICATION_ERROR
+                      ? t(widgetKeys.AUTH_ERROR_TITLE)
+                      : t(widgetKeys.SEND_ERROR_TITLE)}
                   </AppText>
                   <AppText color={colors.text.secondary} style={styles.errorMessage}>
-                    {getFeatureErrorMessage(actionError, vi ? 'vi' : 'en')}
+                    {getFeatureErrorMessage(actionError, locale)}
                   </AppText>
                   <Pressable
                     accessibilityRole="button"
                     onPress={() =>
-                      void (lastAction === 'new'
+                      void (lastAction === AiWidgetAction.NEW
                         ? startNewConversation()
                         : submitQuestion())
                     }
@@ -349,13 +739,13 @@ export function AiChatWidget() {
                     ]}
                   >
                     <AppText variant="bodyStrong" color={colors.primary[700]}>
-                      {vi ? 'Thử lại' : 'Retry'}
+                      {t(widgetKeys.RETRY)}
                     </AppText>
                   </Pressable>
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={vi ? 'Ẩn thông báo lỗi' : 'Dismiss error'}
+                  accessibilityLabel={t(widgetKeys.DISMISS_ERROR_A11Y)}
                   onPress={() => {
                     chat.create.reset();
                     chat.send.reset();
@@ -374,23 +764,38 @@ export function AiChatWidget() {
           </ScrollView>
 
           <View style={styles.composerArea}>
-            <Toggle
-              label={
-                vi
-                  ? 'Cá nhân hóa theo hồ sơ dinh dưỡng'
-                  : 'Personalize with my nutrition profile'
-              }
-              value={useProfile}
-              onValueChange={setUseProfile}
-              disabled={busy}
+            {attachment.asset ? (
+              <View style={styles.previewSlot}>
+                <AiImageAttachmentPicker
+                  asset={attachment.asset}
+                  busy={busy}
+                  onChoose={() => attachment.choose.mutate()}
+                  onClear={attachment.clear}
+                />
+              </View>
+            ) : null}
+
+            <FeatureState
+              error={attachment.choose.error}
+              retry={() => attachment.choose.mutate()}
             />
+
             <View style={styles.composer}>
+              {!attachment.asset ? (
+                <AiImageAttachmentPicker
+                  asset={null}
+                  busy={busy}
+                  compact
+                  onChoose={() => attachment.choose.mutate()}
+                  onClear={attachment.clear}
+                />
+              ) : null}
               <AppInput
                 value={content}
                 onChangeText={updateContent}
-                placeholder={vi ? 'Nhắn cho Mầm AI…' : 'Message Mầm AI…'}
+                placeholder={t(widgetKeys.INPUT_PLACEHOLDER)}
                 multiline
-                maxLength={4000}
+                maxLength={AI_CHAT_LIMITS.MAX_MESSAGE_LENGTH}
                 editable={!busy}
                 returnKeyType="send"
                 blurOnSubmit={false}
@@ -399,38 +804,52 @@ export function AiChatWidget() {
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={vi ? 'Gửi câu hỏi' : 'Send question'}
-                accessibilityState={{ disabled: busy || !content.trim(), busy }}
-                disabled={busy || !content.trim()}
+                accessibilityLabel={t(widgetKeys.SEND_A11Y)}
+                accessibilityState={{
+                  disabled: !canSend,
+                  busy,
+                }}
+                disabled={!canSend}
                 onPress={() => void submitQuestion()}
                 style={({ pressed }) => [
                   styles.sendButton,
-                  (busy || !content.trim()) && styles.sendButtonDisabled,
-                  pressed && styles.sendButtonPressed,
+                  !canSend && styles.sendButtonDisabled,
+                  pressed && canSend && styles.sendButtonPressed,
                 ]}
               >
-                {chat.send.isPending ? (
+                {chat.isSending || chat.isCreating ? (
                   <ActivityIndicator size="small" color={colors.text.inverse} />
                 ) : (
-                  <AppText style={styles.sendIcon}>↑</AppText>
+                  <AppIcon
+                    name="send"
+                    size={20}
+                    color={canSend ? colors.text.inverse : colors.text.disabled}
+                    decorative
+                  />
                 )}
               </Pressable>
             </View>
-            <AiMedicalDisclaimer vi={vi} />
+            <AiMedicalDisclaimer compact />
           </View>
-        </View>
-      </BottomSheet>
+        </>
+      )}
+    </View>
+  </BottomSheet>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  launcher: {
+  semiBold: { fontWeight: '600' },
+  launcherPosition: {
     position: 'absolute',
-    right: spacing.xl,
     zIndex: 20,
     width: WIDGET_SIZE,
     height: WIDGET_SIZE,
+  },
+  launcher: {
+    width: '100%',
+    height: '100%',
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -455,23 +874,59 @@ const styles = StyleSheet.create({
     borderColor: colors.background.surface,
   },
   aiBadgeText: { color: colors.text.inverse, fontSize: 10, fontWeight: '700' },
+  backgroundTaskBadge: {
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.background.surface,
+    backgroundColor: colors.primary[700],
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  newChatButton: {
-    minHeight: 38,
+  secondaryHeaderButton: {
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.base,
+  },
+  newChatButton: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.full,
     backgroundColor: colors.primary[50],
+    borderWidth: 1,
+    borderColor: colors.primary[300],
+  },
+  iconHeaderButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.base,
   },
   closeButton: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
@@ -479,49 +934,52 @@ const styles = StyleSheet.create({
   },
   controlPressed: { opacity: 0.72 },
   controlDisabled: { opacity: 0.45 },
-  chatPanel: { flex: 1, minHeight: 0, gap: spacing.sm },
+  chatPanel: { flex: 1, minHeight: 0, gap: spacing.xs },
   messages: { flex: 1, minHeight: 0 },
   messagesContent: {
     flexGrow: 1,
     gap: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
   },
   welcome: {
     flex: 1,
-    minHeight: 360,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.sm,
   },
   mascotHalo: {
-    width: 92,
-    height: 92,
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.primary[50],
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   centerText: { textAlign: 'center' },
   suggestions: {
     width: '100%',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   suggestion: {
-    minHeight: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    gap: 2,
     paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border.default,
-    backgroundColor: colors.background.surface,
+    backgroundColor: colors.background.base,
   },
-  suggestionText: { flex: 1 },
+  suggestionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  suggestionText: { color: colors.text.primary },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -529,26 +987,37 @@ const styles = StyleSheet.create({
   },
   userMessageRow: { justifyContent: 'flex-end' },
   aiAvatar: {
-    width: 34,
-    height: 34,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
     backgroundColor: colors.primary[50],
+    borderWidth: 1,
+    borderColor: colors.primary[300],
   },
   message: {
-    maxWidth: '82%',
+    maxWidth: '84%',
     padding: spacing.md,
     borderRadius: radius.xl,
     gap: spacing.xs,
+  },
+  messageMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
   },
   userMessage: {
     backgroundColor: colors.primary[700],
     borderBottomRightRadius: spacing.xs,
   },
   aiMessage: {
+    flex: 1,
     backgroundColor: colors.primary[50],
     borderBottomLeftRadius: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.primary[300],
   },
   progressMessage: { flex: 1, maxWidth: '86%' },
   errorNotice: {
@@ -573,17 +1042,17 @@ const styles = StyleSheet.create({
   errorMessage: { fontSize: 12 },
   retryButton: { alignSelf: 'flex-start', paddingVertical: spacing.xs },
   composerArea: {
-    gap: spacing.sm,
-    paddingTop: spacing.md,
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border.default,
   },
-  composer: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   input: { flex: 1 },
-  inputText: { maxHeight: 96 },
+  inputText: { maxHeight: 88 },
   sendButton: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.full,
@@ -591,10 +1060,72 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: { backgroundColor: colors.background.muted },
   sendButtonPressed: { transform: [{ scale: 0.95 }] },
-  sendIcon: {
-    color: colors.text.inverse,
-    fontSize: 26,
-    lineHeight: 28,
-    fontWeight: '700',
+  previewSlot: {
+    paddingBottom: spacing.xs,
+  },
+  historyContainer: {
+    flex: 1,
+    minHeight: 0,
+    gap: spacing.sm,
+    paddingTop: spacing.xs,
+  },
+  historyHeaderCol: {
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+  },
+  historyScroll: { flex: 1 },
+  historyScrollContent: { gap: spacing.sm, paddingVertical: spacing.xs },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    backgroundColor: colors.background.surface,
+  },
+  historyItemActive: {
+    borderColor: colors.primary[300],
+    backgroundColor: colors.primary[50],
+  },
+  historyItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary[50],
+  },
+  historyItemCopy: { flex: 1, gap: 2 },
+  historyItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.xs,
+  },
+  activePill: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    backgroundColor: colors.primary[100],
+  },
+  historyDeleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.muted,
+  },
+  emptyHistory: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing['2xl'],
   },
 });

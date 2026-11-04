@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   isValidIanaTimezone,
   validateProfileText,
+  validateOptionalMeasurement,
+  validateOptionalUsername,
   parseNutritionTarget,
 } from '../src/features/profile/validation.ts';
 
@@ -43,6 +45,12 @@ test('profile validation matches backend text and IANA timezone constraints', ()
   assert.equal(validateProfileText('Ngọc', 'x'.repeat(501)).bio, false);
   assert.equal(isValidIanaTimezone('Asia/Ho_Chi_Minh'), true);
   assert.equal(isValidIanaTimezone('not/a-zone'), false);
+  assert.equal(validateOptionalUsername(''), true);
+  assert.equal(validateOptionalUsername('vegeta_user'), true);
+  assert.equal(validateOptionalUsername('bad name'), false);
+  assert.equal(validateOptionalMeasurement('', 50, 250), true);
+  assert.equal(validateOptionalMeasurement('170', 50, 250), true);
+  assert.equal(validateOptionalMeasurement('20', 50, 250), false);
 });
 
 test('timezone picker labels IANA values with date-aware UTC offsets', () => {

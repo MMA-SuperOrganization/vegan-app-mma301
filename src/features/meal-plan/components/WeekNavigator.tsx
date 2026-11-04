@@ -7,6 +7,7 @@ import { addCalendarDays, relativeWeekOffset } from '../mealPlanState';
 export function WeekNavigator({
   weekStartDate,
   currentWeekStartDate,
+  showTodayButton,
   disabled,
   onPrevious,
   onNext,
@@ -15,6 +16,7 @@ export function WeekNavigator({
 }: {
   weekStartDate: string;
   currentWeekStartDate: string;
+  showTodayButton?: boolean;
   disabled: boolean;
   onPrevious: () => void;
   onNext: () => void;
@@ -24,6 +26,7 @@ export function WeekNavigator({
   const { locale, t } = useTranslation();
   const localeTag = locale === 'vi' ? 'vi-VN' : 'en-US';
   const offset = relativeWeekOffset(currentWeekStartDate, weekStartDate);
+  const shouldShowToday = showTodayButton ?? offset !== 0;
   const rangeFormatter = new Intl.DateTimeFormat(localeTag, {
     day: '2-digit',
     month: '2-digit',
@@ -70,14 +73,9 @@ export function WeekNavigator({
             disabled && styles.disabled,
           ]}
         >
-          <View style={styles.titleRow}>
-            <AppText variant="heading3" style={styles.centerText}>
-              {title}
-            </AppText>
-            <AppText variant="bodyStrong" color={colors.primary[700]}>
-              ⌄
-            </AppText>
-          </View>
+          <AppText variant="heading3" style={styles.centerText}>
+            {title}
+          </AppText>
           <AppText
             variant="bodySmall"
             color={colors.text.secondary}
@@ -107,7 +105,7 @@ export function WeekNavigator({
         </Pressable>
       </View>
 
-      {offset !== 0 ? (
+      {shouldShowToday ? (
         <Pressable
           accessibilityRole="button"
           disabled={disabled}
@@ -118,8 +116,13 @@ export function WeekNavigator({
             disabled && styles.disabled,
           ]}
         >
-          <AppText variant="bodyStrong" color={colors.primary[700]}>
-            {t('mealPlan.backToCurrentWeek')}
+          <AppText
+            variant="bodyStrong"
+            color={colors.primary[700]}
+            numberOfLines={1}
+            style={styles.todayButtonText}
+          >
+            {t('mealPlan.backToToday')}
           </AppText>
         </Pressable>
       ) : null}
@@ -130,16 +133,17 @@ export function WeekNavigator({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.sm,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.default,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     backgroundColor: colors.background.surface,
   },
   navigationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   arrowButton: {
     width: 44,
@@ -149,20 +153,30 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     backgroundColor: colors.background.selected,
   },
-  weekCopy: { flex: 1, alignItems: 'center', gap: spacing.xs },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  weekCopyPressed: {
+  weekCopy: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.md,
+  },
+  weekCopyPressed: {
     backgroundColor: colors.background.selected,
   },
   centerText: { textAlign: 'center' },
   todayButton: {
     alignSelf: 'center',
     minHeight: 36,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderRadius: radius.full,
     backgroundColor: colors.primary[100],
+  },
+  todayButtonText: {
+    textAlign: 'center',
   },
   pressed: { opacity: 0.68 },
   disabled: { opacity: 0.45 },

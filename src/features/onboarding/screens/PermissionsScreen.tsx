@@ -1,10 +1,12 @@
+import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
-import { AppButton } from '@/components';
+import { StyleSheet, View } from 'react-native';
+import { AppButton, appDialog } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
+import { isStep1Complete, isStep2Complete, isStep3Complete } from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 import {
@@ -18,11 +20,23 @@ export function PermissionsScreen() {
   const { t } = useTranslation();
   const complete = useOnboardingStore((state) => state.complete);
   const isSaving = useOnboardingStore((state) => state.isSaving);
-  const error = useOnboardingStore((state) => state.error);
+  const error = useOnboardingStore((state) => state.saveError);
   const draft = useOnboardingStore((state) => state.draft);
+  const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const setDraft = useOnboardingStore((state) => state.setDraft);
   const { camera, notifications, requestCamera, requestNotifications } =
     useDevicePermissions();
+
+  useEffect(() => {
+    if (isHydrating) return;
+    if (!isStep1Complete(draft)) {
+      router.replace('/(onboarding)/diet-goals');
+    } else if (!isStep2Complete(draft)) {
+      router.replace('/(onboarding)/nutrition-profile');
+    } else if (!isStep3Complete(draft)) {
+      router.replace('/(onboarding)/allergies');
+    }
+  }, [isHydrating, draft, router]);
 
   const finish = async () => {
     if (await complete()) router.replace('/(tabs)');
@@ -32,7 +46,7 @@ export function PermissionsScreen() {
     try {
       await request();
     } catch {
-      Alert.alert(
+      appDialog.alert(
         t('onboarding.permissionRequestError'),
         t('onboarding.permissionUnsupported')
       );

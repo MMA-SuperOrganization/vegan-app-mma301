@@ -1,10 +1,16 @@
 import { useEffect } from 'react';
-import { Alert, View } from 'react-native';
+import { View } from 'react-native';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEvent } from 'expo';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AppButton, AppText, CustomHeader, ScreenWrapper } from '@/components';
+import {
+  AppButton,
+  AppText,
+  CustomHeader,
+  ScreenWrapper,
+  appDialog,
+} from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { ContentSaveButton } from '@/features/recipes/components/ContentSaveButton';
 import { communityApi } from '../communityApi';
@@ -63,10 +69,6 @@ export function VideoDetailScreen() {
     queryFn: () => communityApi.relatedVideos(id),
     enabled: video.data?.status === 'published',
   });
-  const summary = useMutation({
-    mutationFn: () => communityApi.generateVideoSummary(id),
-    onSuccess: () => video.refetch(),
-  });
   const remove = useMutation({
     mutationFn: () => communityApi.removeVideo(id),
     onSuccess: () => router.replace('/community'),
@@ -107,15 +109,6 @@ export function VideoDetailScreen() {
               {vi ? 'Video chưa sẵn sàng.' : 'Video is unavailable.'}
             </AppText>
           )}
-          {mine ? (
-            <AppButton
-              title={vi ? 'Tạo tóm tắt AI' : 'Generate AI summary'}
-              variant="outline"
-              loading={summary.isPending}
-              disabled={summary.isPending}
-              onPress={() => summary.mutate()}
-            />
-          ) : null}
           <ContentSaveButton
             content={{ ...video.data, type: 'video' }}
             initialSaved={video.data.saved}
@@ -141,7 +134,7 @@ export function VideoDetailScreen() {
               variant="ghost"
               loading={remove.isPending}
               onPress={() =>
-                Alert.alert(
+                appDialog.alert(
                   vi ? 'Xóa video?' : 'Delete video?',
                   vi
                     ? 'Video sẽ bị xóa khỏi ứng dụng.'
@@ -189,13 +182,17 @@ export function VideoDetailScreen() {
             onPress={() =>
               router.push({
                 pathname: '/community/report',
-                params: { targetType: 'video', targetId: video.data!._id },
+                params: {
+                  targetType: 'video',
+                  targetId: video.data!._id,
+                  targetPreview: video.data!.title,
+                },
               })
             }
           />
         </>
       ) : null}
-      <FeatureState error={progress.error || summary.error || remove.error} />
+      <FeatureState error={progress.error || remove.error} />
     </ScreenWrapper>
   );
 }

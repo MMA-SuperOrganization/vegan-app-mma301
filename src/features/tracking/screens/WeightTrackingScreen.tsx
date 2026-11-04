@@ -9,6 +9,7 @@ import {
   ScreenWrapper,
 } from '@/components';
 import { useTranslation, type TranslationKey } from '@/i18n';
+import { useProfileStore } from '@/features/profile/profileStore';
 import { colors, radius, spacing } from '@/theme';
 import { LogHistoryItem } from '../components/LogHistoryItem';
 import { TrackingQueryState } from '../components/TrackingQueryState';
@@ -52,6 +53,9 @@ export function WeightTrackingScreen() {
   const logs = useWeightLogs();
   const trendQuery = useWeightTrend();
   const weightLogs = logs.data?.data ?? [];
+  const heightCm = useProfileStore(
+    (state) => state.data?.nutritionProfile?.heightCm
+  );
   const goalKg = useTrackingTargets().weightKg;
   const [modal, setModal] = useState<ModalState>({ open: false, key: 0 });
 
@@ -78,6 +82,16 @@ export function WeightTrackingScreen() {
       : day;
   };
   const kg = (value: number) => formatNumber(value, 1, 1);
+  const historyValue = (weightKg: number) => {
+    const heightM = heightCm ? heightCm / 100 : 0;
+    const bmi = heightM > 0 ? weightKg / (heightM * heightM) : null;
+    return bmi == null
+      ? t('tracking.hub.weightValue', { weight: kg(weightKg) })
+      : t('tracking.weight.historyValue', {
+          weight: kg(weightKg),
+          bmi: kg(bmi),
+        });
+  };
 
   const openModal = (log?: WeightLog) =>
     setModal({ open: true, key: Date.now(), log });
@@ -220,9 +234,7 @@ export function WeightTrackingScreen() {
                           variant="row"
                           unit="kg"
                           title={historyTitle(log.recordedAt)}
-                          value={t('tracking.hub.weightValue', {
-                            weight: kg(log.weightKg),
-                          })}
+                          value={historyValue(log.weightKg)}
                           onPress={() => openModal(log)}
                         />
                       </Fragment>

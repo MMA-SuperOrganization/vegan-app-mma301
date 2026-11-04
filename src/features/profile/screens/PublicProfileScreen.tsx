@@ -1,20 +1,15 @@
 import { Image, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 import { AppText, CustomHeader, ScreenWrapper } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
-import { profileApi } from '../profileApi';
+import { usePublicProfile } from '../hooks';
 
 export function PublicProfileScreen() {
   const { id = '' } = useLocalSearchParams<{ id: string }>();
   const vi = useTranslation().locale === 'vi';
-  const profile = useQuery({
-    queryKey: ['public-profile', id],
-    queryFn: () => profileApi.publicProfile(id),
-    enabled: Boolean(id),
-  });
+  const profile = usePublicProfile(id);
   return (
     <ScreenWrapper
       scrollable
@@ -53,6 +48,9 @@ export function PublicProfileScreen() {
             <AppText selectable>{profile.data.bio}</AppText>
           ) : null}
           {profile.data.dietType ? (
+            /* FR-PROFILE-05: tạm tắt – hiển thị chế độ ăn tiếng Việt bằng
+               optionLabel(getDietOptions(t), profile.data.dietType)
+               (import từ @/features/onboarding/constants). */
             <AppText color={colors.text.secondary}>{profile.data.dietType}</AppText>
           ) : null}
           {profile.data.preferredCuisines?.length ? (

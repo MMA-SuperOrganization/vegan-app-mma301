@@ -1,19 +1,42 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth';
 import { communityApi } from './communityApi';
 import { mediaApi } from '@/features/media/mediaApi';
+import { recipeKeys } from '@/features/recipes/hooks';
 import type {
   CommunityPost,
   PostComment,
   ReportReason,
   ReportTarget,
 } from './types';
-export function useCommunityPosts(mine: boolean) {
+import {
+  type PostReactionChange,
+  type ReactionCacheSnapshot,
+  updatePostReactionCache,
+} from './reactionState';
+export function useCommunityPosts(mine: boolean, limit = 10) {
   const userId = useAuthStore((state) => state.user?.id);
-  return useQuery({
-    queryKey: ['account', userId, 'community', 'posts', mine],
-    queryFn: () => communityApi.posts(mine),
+  return useInfiniteQuery({
+    queryKey: ['account', userId, 'community', 'posts', mine, limit],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => communityApi.posts(mine, pageParam, limit),
+    getNextPageParam: (lastPage) => {
+      const page = lastPage.meta?.page ?? 1;
+      return lastPage.meta && page < lastPage.meta.totalPages ? page + 1 : undefined;
+    },
     enabled: Boolean(userId),
+  });
+}
+export function useRelatedRecipePosts(recipeId?: string) {
+  return useQuery({
+    queryKey: ['recipes', recipeId, 'related-posts'],
+    queryFn: () => communityApi.relatedPosts(recipeId!),
+    enabled: Boolean(recipeId),
   });
 }
 export function useCommunityVideos(mine: boolean) {
@@ -28,7 +51,15 @@ export function useCommunityPost(id?: string) {
   const userId = useAuthStore((state) => state.user?.id);
   const client = useQueryClient();
   const root = ['account', userId, 'community'];
-  const refresh = () => client.invalidateQueries({ queryKey: root });
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: root }),
+      client.invalidateQueries({ queryKey: recipeKeys.home(userId) }),
+      client.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          queryKey[0] === 'recipes' && queryKey.includes('related-posts'),
+      }),
+    ]);
   const post = useQuery({
     queryKey: [...root, 'post', id],
     queryFn: () => communityApi.post(id!),
@@ -53,6 +84,7 @@ export function useCommunityPost(id?: string) {
         mediaIds,
         categoryIds,
         tags,
+        foodItemIds,
         recipeId,
         visibility,
         previous,
@@ -62,9 +94,10 @@ export function useCommunityPost(id?: string) {
         mediaIds?: string[];
         categoryIds?: string[];
         tags?: string[];
+        foodItemIds?: string[];
         recipeId?: string | null;
         visibility?: 'public' | 'private';
-        previous?: CommunityPost;
+        previous?: Pick<CommunityPost, '_id' | 'version'>;
       }) =>
         previous
           ? communityApi.update(previous._id, previous.version, {
@@ -73,6 +106,7 @@ export function useCommunityPost(id?: string) {
               mediaIds,
               categoryIds,
               tags,
+              foodItemIds,
               recipeId,
               visibility,
             })
@@ -82,10 +116,14 @@ export function useCommunityPost(id?: string) {
               mediaIds,
               categoryIds,
               tags,
+              foodItemIds,
               recipeId,
               visibility,
             }),
-      onSuccess: refresh,
+      onSuccess: (savedPost) => {
+        client.setQueryData([...root, 'post', savedPost._id], savedPost);
+        return refresh();
+      },
     }),
     submit: useMutation({
       mutationFn: (post: CommunityPost) =>
@@ -117,17 +155,45 @@ export function useCommunityPost(id?: string) {
       mutationFn: communityApi.removeComment,
       onSuccess: refresh,
     }),
-    react: useMutation({
-      mutationFn: ({
-        remove,
-        type,
-      }: {
-        remove: boolean;
-        type: 'like' | 'love' | 'helpful';
-      }) => communityApi.react(id!, remove, type),
-      onSuccess: refresh,
-    }),
   };
+}
+
+export function usePostReaction() {
+  const userId = useAuthStore((state) => state.user?.id);
+  const client = useQueryClient();
+  const communityRoot = ['account', userId, 'community'] as const;
+  const matchesPostCache = (queryKey: readonly unknown[], postId: string) => {
+    const underCommunityRoot = communityRoot.every(
+      (segment, index) => queryKey[index] === segment
+    );
+    const section = queryKey[3];
+    return (
+      underCommunityRoot &&
+      (section === 'posts' || (section === 'post' && queryKey[4] === postId))
+    );
+  };
+
+  return useMutation({
+    mutationFn: ({ postId, nextReaction }: PostReactionChange) =>
+      communityApi.react(postId, nextReaction === null, nextReaction ?? 'like'),
+    onMutate: async (change): Promise<ReactionCacheSnapshot> => {
+      const predicate = (query: { queryKey: readonly unknown[] }) =>
+        matchesPostCache(query.queryKey, change.postId);
+      await client.cancelQueries({ predicate });
+      const snapshots = client.getQueriesData({ predicate });
+
+      snapshots.forEach(([queryKey, cached]) => {
+        client.setQueryData(queryKey, updatePostReactionCache(cached, change));
+      });
+
+      return snapshots;
+    },
+    onError: (_error, _change, snapshots) => {
+      snapshots?.forEach(([queryKey, cached]) =>
+        client.setQueryData(queryKey, cached)
+      );
+    },
+  });
 }
 export function useReports() {
   const userId = useAuthStore((state) => state.user?.id);

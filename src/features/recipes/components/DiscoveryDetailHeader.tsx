@@ -8,10 +8,12 @@ export function DiscoveryDetailHeader({
   title,
   subtitle,
   backFallbackHref = '/(discover)/explore',
+  showHome = true,
 }: {
   title: string;
   subtitle?: string;
   backFallbackHref?: Href;
+  showHome?: boolean;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -21,14 +23,18 @@ export function DiscoveryDetailHeader({
         title={title}
         showBack
         backFallbackHref={backFallbackHref}
-        rightAction={{
-          icon: 'home',
-          accessibilityLabel: t('common.backHome'),
-          onPress: () => {
-            router.dismissAll();
-            router.replace('/(tabs)');
-          },
-        }}
+        rightAction={
+          showHome
+            ? {
+                icon: 'home',
+                accessibilityLabel: t('common.backHome'),
+                onPress: () => {
+                  router.dismissAll();
+                  router.replace('/(tabs)');
+                },
+              }
+            : undefined
+        }
       />
       {subtitle ? (
         <AppText

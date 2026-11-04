@@ -22,9 +22,11 @@ Cloudflare R2 secrets, and production signing keys belong in GitHub Actions
 Secrets or the backend deployment environment and must not use the
 `EXPO_PUBLIC_` prefix.
 
-The generated APK is signed with Expo's public development key and is intended
-for internal installation/testing, not Play Store publication. A production
-release requires a private upload keystore stored as GitHub Secrets.
+The workflow builds the non-debuggable `internal` variant, so the APK includes
+the JavaScript bundle and runs without Metro. It is signed with Expo's public
+development key and is intended for internal installation/testing, not Play
+Store publication. The protected `release` variant still requires a private
+upload keystore and cannot silently fall back to debug signing.
 
 ## Download
 

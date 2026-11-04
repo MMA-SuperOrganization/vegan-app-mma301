@@ -8,6 +8,7 @@ import { useRecipeOptions } from '@/features/tracking/hooks/usePickerOptions';
 import { parseDecimal } from '@/features/tracking/trackingState';
 import { useTranslation } from '@/i18n';
 import { spacing } from '@/theme';
+import { AI_TRANSLATION_KEYS } from '../aiConstants';
 import type { ProposalMeal } from '../types';
 
 export function ProposalMealEditor({
@@ -21,8 +22,8 @@ export function ProposalMealEditor({
   onRemove: () => void;
   disabled: boolean;
 }) {
-  const { t, locale } = useTranslation();
-  const vi = locale === 'vi';
+  const { t } = useTranslation();
+  const keys = AI_TRANSLATION_KEYS.MEAL_PLANNER;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
@@ -35,29 +36,26 @@ export function ProposalMealEditor({
   });
   const recipeName = name || recipe.data?.title;
   const parsed = parseDecimal(servings);
+
   return (
     <View style={{ gap: spacing.sm }}>
       <AppText variant="bodyStrong">{t(`tracking.meal.${meal.slot}`)}</AppText>
-      <AppText>
-        {recipeName || (vi ? 'Đang tải công thức…' : 'Loading recipe…')}
-      </AppText>
+      <AppText>{recipeName || t(keys.LOADING_RECIPE)}</AppText>
       <FeatureState error={recipe.error} retry={() => void recipe.refetch()} />
       <AppButton
-        title={vi ? 'Thay món' : 'Replace recipe'}
+        title={t(keys.REPLACE_RECIPE)}
         variant="outline"
         disabled={disabled}
         onPress={() => setOpen(true)}
       />
       <AppInput
-        label={vi ? 'Khẩu phần (tối đa 20)' : 'Servings (up to 20)'}
+        label={t(keys.SERVINGS_LABEL)}
         value={servings}
         editable={!disabled}
         keyboardType="decimal-pad"
         error={
           parsed === null || parsed <= 0 || parsed > 20
-            ? vi
-              ? 'Nhập từ trên 0 đến 20.'
-              : 'Enter a number greater than 0 and at most 20.'
+            ? t(keys.SERVINGS_ERROR)
             : null
         }
         onChangeText={(value) => {
@@ -66,28 +64,28 @@ export function ProposalMealEditor({
         }}
       />
       <AppButton
-        title={vi ? 'Bỏ món' : 'Remove meal'}
+        title={t(keys.REMOVE_MEAL)}
         variant="ghost"
         disabled={disabled}
         onPress={onRemove}
       />
       <SearchPickerSheet
         visible={open}
-        title={vi ? 'Chọn công thức' : 'Choose recipe'}
-        searchPlaceholder={vi ? 'Tìm công thức' : 'Search recipes'}
+        title={t(keys.CHOOSE_RECIPE)}
+        searchPlaceholder={t(keys.SEARCH_RECIPE)}
         query={search}
         onQueryChange={setSearch}
-        items={(recipes.data?.data ?? []).map((recipe) => ({
-          id: recipe._id,
-          title: recipe.title || '',
-          imageUrl: recipe.coverImageUrl,
+        items={(recipes.data?.data ?? []).map((item) => ({
+          id: item._id,
+          title: item.title || '',
+          imageUrl: item.coverImageUrl,
         }))}
         isLoading={recipes.isLoading}
         isError={recipes.isError}
         onRetry={() => void recipes.refetch()}
         onSelect={(recipeId) => {
           setName(
-            recipes.data?.data.find((recipe) => recipe._id === recipeId)?.title || ''
+            recipes.data?.data.find((item) => item._id === recipeId)?.title || ''
           );
           onChange({ ...meal, recipeId });
           setOpen(false);

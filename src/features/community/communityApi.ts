@@ -75,17 +75,17 @@ export const communityApi = {
     unwrapApiRequest(() =>
       apiClient.put(`/videos/${id}/progress`, { progressSeconds, completed })
     ),
-  generateVideoSummary: (id: string) =>
-    unwrapApiRequest<{ summary: string; chapters?: unknown[] }>(() =>
-      apiClient.post(`/videos/${id}/generate-summary`, {})
+  posts: (mine: boolean, page = 1, limit = 10) =>
+    unwrapApiPageRequest<CommunityPost>(() =>
+      apiClient.get(mine ? '/posts/mine' : '/posts', {
+        params: { page, limit, postType: 'community' },
+      })
     ),
-  posts: (mine: boolean) =>
-    collectPages((page) =>
-      unwrapApiPageRequest<CommunityPost>(() =>
-        apiClient.get(mine ? '/posts/mine' : '/posts', {
-          params: { page, limit: 50, postType: 'community' },
-        })
-      )
+  relatedPosts: (recipeId: string) =>
+    unwrapApiPageRequest<CommunityPost>(() =>
+      apiClient.get('/posts', {
+        params: { page: 1, limit: 10, postType: 'community', recipeId },
+      })
     ),
   post: (id: string) =>
     unwrapApiRequest<CommunityPost>(() => apiClient.get(`/posts/${id}`)),
@@ -95,6 +95,7 @@ export const communityApi = {
     mediaIds?: string[];
     categoryIds?: string[];
     tags?: string[];
+    foodItemIds?: string[];
     recipeId?: string | null;
     visibility?: 'public' | 'private';
   }) =>
@@ -114,6 +115,7 @@ export const communityApi = {
       mediaIds?: string[];
       categoryIds?: string[];
       tags?: string[];
+      foodItemIds?: string[];
       recipeId?: string | null;
       visibility?: 'public' | 'private';
     }

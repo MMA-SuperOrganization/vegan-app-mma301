@@ -1,28 +1,32 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import {
   AppButton,
   AppText,
   EmptyState,
   LoadingSpinner,
   Toggle,
+  appDialog,
 } from '@/components';
 import { useSafeBack } from '@/hooks';
 import { useTranslation } from '@/i18n';
+import { allergenLabel } from '@/features/recipes/filterLabels';
 import { colors, spacing } from '@/theme';
 import { useOnboardingStore } from '../onboardingStore';
+import { isStep1Complete, isStep2Complete } from '../validation';
 import { InfoCard } from '../components/InfoCard';
 import { OnboardingScreen } from '../components/OnboardingScreen';
 
 export function AllergiesScreen() {
   const router = useRouter();
   const goBack = useSafeBack('/(onboarding)/nutrition-profile');
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const draft = useOnboardingStore((state) => state.draft);
+  const isHydrating = useOnboardingStore((state) => state.isHydrating);
   const allergens = useOnboardingStore((state) => state.allergens);
   const isLoading = useOnboardingStore((state) => state.isLoadingAllergens);
-  const error = useOnboardingStore((state) => state.error);
+  const error = useOnboardingStore((state) => state.allergensError);
   const loadAllergens = useOnboardingStore((state) => state.loadAllergens);
   const toggleAllergen = useOnboardingStore((state) => state.toggleAllergen);
   const selectNoAllergens = useOnboardingStore((state) => state.selectNoAllergens);
@@ -30,14 +34,21 @@ export function AllergiesScreen() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isHydrating) return;
+    if (!isStep1Complete(draft)) {
+      router.replace('/(onboarding)/diet-goals');
+    } else if (!isStep2Complete(draft)) {
+      router.replace('/(onboarding)/nutrition-profile');
+    }
+  }, [isHydrating, draft, router]);
+
+  useEffect(() => {
     void loadAllergens();
   }, [loadAllergens]);
 
   const next = () => {
     if (!draft.allergyAnswered) {
-      setValidationError(
-        t('onboarding.allergyRequired')
-      );
+      setValidationError(t('onboarding.allergyRequired'));
       return;
     }
     router.push('/(onboarding)/permissions');
@@ -54,12 +65,14 @@ export function AllergiesScreen() {
       error={validationError}
     >
       <View style={styles.list}>
-        {isLoading ? <LoadingSpinner text={t('onboarding.loadingAllergens')} /> : null}
+        {isLoading ? (
+          <LoadingSpinner text={t('onboarding.loadingAllergens')} />
+        ) : null}
         {!isLoading && allergens.length
           ? allergens.map((allergen) => (
               <Toggle
                 key={allergen._id}
-                label={allergen.name}
+                label={allergenLabel(allergen.name, locale)}
                 value={draft.allergenIds.includes(allergen._id)}
                 onValueChange={() => {
                   toggleAllergen(allergen._id);
@@ -113,7 +126,7 @@ export function AllergiesScreen() {
           title={t('onboarding.allergenInfo')}
           variant="ghost"
           onPress={() =>
-            Alert.alert(
+            appDialog.alert(
               t('onboarding.allergenInfoTitle'),
               t('onboarding.allergenInfoDescription')
             )

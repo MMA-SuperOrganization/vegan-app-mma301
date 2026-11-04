@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppButton, AppInput, AppText, SettingsScreenLayout } from '@/components';
+import { SelectionField } from '@/features/onboarding/components/SelectionField';
+import { getGoalOptions } from '@/features/onboarding/constants';
+import type { NutritionGoal } from '@/features/onboarding/types';
 import { parseDecimal, validateMeasurement } from '@/features/onboarding/validation';
 import { useSafeBack } from '@/hooks';
-import { useTranslation } from '@/i18n';
+import { useTranslation, type TranslationKey } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { useProfileStore } from '../profileStore';
 import { parseNutritionTarget } from '../validation';
@@ -17,6 +20,7 @@ export function NutritionProfileScreen() {
   const isSaving = useProfileStore((state) => state.isSaving);
   const error = useProfileStore((state) => state.error);
   const [height, setHeight] = useState(nutrition?.heightCm?.toString() ?? '');
+  const [goal, setGoal] = useState<NutritionGoal | null>(nutrition?.goal ?? null);
   const [weight, setWeight] = useState(nutrition?.currentWeightKg?.toString() ?? '');
   const [calories, setCalories] = useState(
     nutrition?.dailyCalorieTarget?.toString() ?? ''
@@ -67,6 +71,7 @@ export function NutritionProfileScreen() {
     const currentWeightKg = parseDecimal(weight);
     if (heightCm === null || currentWeightKg === null) return;
     await save({
+      ...(goal ? { goal } : {}),
       heightCm,
       currentWeightKg,
       dailyCalorieTarget: calorieTarget.value,
@@ -90,10 +95,22 @@ export function NutritionProfileScreen() {
             : t('profile.bmiUnavailable')}
         </AppText>
         <AppText color={colors.text.secondary}>
-          {nutrition?.bmiCategory ?? t('profile.bmiEstimate')}
+          {nutrition?.bmiCategory
+            ? bmiCategoryLabel(nutrition.bmiCategory, t)
+            : t('profile.bmiEstimate')}
         </AppText>
       </View>
       <View style={styles.fields}>
+        <SelectionField
+          label={t('profile.currentGoal')}
+          placeholder={t('onboarding.selectGoal')}
+          value={goal}
+          options={getGoalOptions(t)}
+          onChange={setGoal}
+        />
+        <AppText variant="bodySmall" color={colors.text.secondary}>
+          {t('profile.goalHistoryNote')}
+        </AppText>
         <AppInput
           label={t('onboarding.heightCm')}
           value={height}
@@ -176,3 +193,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.surface,
   },
 });
+
+const BMI_CATEGORY_KEYS: Record<string, TranslationKey> = {
+  underweight: 'profile.bmiCategory.underweight',
+  normal: 'profile.bmiCategory.normal',
+  overweight: 'profile.bmiCategory.overweight',
+  obese: 'profile.bmiCategory.obese',
+};
+
+/** The API returns English BMI classes; unknown values are shown as received. */
+function bmiCategoryLabel(category: string, t: (key: TranslationKey) => string) {
+  const key = BMI_CATEGORY_KEYS[category];
+  return key ? t(key) : category;
+}

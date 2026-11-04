@@ -21,8 +21,12 @@ export function RecipeHeroSection({
 
   const metaText = [
     servings ? t('recipe.servings', { count: servings }) : null,
-    prepMinutes != null ? t('recipe.prepMinutes', { count: prepMinutes }) : null,
-    cookMinutes != null ? t('recipe.cookMinutes', { count: cookMinutes }) : null,
+    prepMinutes != null && prepMinutes > 0
+      ? t('recipe.prepMinutes', { count: prepMinutes })
+      : null,
+    cookMinutes != null && cookMinutes > 0
+      ? t('recipe.cookMinutes', { count: cookMinutes })
+      : null,
     difficulty,
   ]
     .filter(Boolean)
@@ -30,11 +34,7 @@ export function RecipeHeroSection({
 
   return (
     <View style={styles.container}>
-      <RecipeImage
-        uri={coverImageUrl}
-        style={styles.cover}
-        fallbackSize="large"
-      />
+      <RecipeImage uri={coverImageUrl} style={styles.cover} fallbackSize="large" />
       <View style={styles.intro}>
         <AppText variant="heading1">{title}</AppText>
         <AppText color={colors.text.secondary}>

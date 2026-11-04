@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components';
 import { colors, radius, spacing } from '@/theme';
 import { weekDates } from '../mealPlanState';
@@ -19,11 +19,7 @@ export function WeekDaySelector({
   const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.list}
-    >
+    <View style={styles.list}>
       {weekDates(weekStartDate).map((date) => {
         const value = new Date(`${date}T12:00:00`);
         const selected = date === selectedDate;
@@ -45,17 +41,19 @@ export function WeekDaySelector({
             ]}
           >
             <AppText
-              variant="bodySmall"
+              variant="caption"
               color={selected ? colors.text.inverse : colors.text.secondary}
             >
-              {value.toLocaleDateString(dateLocale, { weekday: 'short' })}
+              {value.toLocaleDateString(dateLocale, { weekday: 'narrow' })}
             </AppText>
-            <AppText
-              variant="heading4"
-              color={selected ? colors.text.inverse : colors.text.primary}
-            >
-              {value.getDate()}
-            </AppText>
+            <View style={[styles.number, selected && styles.selectedNumber]}>
+              <AppText
+                variant="bodyStrong"
+                color={selected ? colors.primary[700] : colors.text.primary}
+              >
+                {value.getDate()}
+              </AppText>
+            </View>
             <View
               style={[
                 styles.dot,
@@ -66,27 +64,33 @@ export function WeekDaySelector({
           </Pressable>
         );
       })}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { gap: spacing.sm, paddingRight: spacing.xl },
+  list: { flexDirection: 'row', gap: spacing.xs },
   day: {
-    width: 58,
-    minHeight: 82,
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     gap: spacing.xs,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border.default,
-    backgroundColor: colors.background.surface,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.background.muted,
   },
   selectedDay: {
     backgroundColor: colors.primary[700],
-    borderColor: colors.primary[700],
   },
+  number: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.surface,
+  },
+  selectedNumber: { borderWidth: 2, borderColor: colors.primary[300] },
   pressed: { opacity: 0.78 },
   dot: { width: 5, height: 5, borderRadius: radius.full },
   dotFilled: { backgroundColor: colors.primary[500] },

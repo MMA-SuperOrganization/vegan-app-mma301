@@ -15,6 +15,8 @@ interface AccountDto {
   role: 'user' | 'admin';
   status: 'active' | 'suspended' | 'deleted';
   onboardingCompleted?: boolean | null;
+  isNewAccount?: boolean;
+  passwordSetupRequired?: boolean;
 }
 
 export interface LoginResponse {
@@ -42,6 +44,11 @@ async function syncAccount(token: string): Promise<LoginResponse> {
     apiClient.post('/auth/sync', {})
   );
   const user = toUser(account);
+  // Firebase sends a one-time password setup link. This gives a Google-first
+  // account a password credential without ever emailing or storing plaintext.
+  if (account.passwordSetupRequired && account.email) {
+    await firebaseAuth.sendPasswordReset(account.email).catch(() => undefined);
+  }
   await storage.setItem(storageKeys.authUser, JSON.stringify(user));
   return { user, token };
 }
@@ -60,10 +67,7 @@ async function readCachedUser(): Promise<User | null> {
 }
 
 async function clearStoredSession() {
-  await Promise.all([
-    authSession.clear(),
-    storage.removeItem(storageKeys.authUser),
-  ]);
+  await Promise.all([authSession.clear(), storage.removeItem(storageKeys.authUser)]);
 }
 
 export const authApi = {

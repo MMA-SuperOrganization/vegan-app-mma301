@@ -33,6 +33,8 @@ export interface MealPlan {
   status: MealPlanStatus;
   days: MealPlanDay[];
   version: number;
+  isTemplate?: boolean;
+  templateSourceId?: string | null;
 }
 
 export interface AddMealInput {
@@ -48,4 +50,5 @@ export interface UpdateMealInput {
   servings?: number;
   completed?: boolean;
   acknowledgeAllergens?: boolean;
+  consumePantry?: boolean;
 }

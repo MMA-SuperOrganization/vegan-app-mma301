@@ -37,6 +37,15 @@ export function useWeekMealPlans(weekStartDate: string) {
   });
 }
 
+export function useMealPlanTemplates() {
+  const userId = useAuthStore((state) => state.user?.id);
+  return useQuery({
+    queryKey: [...mealPlanKeys.root(userId), 'templates'],
+    queryFn: mealPlanApi.listTemplates,
+    enabled: Boolean(userId),
+  });
+}
+
 export function useMealPlanActions(weekStartDate: string, planId?: string) {
   const client = useQueryClient();
   const userId = useAuthStore((state) => state.user?.id);
@@ -170,5 +179,33 @@ export function useMealPlanActions(weekStartDate: string, planId?: string) {
     onSuccess: () =>
       client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) }),
   });
-  return { addMeal, updateMeal, removeMeal, activate, setStatus, clone };
+  const saveTemplate = useMutation({
+    mutationFn: ({ id, title }: { id: string; title?: string }) =>
+      mealPlanApi.saveTemplate(id, title),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) }),
+  });
+  const applyTemplate = useMutation({
+    mutationFn: ({
+      id,
+      targetWeek,
+      title,
+    }: {
+      id: string;
+      targetWeek: string;
+      title?: string;
+    }) => mealPlanApi.applyTemplate(id, targetWeek, title),
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: mealPlanKeys.root(userId) }),
+  });
+  return {
+    addMeal,
+    updateMeal,
+    removeMeal,
+    activate,
+    setStatus,
+    clone,
+    saveTemplate,
+    applyTemplate,
+  };
 }

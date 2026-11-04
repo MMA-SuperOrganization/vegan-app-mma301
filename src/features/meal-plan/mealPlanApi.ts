@@ -27,6 +27,14 @@ export const mealPlanApi = {
         })
       )
     ).then((page) => ({ ...page, data: page.data.map(normalize) })),
+  listTemplates: () =>
+    collectPages((page) =>
+      unwrapApiPageRequest<MealPlan>(() =>
+        apiClient.get('/meal-plans', {
+          params: { page, limit: 100, isTemplate: true },
+        })
+      )
+    ).then((page) => ({ ...page, data: page.data.map(normalize) })),
   create: (weekStartDate: string) =>
     unwrapApiRequest<MealPlan>(() =>
       apiClient.post('/meal-plans', { weekStartDate, days: [] })
@@ -53,6 +61,21 @@ export const mealPlanApi = {
   clone: (id: string, weekStartDate: string, title?: string) =>
     unwrapApiRequest<MealPlan>(() =>
       apiClient.post(`/meal-plans/${id}/clone`, {
+        weekStartDate,
+        ...(title ? { title } : {}),
+      })
+    ).then(normalize),
+  saveTemplate: (id: string, title?: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post(`/meal-plans/${id}/clone`, {
+        action: 'save_template',
+        ...(title ? { title } : {}),
+      })
+    ).then(normalize),
+  applyTemplate: (id: string, weekStartDate: string, title?: string) =>
+    unwrapApiRequest<MealPlan>(() =>
+      apiClient.post(`/meal-plans/${id}/clone`, {
+        action: 'apply_template',
         weekStartDate,
         ...(title ? { title } : {}),
       })

@@ -21,12 +21,12 @@ import { useTrackingFormat } from '@/features/tracking/hooks/useTrackingFormat';
 import { useTrackingTargets } from '@/features/tracking/hooks/useTrackingApi';
 import type { MealType } from '@/features/tracking/types';
 import { useTranslation } from '@/i18n';
-import { colors, spacing } from '@/theme';
+import { colors, radius, spacing } from '@/theme';
 import { MealSection } from '../components/MealSection';
 import { WeekDaySelector } from '../components/WeekDaySelector';
 import { WeekNavigator } from '../components/WeekNavigator';
 import { WeekPickerSheet } from '../components/WeekPickerSheet';
-import { useMealPlan, useMealPlanActions } from '../hooks';
+import { useMealPlan, useMealPlanActions, useMealPlanTemplates } from '../hooks';
 import {
   groupMealsByType,
   completeNutritionSnapshot,
@@ -86,6 +86,7 @@ export function MealPlanScreen() {
   const allergenCatalog = useProfileStore((state) => state.data?.allergens ?? []);
 
   const planQuery = useMealPlan(weekStartDate, params.planId);
+  const templatesQuery = useMealPlanTemplates();
   const actions = useMealPlanActions(weekStartDate, params.planId);
   const legacyDiaryRepairAttempts = useRef(new Set<string>());
   const targets = useTrackingTargets();
@@ -106,14 +107,18 @@ export function MealPlanScreen() {
     actions.removeMeal.isPending ||
     actions.activate.isPending ||
     actions.setStatus.isPending ||
-    actions.clone.isPending;
+    actions.clone.isPending ||
+    actions.saveTemplate.isPending ||
+    actions.applyTemplate.isPending;
   const saveError =
     actions.addMeal.isError ||
     actions.updateMeal.isError ||
     actions.removeMeal.isError ||
     actions.activate.isError ||
     actions.setStatus.isError ||
-    actions.clone.isError;
+    actions.clone.isError ||
+    actions.saveTemplate.isError ||
+    actions.applyTemplate.isError;
 
   useEffect(() => {
     if (!plan || readOnly) return;
@@ -269,12 +274,34 @@ export function MealPlanScreen() {
   const toggleCompleted = (meal: PlannedMeal) => {
     if (!plan || readOnly) return;
     const completed = !meal.diaryEntryId;
-    actions.updateMeal.mutate({
-      planId: plan._id,
-      mealId: meal.mealId,
-      input: { completed },
-      optimisticMeal: optimisticDiaryState(meal, completed),
-    });
+    const commit = (consumePantry = false) =>
+      actions.updateMeal.mutate({
+        planId: plan._id,
+        mealId: meal.mealId,
+        input: { completed, ...(consumePantry ? { consumePantry: true } : {}) },
+        optimisticMeal: optimisticDiaryState(meal, completed),
+      });
+    if (!completed) {
+      commit();
+      return;
+    }
+    appDialog.alert(
+      locale === 'vi' ? 'Ghi nhận bữa ăn' : 'Log meal',
+      locale === 'vi'
+        ? 'Bạn có muốn tự động trừ các nguyên liệu đã dùng khỏi Kitchen không?'
+        : 'Would you like to automatically deduct the used ingredients from Kitchen?',
+      [
+        { text: locale === 'vi' ? 'Hủy' : 'Cancel', style: 'cancel' },
+        {
+          text: locale === 'vi' ? 'Chỉ ghi nhật ký' : 'Log only',
+          onPress: () => commit(false),
+        },
+        {
+          text: locale === 'vi' ? 'Ghi và trừ kho' : 'Log and deduct',
+          onPress: () => commit(true),
+        },
+      ]
+    );
   };
 
   const confirmRemove = (meal: PlannedMeal) => {
@@ -431,20 +458,51 @@ export function MealPlanScreen() {
                   }
                 />
               ) : null}
+              {!plan.isTemplate ? (
+                <AppButton
+                  title={
+                    locale === 'vi'
+                      ? 'Lưu làm mẫu thực đơn'
+                      : 'Save as meal template'
+                  }
+                  variant="outline"
+                  disabled={pending}
+                  loading={actions.saveTemplate.isPending}
+                  onPress={() =>
+                    actions.saveTemplate.mutate({
+                      id: plan._id,
+                      title: `${plan.title} template`,
+                    })
+                  }
+                />
+              ) : null}
               <AppButton
                 title={
-                  locale === 'vi' ? 'Nhân bản sang tuần sau' : 'Clone to next week'
+                  plan.isTemplate
+                    ? locale === 'vi'
+                      ? 'Áp dụng mẫu cho tuần sau'
+                      : 'Apply template to next week'
+                    : locale === 'vi'
+                      ? 'Nhân bản sang tuần sau'
+                      : 'Clone to next week'
                 }
                 variant="outline"
                 disabled={pending}
-                loading={actions.clone.isPending}
+                loading={
+                  plan.isTemplate
+                    ? actions.applyTemplate.isPending
+                    : actions.clone.isPending
+                }
                 onPress={() => {
                   const targetWeek = shiftWeekSelection(
                     plan.weekStartDate,
                     plan.weekStartDate,
                     1
                   ).weekStartDate;
-                  actions.clone.mutate(
+                  const mutation = plan.isTemplate
+                    ? actions.applyTemplate
+                    : actions.clone;
+                  mutation.mutate(
                     { id: plan._id, targetWeek, title: plan.title },
                     {
                       onSuccess: (copy) =>
@@ -470,6 +528,55 @@ export function MealPlanScreen() {
             onToday={returnToCurrentWeek}
             onOpenPicker={() => setWeekPickerVisible(true)}
           />
+
+          {templatesQuery.data?.data.length ? (
+            <View style={styles.templateCard}>
+              <AppText variant="heading4">
+                {locale === 'vi' ? 'Mẫu thực đơn của bạn' : 'Your meal templates'}
+              </AppText>
+              <AppText variant="bodySmall" color={colors.text.secondary}>
+                {locale === 'vi'
+                  ? 'Áp dụng cùng một cấu trúc món ăn cho tuần đang xem.'
+                  : 'Apply the same meal structure to the week you are viewing.'}
+              </AppText>
+              {templatesQuery.data.data.map((template) => (
+                <View key={template._id} style={styles.templateRow}>
+                  <AppText variant="bodyStrong" style={styles.templateTitle}>
+                    {template.title}
+                  </AppText>
+                  <AppButton
+                    title={locale === 'vi' ? 'Áp dụng' : 'Apply'}
+                    variant="outline"
+                    fullWidth={false}
+                    disabled={pending}
+                    loading={
+                      actions.applyTemplate.isPending &&
+                      actions.applyTemplate.variables?.id === template._id
+                    }
+                    onPress={() =>
+                      actions.applyTemplate.mutate(
+                        {
+                          id: template._id,
+                          targetWeek: weekStartDate,
+                          title: template.title,
+                        },
+                        {
+                          onSuccess: (copy) =>
+                            router.replace({
+                              pathname: '/(tabs)/meal-plan',
+                              params: {
+                                planId: copy._id,
+                                date: copy.weekStartDate,
+                              },
+                            }),
+                        }
+                      )
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           <WeekDaySelector
             weekStartDate={weekStartDate}
@@ -616,4 +723,18 @@ const styles = StyleSheet.create({
   },
   nutritionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   nutritionCard: { flexGrow: 1, flexBasis: '46%' },
+  templateCard: {
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+  },
+  templateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  templateTitle: { flex: 1 },
 });

@@ -130,6 +130,12 @@ export interface RecipeDetail extends ContentCardData {
     note?: string;
     allergenIds?: string[];
   }>;
+  variants?: RecipeVariant[];
+  nutritionCalculation?: {
+    method: 'declared' | 'atwater_general';
+    declaredCaloriesKcal?: number | null;
+    atwaterCaloriesKcal: number;
+  };
   steps?: Array<{
     order: number;
     instruction: string;
@@ -137,6 +143,23 @@ export interface RecipeDetail extends ContentCardData {
     mediaId?: string | null;
   }>;
   isSaved?: boolean;
+}
+
+export interface RecipeVariant {
+  variantId: string;
+  name: string;
+  region?: string;
+  countryCode?: string;
+  servings: number;
+  isDefault?: boolean;
+  ingredients: NonNullable<RecipeDetail['ingredients']>;
+  nutritionPerServing?: NutritionFacts;
+  allergenIds?: string[];
+}
+
+export interface RecipeSubstitution {
+  ingredient: NonNullable<RecipeDetail['ingredients']>[number];
+  alternatives: FoodItem[];
 }
 
 export interface RecipeAuthorInput {
@@ -155,6 +178,15 @@ export interface RecipeAuthorInput {
     unit: string;
     order: number;
     note?: string;
+  }>;
+  variants?: Array<{
+    variantId?: string;
+    name: string;
+    region?: string;
+    countryCode?: string;
+    servings?: number;
+    isDefault?: boolean;
+    ingredients: RecipeAuthorInput['ingredients'];
   }>;
   steps: Array<{ order: number; instruction: string; mediaId?: string | null }>;
   visibility: 'public' | 'private' | 'unlisted';

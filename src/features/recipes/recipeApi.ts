@@ -16,6 +16,7 @@ import type {
   SearchSuggestion,
   RecipeAuthorInput,
   RecipeTagOption,
+  RecipeSubstitution,
 } from './types';
 
 // The API reads list filters as comma-separated values; axios would send `key[]=`.
@@ -129,6 +130,31 @@ export const recipeApi = {
       apiClient.get(`/recipes/${idOrSlug}`)
     );
     return { ...recipe, isSaved: recipe.isSaved ?? recipe.saved ?? false };
+  },
+  substitutions: async (
+    recipe: RecipeDetail,
+    excludedAllergenIds: string[]
+  ): Promise<RecipeSubstitution[]> => {
+    const unsafeIngredients = (recipe.ingredients ?? []).filter((ingredient) =>
+      ingredient.allergenIds?.some((id) => excludedAllergenIds.includes(id))
+    );
+    return Promise.all(
+      unsafeIngredients.map(async (ingredient) => {
+        const source = await recipeApi.foodDetail(ingredient.foodItemId);
+        const alternatives = await recipeApi.foods({
+          category: source.categoryId,
+          excludeAllergenIds: excludedAllergenIds,
+          isVegan: true,
+          limit: 5,
+        });
+        return {
+          ingredient,
+          alternatives: alternatives.data.filter(
+            (item) => item._id !== ingredient.foodItemId
+          ),
+        };
+      })
+    );
   },
   foods: (query: FoodQuery = {}): Promise<PageResult<FoodItem>> =>
     pageRequest('/food-items', {

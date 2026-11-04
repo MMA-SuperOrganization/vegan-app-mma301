@@ -37,6 +37,14 @@ type Step = {
   asset?: ImagePicker.ImagePickerAsset;
 };
 
+type VariantDraft = {
+  variantId?: string;
+  name: string;
+  region: string;
+  countryCode: string;
+  ingredients: Ingredient[];
+};
+
 export function RecipeEditorScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
@@ -50,6 +58,7 @@ export function RecipeEditorScreen() {
   const [cookMinutes, setCookMinutes] = useState('20');
   const [difficulty, setDifficulty] = useState<RecipeDifficulty>('easy');
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [variants, setVariants] = useState<VariantDraft[]>([]);
   const [steps, setSteps] = useState<Step[]>([{ instruction: '' }]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [tags, setTags] = useState('');
@@ -83,6 +92,21 @@ export function RecipeEditorScreen() {
         quantity: String(item.quantity),
         unit: item.unit,
         note: item.note || '',
+      }))
+    );
+    setVariants(
+      (value.variants || []).map((variant) => ({
+        variantId: variant.variantId,
+        name: variant.name,
+        region: variant.region || '',
+        countryCode: variant.countryCode || '',
+        ingredients: variant.ingredients.map((item) => ({
+          foodItemId: item.foodItemId,
+          name: item.foodNameSnapshot,
+          quantity: String(item.quantity),
+          unit: item.unit,
+          note: item.note || '',
+        })),
       }))
     );
     setSteps(
@@ -140,6 +164,20 @@ export function RecipeEditorScreen() {
           order: index + 1,
           note: item.note.trim() || undefined,
         })),
+        variants: variants.map((variant) => ({
+          ...(variant.variantId ? { variantId: variant.variantId } : {}),
+          name: variant.name.trim(),
+          region: variant.region.trim() || undefined,
+          countryCode: variant.countryCode.trim().toUpperCase() || undefined,
+          servings: Number(servings),
+          ingredients: variant.ingredients.map((item, index) => ({
+            foodItemId: item.foodItemId,
+            quantity: Number(item.quantity),
+            unit: item.unit,
+            order: index + 1,
+            note: item.note.trim() || undefined,
+          })),
+        })),
         steps: storedSteps,
         visibility,
       };
@@ -160,6 +198,12 @@ export function RecipeEditorScreen() {
     Number(cookMinutes) >= 0 &&
     ingredients.length > 0 &&
     ingredients.every((item) => Number(item.quantity) > 0) &&
+    variants.every(
+      (variant) =>
+        variant.name.trim() &&
+        variant.ingredients.length > 0 &&
+        variant.ingredients.every((item) => Number(item.quantity) > 0)
+    ) &&
     steps.some((step) => step.instruction.trim());
   const saveRecipe = (submit: boolean) => {
     if (!valid) {
@@ -377,6 +421,182 @@ export function RecipeEditorScreen() {
         disabled={!editable}
         onPress={() => setPickerOpen(true)}
       />
+      <AppText variant="heading3">
+        {vi ? 'Biến thể vùng miền' : 'Regional variants'}
+      </AppText>
+      <AppText variant="bodySmall" color={colors.text.secondary}>
+        {vi
+          ? 'Mỗi biến thể lưu bộ nguyên liệu riêng. Tạo từ danh sách hiện tại rồi chỉnh theo vùng.'
+          : 'Each variant keeps its own ingredients. Start from the current list, then tailor it by region.'}
+      </AppText>
+      {variants.map((variant, index) => (
+        <View key={variant.variantId || index} style={styles.variantCard}>
+          <AppInput
+            label={vi ? 'Tên biến thể' : 'Variant name'}
+            value={variant.name}
+            editable={editable}
+            onChangeText={(name) =>
+              setVariants((current) =>
+                current.map((item, at) => (at === index ? { ...item, name } : item))
+              )
+            }
+          />
+          <AppInput
+            label={vi ? 'Vùng / miền' : 'Region'}
+            value={variant.region}
+            editable={editable}
+            onChangeText={(region) =>
+              setVariants((current) =>
+                current.map((item, at) =>
+                  at === index ? { ...item, region } : item
+                )
+              )
+            }
+          />
+          <AppInput
+            label={vi ? 'Mã quốc gia (VD: VN)' : 'Country code (e.g. VN)'}
+            value={variant.countryCode}
+            editable={editable}
+            maxLength={2}
+            autoCapitalize="characters"
+            onChangeText={(countryCode) =>
+              setVariants((current) =>
+                current.map((item, at) =>
+                  at === index ? { ...item, countryCode } : item
+                )
+              )
+            }
+          />
+          <AppText variant="bodySmall" color={colors.text.secondary}>
+            {vi ? 'Số nguyên liệu' : 'Ingredients'}: {variant.ingredients.length}
+          </AppText>
+          {variant.ingredients.map((ingredient, ingredientIndex) => (
+            <View
+              key={`${ingredient.foodItemId}-${ingredientIndex}`}
+              style={styles.variantIngredient}
+            >
+              <AppText variant="bodyStrong">{ingredient.name}</AppText>
+              <View style={styles.variantIngredientFields}>
+                <AppInput
+                  label={vi ? 'Số lượng' : 'Quantity'}
+                  value={ingredient.quantity}
+                  keyboardType="decimal-pad"
+                  editable={editable}
+                  onChangeText={(quantity) =>
+                    setVariants((current) =>
+                      current.map((item, at) =>
+                        at === index
+                          ? {
+                              ...item,
+                              ingredients: item.ingredients.map(
+                                (value, ingredientAt) =>
+                                  ingredientAt === ingredientIndex
+                                    ? { ...value, quantity }
+                                    : value
+                              ),
+                            }
+                          : item
+                      )
+                    )
+                  }
+                />
+                <AppInput
+                  label={vi ? 'Đơn vị' : 'Unit'}
+                  value={ingredient.unit}
+                  editable={editable}
+                  onChangeText={(unit) =>
+                    setVariants((current) =>
+                      current.map((item, at) =>
+                        at === index
+                          ? {
+                              ...item,
+                              ingredients: item.ingredients.map(
+                                (value, ingredientAt) =>
+                                  ingredientAt === ingredientIndex
+                                    ? { ...value, unit }
+                                    : value
+                              ),
+                            }
+                          : item
+                      )
+                    )
+                  }
+                />
+              </View>
+              <AppButton
+                title={vi ? 'Bỏ khỏi biến thể' : 'Remove from variant'}
+                variant="ghost"
+                disabled={!editable || variant.ingredients.length <= 1}
+                onPress={() =>
+                  setVariants((current) =>
+                    current.map((item, at) =>
+                      at === index
+                        ? {
+                            ...item,
+                            ingredients: item.ingredients.filter(
+                              (_, ingredientAt) => ingredientAt !== ingredientIndex
+                            ),
+                          }
+                        : item
+                    )
+                  )
+                }
+              />
+            </View>
+          ))}
+          <AppButton
+            title={
+              vi ? 'Đồng bộ từ nguyên liệu hiện tại' : 'Sync current ingredients'
+            }
+            variant="outline"
+            disabled={!editable || ingredients.length === 0}
+            onPress={() =>
+              setVariants((current) =>
+                current.map((item, at) =>
+                  at === index
+                    ? {
+                        ...item,
+                        ingredients: ingredients.map((ingredient) => ({
+                          ...ingredient,
+                        })),
+                      }
+                    : item
+                )
+              )
+            }
+          />
+          <AppButton
+            title={vi ? 'Xóa biến thể' : 'Remove variant'}
+            variant="ghost"
+            disabled={!editable}
+            onPress={() =>
+              setVariants((current) => current.filter((_, at) => at !== index))
+            }
+          />
+        </View>
+      ))}
+      <AppButton
+        title={
+          vi
+            ? 'Tạo biến thể từ nguyên liệu hiện tại'
+            : 'Create variant from current ingredients'
+        }
+        variant="outline"
+        disabled={!editable || ingredients.length === 0}
+        onPress={() =>
+          setVariants((current) => [
+            ...current,
+            {
+              name: vi
+                ? `Biến thể ${current.length + 1}`
+                : `Variant ${current.length + 1}`,
+              region: '',
+              countryCode: '',
+              ingredients: ingredients.map((item) => ({ ...item })),
+            },
+          ])
+        }
+      />
       <AppText variant="heading3">{vi ? 'Các bước' : 'Steps'}</AppText>
       {steps.map((step, index) => (
         <View key={index} style={{ gap: spacing.sm }}>
@@ -441,17 +661,33 @@ export function RecipeEditorScreen() {
       />
       <FeatureState error={save.error} />
       <AppButton
-        title={vi ? 'Lưu bản nháp' : 'Save draft'}
+        title={
+          visibility === 'private'
+            ? vi
+              ? 'Lưu món ăn cá nhân'
+              : 'Save personal recipe'
+            : vi
+              ? 'Lưu bản nháp'
+              : 'Save draft'
+        }
         loading={save.isPending}
         disabled={!editable || save.isPending}
         onPress={() => saveRecipe(false)}
       />
-      <AppButton
-        title={vi ? 'Lưu và gửi duyệt' : 'Save and submit'}
-        variant="outline"
-        disabled={!editable || save.isPending}
-        onPress={() => saveRecipe(true)}
-      />
+      {visibility !== 'private' ? (
+        <AppButton
+          title={vi ? 'Lưu và gửi duyệt' : 'Save and submit'}
+          variant="outline"
+          disabled={!editable || save.isPending}
+          onPress={() => saveRecipe(true)}
+        />
+      ) : (
+        <AppText variant="bodySmall" color={colors.text.secondary}>
+          {vi
+            ? 'Món ăn cá nhân chỉ hiển thị cho bạn và không được gửi lên cộng đồng.'
+            : 'Personal recipes are visible only to you and are never submitted to the community.'}
+        </AppText>
+      )}
       <SearchPickerSheet
         visible={pickerOpen}
         title={vi ? 'Chọn thực phẩm' : 'Choose food'}
@@ -522,4 +758,19 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   pressed: { opacity: 0.78 },
+  variantCard: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+    borderRadius: radius.lg,
+    backgroundColor: colors.background.surface,
+  },
+  variantIngredient: {
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border.default,
+  },
+  variantIngredientFields: { gap: spacing.sm },
 });

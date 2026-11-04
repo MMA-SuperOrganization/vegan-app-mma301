@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -7,6 +7,7 @@ import {
   AppText,
   CustomHeader,
   ScreenWrapper,
+  Toggle,
 } from '@/components';
 import { FeatureState } from '@/components/feedback/FeatureState';
 import { IngredientReviewEditor } from '@/features/pantry/components/IngredientReviewEditor';
@@ -30,6 +31,11 @@ export function AdvancedPantryScreen() {
   );
   const [requestKey, setRequestKey] = useState(newKey);
   const [saved, setSaved] = useState(false);
+  const [thresholdText, setThresholdText] = useState('100');
+  useEffect(() => {
+    if (actions.automation.data)
+      setThresholdText(String(actions.automation.data.restockThresholdGrams));
+  }, [actions.automation.data]);
   const busy = actions.bulk.isPending;
   const changeRows = (next: typeof rows) => {
     setRows(next);
@@ -79,6 +85,81 @@ export function AdvancedPantryScreen() {
         />
       }
     >
+      <AppText variant="heading3">
+        {vi ? 'Tự động hóa kho bếp' : 'Kitchen automation'}
+      </AppText>
+      <FeatureState
+        loading={actions.automation.isLoading}
+        error={actions.automation.error || actions.saveAutomation.error}
+        retry={() => void actions.automation.refetch()}
+      />
+      {actions.automation.data ? (
+        <View style={{ gap: spacing.md }}>
+          <Toggle
+            label={
+              vi
+                ? 'Tự trừ nguyên liệu khi hoàn thành bữa ăn'
+                : 'Auto-deduct ingredients when a meal is completed'
+            }
+            value={actions.automation.data.autoDeductOnMealCompletion}
+            onValueChange={(autoDeductOnMealCompletion) =>
+              actions.saveAutomation.mutate({ autoDeductOnMealCompletion })
+            }
+          />
+          <Toggle
+            label={vi ? 'Theo dõi hạn sử dụng' : 'Track expiry dates'}
+            value={actions.automation.data.expiryTrackingEnabled}
+            onValueChange={(expiryTrackingEnabled) =>
+              actions.saveAutomation.mutate({ expiryTrackingEnabled })
+            }
+          />
+          <Toggle
+            label={vi ? 'Gợi ý mua bổ sung' : 'Restock suggestions'}
+            value={actions.automation.data.restockSuggestionsEnabled}
+            onValueChange={(restockSuggestionsEnabled) =>
+              actions.saveAutomation.mutate({ restockSuggestionsEnabled })
+            }
+          />
+          <AppInput
+            label={vi ? 'Ngưỡng tồn kho (g)' : 'Low-stock threshold (g)'}
+            value={thresholdText}
+            onChangeText={setThresholdText}
+            keyboardType="number-pad"
+          />
+          <AppButton
+            title={vi ? 'Lưu ngưỡng tồn kho' : 'Save stock threshold'}
+            variant="outline"
+            disabled={
+              !/^\d+(?:\.\d+)?$/.test(thresholdText) ||
+              Number(thresholdText) > 100000
+            }
+            loading={actions.saveAutomation.isPending}
+            onPress={() =>
+              actions.saveAutomation.mutate({
+                restockThresholdGrams: Number(thresholdText),
+              })
+            }
+          />
+        </View>
+      ) : null}
+      <AppText variant="heading3">
+        {vi ? 'Cần mua bổ sung' : 'Restock suggestions'}
+      </AppText>
+      <FeatureState
+        loading={actions.restock.isLoading}
+        error={actions.restock.error}
+        retry={() => void actions.restock.refetch()}
+      />
+      {actions.restock.data?.data.map((item) => (
+        <View key={item.foodItemId}>
+          <AppText variant="bodyStrong">{item.foodNameSnapshot}</AppText>
+          <AppText color={colors.text.secondary}>
+            {vi ? 'Còn' : 'Available'} {Math.round(item.availableGrams)} g ·{' '}
+            {vi ? 'Gợi ý mua' : 'Suggested'}{' '}
+            {Math.round(item.suggestedQuantityGrams)} g
+          </AppText>
+        </View>
+      ))}
       <AppText variant="heading3">
         {vi ? 'Thêm nhiều nguyên liệu' : 'Add multiple ingredients'}
       </AppText>

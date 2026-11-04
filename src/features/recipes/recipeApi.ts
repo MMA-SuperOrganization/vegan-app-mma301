@@ -133,28 +133,19 @@ export const recipeApi = {
   },
   substitutions: async (
     recipe: RecipeDetail,
-    excludedAllergenIds: string[]
+    excludedAllergenIds: string[],
+    variantId?: string | null
   ): Promise<RecipeSubstitution[]> => {
-    const unsafeIngredients = (recipe.ingredients ?? []).filter((ingredient) =>
-      ingredient.allergenIds?.some((id) => excludedAllergenIds.includes(id))
-    );
-    return Promise.all(
-      unsafeIngredients.map(async (ingredient) => {
-        const source = await recipeApi.foodDetail(ingredient.foodItemId);
-        const alternatives = await recipeApi.foods({
-          category: source.categoryId,
+    const detail = await unwrapApiRequest<RecipeDetail>(() =>
+      apiClient.get(`/recipes/${recipe._id}`, {
+        params: {
           excludeAllergenIds: excludedAllergenIds,
-          isVegan: true,
-          limit: 5,
-        });
-        return {
-          ingredient,
-          alternatives: alternatives.data.filter(
-            (item) => item._id !== ingredient.foodItemId
-          ),
-        };
+          variantId: variantId || undefined,
+          includeSubstitutions: 'true',
+        },
       })
     );
+    return detail.substitutions ?? [];
   },
   foods: (query: FoodQuery = {}): Promise<PageResult<FoodItem>> =>
     pageRequest('/food-items', {

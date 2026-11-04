@@ -48,8 +48,14 @@ export function RecipeDetailScreen() {
     (state) => state.data?.nutritionProfile?.allergenIds ?? []
   );
   const substitutions = useQuery({
-    queryKey: ['recipe-substitutions', recipe.data?._id, ...profileAllergenIds],
-    queryFn: () => recipeApi.substitutions(recipe.data!, profileAllergenIds),
+    queryKey: [
+      'recipe-substitutions',
+      recipe.data?._id,
+      variantId,
+      ...profileAllergenIds,
+    ],
+    queryFn: () =>
+      recipeApi.substitutions(recipe.data!, profileAllergenIds, variantId),
     enabled: Boolean(recipe.data?._id && profileAllergenIds.length),
   });
   useEffect(() => {
@@ -280,13 +286,26 @@ export function RecipeDetailScreen() {
                   <AppText variant="bodyStrong">
                     {suggestion.ingredient.foodNameSnapshot}
                   </AppText>
-                  <AppText color={colors.primary[700]}>
-                    {suggestion.alternatives.length
-                      ? suggestion.alternatives.map((item) => item.name).join(', ')
-                      : locale === 'vi'
+                  {suggestion.alternatives.length ? (
+                    suggestion.alternatives.map((item) => (
+                      <View key={item.food._id} style={styles.substitutionOption}>
+                        <AppText color={colors.primary[700]} variant="bodyStrong">
+                          {item.food.name} · {item.recommendedQuantity} {item.unit}
+                        </AppText>
+                        <AppText variant="caption" color={colors.text.secondary}>
+                          {locale === 'vi'
+                            ? `Tỷ lệ ${item.quantityRatio}×. Dùng lượng gợi ý rồi điều chỉnh gia vị và kết cấu khi nấu.`
+                            : `${item.quantityRatio}× ratio. ${item.guidance}`}
+                        </AppText>
+                      </View>
+                    ))
+                  ) : (
+                    <AppText color={colors.primary[700]}>
+                      {locale === 'vi'
                         ? 'Chưa có lựa chọn phù hợp'
                         : 'No suitable alternative yet'}
-                  </AppText>
+                    </AppText>
+                  )}
                 </View>
               ))}
             </Surface>
@@ -352,6 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[700],
   },
   substitutionRow: { gap: spacing.xs },
+  substitutionOption: { gap: spacing.xs, paddingTop: spacing.xs },
   allergenWarning: {
     gap: spacing.md,
     borderColor: colors.status.danger,

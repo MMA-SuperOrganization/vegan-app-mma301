@@ -131,6 +131,7 @@ export interface RecipeDetail extends ContentCardData {
     allergenIds?: string[];
   }>;
   variants?: RecipeVariant[];
+  substitutions?: RecipeSubstitution[];
   nutritionCalculation?: {
     method: 'declared' | 'atwater_general';
     declaredCaloriesKcal?: number | null;
@@ -159,7 +160,14 @@ export interface RecipeVariant {
 
 export interface RecipeSubstitution {
   ingredient: NonNullable<RecipeDetail['ingredients']>[number];
-  alternatives: FoodItem[];
+  alternatives: Array<{
+    food: FoodItem;
+    quantityRatio: number;
+    recommendedQuantity: number;
+    unit: string;
+    reason: string;
+    guidance: string;
+  }>;
 }
 
 export interface RecipeAuthorInput {

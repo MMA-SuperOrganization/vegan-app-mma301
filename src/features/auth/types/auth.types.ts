@@ -22,6 +22,11 @@ export interface AuthState {
   loginWithGoogle: (googleIdToken: string, requestUri: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   sendPasswordReset: (email: string) => Promise<boolean>;
+  changePassword: (
+    email: string,
+    currentPassword: string,
+    newPassword: string
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   handleBlockedAccount: (code: string) => Promise<void>;
   restoreSession: () => Promise<void>;

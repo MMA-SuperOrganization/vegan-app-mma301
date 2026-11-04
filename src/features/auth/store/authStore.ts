@@ -117,6 +117,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
+  changePassword: async (email, currentPassword, newPassword) => {
+    if (get().isLoading) return false;
+    set({ isLoading: true, error: null });
+    try {
+      await authApi.changePassword(email, currentPassword, newPassword);
+      set({ isLoading: false });
+      return true;
+    } catch (error) {
+      set({
+        isLoading: false,
+        error: captureError(
+          error,
+          'auth.change_password',
+          translate('profile.passwordChangeFailed'),
+          'PASSWORD_CHANGE_FAILED'
+        ),
+      });
+      return false;
+    }
+  },
+
   logout: async () => {
     if (get().isLoading) return;
     set({ isLoading: true });

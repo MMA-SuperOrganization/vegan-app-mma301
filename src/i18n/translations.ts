@@ -738,7 +738,13 @@ export const vi = {
   'profile.currentSession': 'Phiên đăng nhập hiện tại',
   'profile.currentSessionDescription':
     'Tài khoản này đang được xác thực an toàn bằng Firebase.',
-  'profile.changePassword': 'Gửi email đổi mật khẩu',
+  'profile.changePassword': 'Đổi mật khẩu',
+  'profile.currentPassword': 'Mật khẩu hiện tại',
+  'profile.newPassword': 'Mật khẩu mới',
+  'profile.forgotCurrentPassword': 'Quên mật khẩu hiện tại? Gửi email đặt lại',
+  'profile.passwordChangeTitle': 'Đổi mật khẩu',
+  'profile.passwordChangeSuccess': 'Mật khẩu đã được cập nhật an toàn.',
+  'profile.passwordChangeFailed': 'Không thể đổi mật khẩu.',
   'profile.privacyData': 'Xem chính sách dữ liệu',
   'profile.deleteAccount': 'Xóa tài khoản',
   'profile.deleteAccountWarning':
@@ -1376,7 +1382,8 @@ export const vi = {
   'ai.mealPlanner.progressStepRecipes': 'Chọn công thức phù hợp cho từng bữa',
   'ai.mealPlanner.progressStepSafety': 'Kiểm tra dị nguyên và cân đối dinh dưỡng',
   'ai.mealPlanner.progressStepFinish': 'Hoàn thiện đề xuất',
-  'ai.mealPlanner.progressElapsed': 'Đã chờ {{seconds}} giây · thường mất 15–60 giây',
+  'ai.mealPlanner.progressElapsed':
+    'Đã chờ {{seconds}} giây · thường mất 15–60 giây',
   'ai.mealPlanner.progressCancel': 'Hủy tạo đề xuất',
   'ai.mealPlanner.progressCanceled':
     'Đã hủy tạo đề xuất. Bạn có thể chỉnh lại thông tin và thử lại.',
@@ -2153,7 +2160,13 @@ export const en: Record<TranslationKey, string> = {
   'profile.currentSession': 'Current session',
   'profile.currentSessionDescription':
     'This account is securely authenticated through Firebase.',
-  'profile.changePassword': 'Send password reset email',
+  'profile.changePassword': 'Change password',
+  'profile.currentPassword': 'Current password',
+  'profile.newPassword': 'New password',
+  'profile.forgotCurrentPassword': 'Forgot the current password? Send a reset email',
+  'profile.passwordChangeTitle': 'Change password',
+  'profile.passwordChangeSuccess': 'Your password was updated securely.',
+  'profile.passwordChangeFailed': 'Unable to change the password.',
   'profile.privacyData': 'View data policy',
   'profile.deleteAccount': 'Delete account',
   'profile.deleteAccountWarning':
@@ -2791,7 +2804,8 @@ export const en: Record<TranslationKey, string> = {
   'ai.mealPlanner.useProfileLabel': 'Use my nutrition profile',
   'ai.mealPlanner.generateAction': 'Generate proposal',
   'ai.mealPlanner.progressTitle': 'AI is planning your meals',
-  'ai.mealPlanner.progressStepProfile': 'Reading your nutrition profile and preferences',
+  'ai.mealPlanner.progressStepProfile':
+    'Reading your nutrition profile and preferences',
   'ai.mealPlanner.progressStepRecipes': 'Choosing recipes for each meal',
   'ai.mealPlanner.progressStepSafety': 'Checking allergens and nutrition balance',
   'ai.mealPlanner.progressStepFinish': 'Finishing the proposal',

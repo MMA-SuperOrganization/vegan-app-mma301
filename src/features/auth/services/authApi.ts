@@ -116,6 +116,15 @@ export const authApi = {
     return firebaseAuth.sendPasswordReset(email);
   },
 
+  async changePassword(email: string, currentPassword: string, newPassword: string) {
+    const session = await firebaseAuth.changePassword(
+      email,
+      currentPassword,
+      newPassword
+    );
+    await authSession.save(session);
+  },
+
   // Drops the local session only; used when the API rejects a blocked account.
   clearLocalSession: clearStoredSession,
 

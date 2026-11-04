@@ -20,6 +20,7 @@ export interface PersonalProfile {
   excludedFoodItemIds?: string[];
   locale?: string;
   timezone?: string;
+  kitchenAutomation?: import('@/features/pantry/types').PantryAutomation;
   updatedAt?: string;
 }
 

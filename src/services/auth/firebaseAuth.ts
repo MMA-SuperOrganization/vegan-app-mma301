@@ -68,6 +68,7 @@ function mapFirebaseError(error: unknown): never {
     PROJECT_NUMBER_MISMATCH: 'firebase.projectMismatch',
     INVALID_IDP_RESPONSE: 'firebase.invalidIdp',
     FEDERATED_USER_ID_ALREADY_LINKED: 'firebase.federatedUserConflict',
+    CREDENTIAL_TOO_OLD_LOGIN_AGAIN: 'firebase.invalidCredentials',
     NETWORK_ERROR: 'firebase.network',
   };
 
@@ -147,6 +148,24 @@ export const firebaseAuth = {
         { requestType: 'PASSWORD_RESET', email },
         { timeout: 15_000, headers: { 'X-Firebase-Locale': getActiveLocale() } }
       );
+    } catch (error) {
+      return mapFirebaseError(error);
+    }
+  },
+
+  async changePassword(email: string, currentPassword: string, newPassword: string) {
+    try {
+      const current = await passwordRequest(
+        'signInWithPassword',
+        email,
+        currentPassword
+      );
+      const response = await axios.post<FirebaseSessionPayload>(
+        `${identityBaseUrl}/accounts:update?key=${requireApiKey()}`,
+        { idToken: current.idToken, password: newPassword, returnSecureToken: true },
+        { timeout: 15_000 }
+      );
+      return normalizeFirebaseSession(response.data, current);
     } catch (error) {
       return mapFirebaseError(error);
     }

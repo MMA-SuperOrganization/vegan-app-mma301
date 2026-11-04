@@ -30,6 +30,24 @@ export interface Pantry {
   version: number;
 }
 
+export interface PantryAutomation {
+  autoDeductOnMealCompletion: boolean;
+  expiryTrackingEnabled: boolean;
+  expiryLeadDays: number;
+  restockSuggestionsEnabled: boolean;
+  restockThresholdGrams: number;
+}
+
+export interface PantryRestockSuggestion {
+  foodItemId: string;
+  foodNameSnapshot: string;
+  availableGrams: number;
+  expiredGrams: number;
+  earliestExpiry?: string | null;
+  suggestedQuantityGrams: number;
+  reason: 'low_stock' | 'expired_or_low_stock';
+}
+
 export interface PantryItemInput {
   foodItemId?: string;
   personalIngredientId?: string;

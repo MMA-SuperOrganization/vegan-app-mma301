@@ -91,4 +91,5 @@ export interface NutritionTargetsUpdate {
   carbTargetG?: number;
   fatTargetG?: number;
   fiberTargetG?: number;
+  waterTargetMl?: number;
 }

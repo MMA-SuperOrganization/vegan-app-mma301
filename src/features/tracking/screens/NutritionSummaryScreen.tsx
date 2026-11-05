@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { MacroDonutChart, type MacroSlice } from '../components/MacroDonutChart';
+import { GoalThresholdAlerts } from '../components/GoalThresholdAlerts';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WeekStrip } from '../components/WeekStrip';
 import {
@@ -194,6 +195,14 @@ export function NutritionSummaryScreen() {
                   style={styles.card}
                 />
               </View>
+
+              <GoalThresholdAlerts
+                calories={{
+                  consumed: nutrition.caloriesKcal,
+                  target: targets?.caloriesKcal ?? profileTargets.energyKcal,
+                }}
+                formatNumber={formatNumber}
+              />
 
               <View style={styles.section}>
                 <AppText variant="heading4">

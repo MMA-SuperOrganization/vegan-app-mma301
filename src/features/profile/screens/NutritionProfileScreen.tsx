@@ -31,6 +31,7 @@ export function NutritionProfileScreen() {
   const [carbs, setCarbs] = useState(nutrition?.carbTargetG?.toString() ?? '');
   const [fat, setFat] = useState(nutrition?.fatTargetG?.toString() ?? '');
   const [fiber, setFiber] = useState(nutrition?.fiberTargetG?.toString() ?? '');
+  const [water, setWater] = useState(nutrition?.waterTargetMl?.toString() ?? '');
   const [validation, setValidation] = useState<string | null>(null);
 
   const submit = async () => {
@@ -41,6 +42,7 @@ export function NutritionProfileScreen() {
     const carbTarget = parseNutritionTarget(carbs, 0, 1500);
     const fatTarget = parseNutritionTarget(fat, 0, 500);
     const fiberTarget = parseNutritionTarget(fiber, 0, 100);
+    const waterTarget = parseNutritionTarget(water, 250, 10000);
     const caloriesError = calorieTarget.valid
       ? null
       : t('profile.nutritionCaloriesRange');
@@ -48,6 +50,7 @@ export function NutritionProfileScreen() {
     const carbsError = carbTarget.valid ? null : t('profile.carbsRange');
     const fatError = fatTarget.valid ? null : t('profile.fatRange');
     const fiberError = fiberTarget.valid ? null : t('profile.fiberRange');
+    const waterError = waterTarget.valid ? null : t('profile.waterRange');
     setValidation(
       heightError ??
         weightError ??
@@ -55,7 +58,8 @@ export function NutritionProfileScreen() {
         proteinError ??
         carbsError ??
         fatError ??
-        fiberError
+        fiberError ??
+        waterError
     );
     if (
       heightError ||
@@ -64,7 +68,8 @@ export function NutritionProfileScreen() {
       proteinError ||
       carbsError ||
       fatError ||
-      fiberError
+      fiberError ||
+      waterError
     )
       return;
     const heightCm = parseDecimal(height);
@@ -79,6 +84,7 @@ export function NutritionProfileScreen() {
       carbTargetG: carbTarget.value,
       fatTargetG: fatTarget.value,
       fiberTargetG: fiberTarget.value,
+      waterTargetMl: waterTarget.value,
     });
   };
 
@@ -152,6 +158,12 @@ export function NutritionProfileScreen() {
           value={fiber}
           onChangeText={setFiber}
           keyboardType="decimal-pad"
+        />
+        <AppInput
+          label={t('profile.dailyWater')}
+          value={water}
+          onChangeText={setWater}
+          keyboardType="number-pad"
         />
       </View>
       {validation || error ? (

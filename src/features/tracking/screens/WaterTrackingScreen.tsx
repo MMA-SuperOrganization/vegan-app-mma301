@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '@/i18n';
 import { colors, radius, spacing } from '@/theme';
 import { LogHistoryItem } from '../components/LogHistoryItem';
+import { GoalThresholdAlerts } from '../components/GoalThresholdAlerts';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import { WaterGlassRow } from '../components/WaterGlassRow';
 import { WaterLogModal } from '../components/WaterLogModal';
@@ -189,6 +190,11 @@ export function WaterTrackingScreen() {
                 />
               ) : null}
             </View>
+
+            <GoalThresholdAlerts
+              water={{ consumed: consumedMl, target: targetMl }}
+              formatNumber={formatNumber}
+            />
 
             <WaterGlassRow
               total={glasses.total}

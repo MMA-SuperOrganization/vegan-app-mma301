@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
-import { AdminTabBar } from '@/components';
+import { CustomTabBar, type TabBarItemConfig } from '@/components';
 
 import { useAuthStore } from '@/features/auth';
 
@@ -12,11 +12,14 @@ export default function AdminLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <AdminTabBar {...props} />}
+      tabBar={(props) => (
+        <CustomTabBar {...props} config={ADMIN_TAB_CONFIG} order={ADMIN_TAB_ORDER} />
+      )}
       screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true }}
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="moderation" />
+      <Tabs.Screen name="content" />
       <Tabs.Screen name="users" />
       <Tabs.Screen name="master-data" />
       <Tabs.Screen name="audit" />
@@ -24,3 +27,12 @@ export default function AdminLayout() {
     </Tabs>
   );
 }
+
+const ADMIN_TAB_CONFIG: Record<string, TabBarItemConfig> = {
+  index: { labelKey: 'admin.tabs.overview', icon: 'home' },
+  content: { labelKey: 'admin.tabs.content', icon: 'explore' },
+  users: { labelKey: 'admin.tabs.users', icon: 'profile' },
+  'master-data': { labelKey: 'admin.tabs.masterData', icon: 'pantry' },
+  settings: { labelKey: 'profile.settingsSection', icon: 'profile' },
+};
+const ADMIN_TAB_ORDER = ['index', 'content', 'users', 'master-data', 'settings'];

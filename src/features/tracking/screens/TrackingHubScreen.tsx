@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n';
 import { colors, spacing } from '@/theme';
 import { DailyDiaryCard } from '../components/DailyDiaryCard';
 import { DiaryDayNavigator } from '../components/DiaryDayNavigator';
+import { GoalThresholdAlerts } from '../components/GoalThresholdAlerts';
 import { TrackingQuickMetricCard } from '../components/TrackingQuickMetricCard';
 import { TrackingQueryState } from '../components/TrackingQueryState';
 import {
@@ -54,7 +55,10 @@ export function TrackingHubScreen() {
     },
   };
   const loading =
-    diary.isLoading || diaryEntries.isLoading || trend.isLoading || waterQuery.isLoading;
+    diary.isLoading ||
+    diaryEntries.isLoading ||
+    trend.isLoading ||
+    waterQuery.isLoading;
   const error =
     diary.isError || diaryEntries.isError || trend.isError || waterQuery.isError;
   const retry = () =>
@@ -109,8 +113,16 @@ export function TrackingHubScreen() {
             }
           />
 
+          <GoalThresholdAlerts
+            calories={{ consumed: energy.consumedKcal, target: energy.targetKcal }}
+            water={{ consumed: water.consumedMl, target: water.targetMl }}
+            formatNumber={formatNumber}
+          />
+
           <View style={styles.secondaryHeader}>
-            <AppText variant="bodyStrong">{t('tracking.hub.secondaryTitle')}</AppText>
+            <AppText variant="bodyStrong">
+              {t('tracking.hub.secondaryTitle')}
+            </AppText>
           </View>
           <View style={styles.quickMetrics}>
             <TrackingQuickMetricCard
@@ -140,9 +152,14 @@ export function TrackingHubScreen() {
                   : t('tracking.hub.waterTitleDay')
               }
               value={
-                t('tracking.hub.waterValueNoTarget', {
-                  consumed: formatNumber(water.consumedMl),
-                })
+                water.targetMl
+                  ? t('tracking.hub.waterValue', {
+                      consumed: formatNumber(water.consumedMl),
+                      target: formatNumber(water.targetMl),
+                    })
+                  : t('tracking.hub.waterValueNoTarget', {
+                      consumed: formatNumber(water.consumedMl),
+                    })
               }
               onPress={() =>
                 router.push({ pathname: '/(tracking)/water', params: { date } })

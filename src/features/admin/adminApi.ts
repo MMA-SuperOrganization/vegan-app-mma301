@@ -1,5 +1,6 @@
 import { apiClient, unwrapApiPageRequest, unwrapApiRequest } from '@/services/api';
 import { collectPages } from '@/services/api/collectPages';
+import type { CommunityPost } from '@/features/community/types';
 import {
   ADMIN_ACTION_REASONS,
   AdminUserRole,
@@ -28,6 +29,17 @@ export interface AdminSummary {
   >;
   reports: Record<string, number>;
   ai?: Record<string, unknown>;
+  engagement?: {
+    comments: number;
+    reactions: number;
+    savedItems: number;
+    postTotals: {
+      views: number;
+      saves: number;
+      comments: number;
+      reactions: number;
+    };
+  };
 }
 export interface AdminUser {
   _id: string;
@@ -104,6 +116,20 @@ const collectMasterRecords = async (path: `${MasterResourcePath}`) => {
 export const adminApi = {
   summary: () =>
     unwrapApiRequest<AdminSummary>(() => apiClient.get('/admin/dashboard/summary')),
+  posts: ({ page = 1, q = '', status = 'all' } = {}) =>
+    unwrapApiPageRequest<CommunityPost>(() =>
+      apiClient.get('/admin/content/pending', {
+        params: {
+          page,
+          limit: 20,
+          type: 'post',
+          ...(q.trim() ? { q: q.trim() } : {}),
+          ...(status ? { status } : {}),
+        },
+      })
+    ),
+  removePost: (id: string) =>
+    unwrapApiRequest(() => apiClient.delete(`/posts/${id}`)),
   users: ({ page = 1, q = '', status, role }: AdminUserQuery = {}) =>
     unwrapApiPageRequest<AdminUser>(() =>
       apiClient.get('/admin/users', {

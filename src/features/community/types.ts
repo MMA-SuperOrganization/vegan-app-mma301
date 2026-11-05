@@ -42,6 +42,8 @@ export interface CommunityPost {
   rejectionReason?: string;
   reactionCount?: number;
   commentCount?: number;
+  viewCount?: number;
+  saveCount?: number;
   reacted?: string | null;
 }
 export interface PostComment {

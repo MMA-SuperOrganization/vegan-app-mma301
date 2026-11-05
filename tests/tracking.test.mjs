@@ -7,6 +7,7 @@ import {
   MEAL_TYPES,
   PRIMARY_MEAL_TYPES,
   addDays,
+  amountOverTarget,
   diaryEntriesForDate,
   formatTimeOfDay,
   sortWeightLogs,
@@ -95,6 +96,30 @@ test('tracking overview matches the Figma mock numbers', () => {
     periodDays: 30,
   });
   assert.deepEqual(overview.water, { consumedMl: 1250, targetMl: 2000 });
+});
+
+test('daily goal warnings only report the amount beyond a configured target', () => {
+  assert.equal(amountOverTarget(2100, 2000), 100);
+  assert.equal(amountOverTarget(2000, 2000), null);
+  assert.equal(amountOverTarget(1900, 2000), null);
+  assert.equal(amountOverTarget(2500, null), null);
+});
+
+test('tracking screens expose calorie and water threshold alerts', () => {
+  const hub = read('../src/features/tracking/screens/TrackingHubScreen.tsx');
+  const water = read('../src/features/tracking/screens/WaterTrackingScreen.tsx');
+  const summary = read(
+    '../src/features/tracking/screens/NutritionSummaryScreen.tsx'
+  );
+  const alerts = read(
+    '../src/features/tracking/components/GoalThresholdAlerts.tsx'
+  );
+  assert.match(hub, /<GoalThresholdAlerts/);
+  assert.match(hub, /tracking\.hub\.waterValue/);
+  assert.match(water, /<GoalThresholdAlerts/);
+  assert.match(summary, /<GoalThresholdAlerts/);
+  assert.match(alerts, /accessibilityRole="alert"/);
+  assert.match(alerts, /amountOverTarget/);
 });
 
 test('new water and diary logs for today change the overview; other days do not', () => {

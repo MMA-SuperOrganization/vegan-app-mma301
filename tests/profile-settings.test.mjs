@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   isValidIanaTimezone,
   validateProfileText,
@@ -23,6 +24,26 @@ test('nutrition targets reject malformed non-empty input instead of silently omi
   assert.equal(parseNutritionTarget('499', 500, 10000).valid, false);
   assert.equal(parseNutritionTarget('500', 500, 10000).valid, true);
   assert.equal(parseNutritionTarget('10000', 500, 10000).valid, true);
+  assert.equal(parseNutritionTarget('249', 250, 10000).valid, false);
+  assert.equal(parseNutritionTarget('2000', 250, 10000).valid, true);
+});
+
+test('nutrition profile saves the configurable daily water target', () => {
+  const screen = readFileSync(
+    new URL(
+      '../src/features/profile/screens/NutritionProfileScreen.tsx',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const types = readFileSync(
+    new URL('../src/features/profile/types.ts', import.meta.url),
+    'utf8'
+  );
+  assert.match(screen, /nutrition\?\.waterTargetMl/);
+  assert.match(screen, /waterTargetMl: waterTarget\.value/);
+  assert.match(screen, /profile\.dailyWater/);
+  assert.match(types, /waterTargetMl\?: number/);
 });
 import { validateNotificationPreferences } from '../src/features/settings/validation.ts';
 import {

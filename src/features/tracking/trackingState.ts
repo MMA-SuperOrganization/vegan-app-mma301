@@ -381,6 +381,12 @@ export function sumWater(logs: WaterLog[]) {
   return logs.reduce((total, log) => total + log.amountMl, 0);
 }
 
+/** Positive amount over a configured daily target; null until the target is crossed. */
+export function amountOverTarget(value: number, target: number | null) {
+  if (target == null || target <= 0 || value <= target) return null;
+  return value - target;
+}
+
 /** One glass in the water tracker. */
 export const WATER_GLASS_ML = 250;
 const DEFAULT_GLASS_COUNT = 8;

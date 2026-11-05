@@ -25,6 +25,14 @@ import {
 
 type TabBarRenderer = NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>;
 export type CustomTabBarProps = Parameters<TabBarRenderer>[0];
+export interface TabBarItemConfig {
+  labelKey: TranslationKey;
+  icon: AssetName;
+}
+export interface ReusableTabBarProps extends CustomTabBarProps {
+  config?: Record<string, TabBarItemConfig>;
+  order?: string[];
+}
 
 const TAB_CONFIG: Record<string, { labelKey: TranslationKey; icon: AssetName }> = {
   index: { labelKey: 'nav.home', icon: 'home' },
@@ -46,7 +54,13 @@ const TAB_CONFIG: Record<string, { labelKey: TranslationKey; icon: AssetName }> 
 const TAB_ORDER = ['index', 'meal-plan', 'grocery', 'diary', 'profile'];
 const ACTIVE_LINE_WIDTH = 30;
 
-export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
+export function CustomTabBar({
+  state,
+  descriptors,
+  navigation,
+  config = TAB_CONFIG,
+  order = TAB_ORDER,
+}: ReusableTabBarProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [itemsWidth, setItemsWidth] = useState(0);
@@ -54,13 +68,13 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
   const hasPositionedIndicator = useRef(false);
   const selectedTabIndex = Math.max(
     0,
-    TAB_ORDER.indexOf(state.routes[state.index]?.name)
+    order.indexOf(state.routes[state.index]?.name)
   );
 
   useEffect(() => {
     if (!itemsWidth) return;
     const contentWidth = itemsWidth - spacing.lg * 2;
-    const tabWidth = contentWidth / TAB_ORDER.length;
+    const tabWidth = contentWidth / order.length;
     const target =
       spacing.lg + tabWidth * selectedTabIndex + (tabWidth - ACTIVE_LINE_WIDTH) / 2;
 
@@ -79,7 +93,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
     });
     animation.start();
     return () => animation.stop();
-  }, [indicatorX, itemsWidth, selectedTabIndex]);
+  }, [indicatorX, itemsWidth, order.length, selectedTabIndex]);
 
   const measureItems = (event: LayoutChangeEvent) => {
     setItemsWidth(event.nativeEvent.layout.width);
@@ -91,22 +105,25 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
       style={[
         styles.container,
         Platform.OS !== 'web' && coreTokens.navigation.tabBarShadow,
-        Platform.OS === 'web' ? styles.webContainer : { paddingBottom: insets.bottom },
+        Platform.OS === 'web'
+          ? styles.webContainer
+          : { paddingBottom: insets.bottom },
       ]}
     >
       <View
         style={[styles.items, Platform.OS === 'web' && styles.webItems]}
         onLayout={measureItems}
       >
-        {TAB_ORDER.map((routeName) => {
+        {order.map((routeName) => {
           const routeIndex = state.routes.findIndex(
             (route) => route.name === routeName
           );
           if (routeIndex < 0) return null;
 
           const route = state.routes[routeIndex];
-          const config = TAB_CONFIG[routeName];
-          const label = t(config.labelKey);
+          const tabConfig = config[routeName];
+          if (!tabConfig) return null;
+          const label = t(tabConfig.labelKey);
           const descriptor = descriptors[route.key];
           const isFocused = state.index === routeIndex;
           const color = isFocused ? colors.primary[700] : colors.text.secondary;
@@ -143,7 +160,7 @@ export function CustomTabBar({ state, descriptors, navigation }: CustomTabBarPro
             >
               <View style={styles.tabContent}>
                 <AppIcon
-                  name={config.icon}
+                  name={tabConfig.icon}
                   size={coreTokens.navigation.tabIconSize}
                   color={color}
                   decorative

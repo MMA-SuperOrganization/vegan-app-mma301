@@ -74,6 +74,33 @@ export function AdminDashboardScreen() {
             />
           </View>
 
+          {summary.data.engagement ? (
+            <>
+              <AdminSectionHeader
+                title={t('admin.overview.engagement')}
+                description={t('admin.overview.engagementDescription')}
+              />
+              <View style={styles.metrics}>
+                <AdminMetricCard
+                  label={t('admin.overview.comments')}
+                  value={summary.data.engagement.comments}
+                />
+                <AdminMetricCard
+                  label={t('admin.overview.reactions')}
+                  value={summary.data.engagement.reactions}
+                />
+                <AdminMetricCard
+                  label={t('admin.overview.saved')}
+                  value={summary.data.engagement.savedItems}
+                />
+                <AdminMetricCard
+                  label={t('admin.overview.views')}
+                  value={summary.data.engagement.postTotals.views}
+                />
+              </View>
+            </>
+          ) : null}
+
           {content.length ? (
             <AdminSurface>
               <AdminSectionHeader
@@ -116,6 +143,12 @@ export function AdminDashboardScreen() {
         description={t('admin.overview.quickActionsDescription')}
       />
       <View style={styles.actions}>
+        <AdminActionCard
+          icon="explore"
+          title={t('admin.tabs.content')}
+          description={t('admin.overview.contentManagementDescription')}
+          onPress={() => router.push('/admin/content')}
+        />
         <AdminActionCard
           icon="flag"
           title={t('admin.overview.moderation')}
